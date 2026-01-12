@@ -4,7 +4,7 @@ using Serilog;
 using System.Text.Json;
 using V2ex.Maui2.App.Services.Bridge;
 using V2ex.Maui2.Core.Services.Interfaces;
-using V2ex.Maui2.App.Services.V2ex;
+using V2ex.Maui2.Core.Services.V2ex;
 using System.Net;
 using CommunityToolkit.Maui;
 

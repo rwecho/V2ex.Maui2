@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using V2ex.Maui2.Core.Models.Api;
 using V2ex.Maui2.Core.Services.Interfaces;
 
-namespace V2ex.Maui2.App.Services.V2ex;
+namespace V2ex.Maui2.Core.Services.V2ex;
 
 /// <summary>
 /// V2EX JSON API 服务 - 使用官方 JSON API 端点

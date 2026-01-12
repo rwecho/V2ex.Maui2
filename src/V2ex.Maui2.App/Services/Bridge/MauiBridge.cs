@@ -2,7 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Devices;
 using V2ex.Maui2.Core.Models.Api;
-using V2ex.Maui2.App.Services.V2ex;
+using V2ex.Maui2.Core.Services.V2ex;
 using CommunityToolkit.Maui.Alerts;
 
 namespace V2ex.Maui2.App.Services.Bridge;
