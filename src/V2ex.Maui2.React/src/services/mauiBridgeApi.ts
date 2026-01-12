@@ -8,7 +8,6 @@ import type {
   TopicDetail,
   Member,
   NodeInfo,
-  GetTopicsParams,
   GetNodeTopicsParams,
   GetTopicParams,
   GetUserParams,
@@ -23,11 +22,14 @@ async function callMauiBridge(
   args?: Record<string, unknown>
 ): Promise<string> {
   try {
-    const argsJson = args ? JSON.stringify(args) : "{}";
+    // 提取args的values并转换数组
+    const argsValues = args ? Object.values(args) : [];
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (window as any).HybridWebView.InvokeDotNet(method, [
-      argsJson,
-    ]);
+    const result = await (window as any).HybridWebView.InvokeDotNet(
+      method,
+      argsValues
+    );
     return typeof result === "string" ? result : JSON.stringify(result);
   } catch (error) {
     console.error(`Error calling MAUI Bridge method ${method}:`, error);
@@ -42,11 +44,8 @@ export const mauiBridgeApi = {
   /**
    * 获取最新话题列表
    */
-  async getTopics(params?: GetTopicsParams): Promise<Topic[]> {
-    const result = await callMauiBridge(
-      "GetTopicsAsync",
-      params as unknown as Record<string, unknown>
-    );
+  async getLatestTopics(): Promise<Topic[]> {
+    const result = await callMauiBridge("GetLatestTopicsAsync");
     const data = JSON.parse(result);
     return data.error ? [] : data;
   },

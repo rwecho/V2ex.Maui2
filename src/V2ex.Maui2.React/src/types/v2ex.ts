@@ -84,11 +84,6 @@ export type User = Member;
 export type Node = NodeInfo;
 export type Comment = Reply;
 
-// API 参数类型
-export interface GetTopicsParams {
-  page?: number;
-}
-
 export interface GetNodeTopicsParams {
   nodeName: string;
   page?: number;

@@ -37,7 +37,7 @@ export function HomePage() {
     topics,
     loading,
     error,
-    fetchTopics,
+    fetchLatestTopics: fetchTopics,
     fetchHotTopics,
     fetchNodeTopics,
   } = useTopicStore();

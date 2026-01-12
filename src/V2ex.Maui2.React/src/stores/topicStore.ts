@@ -13,7 +13,7 @@ interface TopicState {
   error: string | null;
 
   // Actions
-  fetchTopics: (page?: number) => Promise<void>;
+  fetchLatestTopics: (page?: number) => Promise<void>;
   fetchHotTopics: () => Promise<void>;
   fetchNodeTopics: (nodeName: string, page?: number) => Promise<void>;
   fetchTopicDetail: (topicId: number) => Promise<void>;
@@ -26,10 +26,10 @@ export const useTopicStore = create<TopicState>((set) => ({
   loading: false,
   error: null,
 
-  fetchTopics: async (page = 1) => {
+  fetchLatestTopics: async () => {
     set({ loading: true, error: null });
     try {
-      const topics = await v2exApi.getTopics({ page });
+      const topics = await v2exApi.getLatestTopics();
       set({ topics, loading: false });
     } catch (error) {
       set({
