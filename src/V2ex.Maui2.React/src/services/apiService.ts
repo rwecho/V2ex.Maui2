@@ -8,7 +8,6 @@ import type {
   TopicDetail,
   Member,
   NodeInfo,
-  GetTopicsParams,
   GetNodeTopicsParams,
   GetTopicParams,
   GetUserParams,
@@ -20,7 +19,7 @@ import { getPlatformInfoSync } from "./platform";
  * API 服务接口
  */
 interface IV2exApiService {
-  getTopics(params?: GetTopicsParams): Promise<Topic[]>;
+  getLatestTopics(): Promise<Topic[]>;
   getHotTopics(): Promise<Topic[]>;
   getNodeTopics(params: GetNodeTopicsParams): Promise<Topic[]>;
   getTopicDetail(params: GetTopicParams): Promise<TopicDetail | null>;
@@ -71,11 +70,8 @@ class HttpApiService implements IV2exApiService {
     }
   }
 
-  async getTopics(params?: GetTopicsParams): Promise<Topic[]> {
-    return this.fetchApi<Topic[]>(
-      "/topics",
-      params as Record<string, string | number> | undefined
-    );
+  async getLatestTopics(): Promise<Topic[]> {
+    return this.fetchApi<Topic[]>("/topics/latest");
   }
 
   async getHotTopics(): Promise<Topic[]> {

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Devices;
 using V2ex.Maui2.Core.Models.Api;
 using V2ex.Maui2.Core.Services.V2ex;
 using CommunityToolkit.Maui.Alerts;
@@ -26,12 +25,11 @@ public class MauiBridge
     /// </summary>
     /// <param name="jsonArgs">JSON 参数，例如: {"page": 1}</param>
     /// <returns>JSON 格式的话题列表</returns>
-    public async Task<string> GetTopicsAsync(string jsonArgs)
+    public async Task<string> GetTopicsAsync()
     {
         try
         {
-            _logger.LogInformation("Bridge: 获取最新话题，参数: {Args}", jsonArgs);
-
+            _logger.LogInformation("Bridge: 获取最新话题");
             var topics = await _v2exService.GetLatestTopicsAsync();
 
             return JsonSerializer.Serialize(topics, new JsonSerializerOptions
@@ -77,14 +75,13 @@ public class MauiBridge
     /// </summary>
     /// <param name="jsonArgs">JSON 参数，例如: {"nodeName": "python", "page": 1}</param>
     /// <returns>JSON 格式的话题列表</returns>
-    public async Task<string> GetNodeTopicsAsync(string jsonArgs)
+    public async Task<string> GetNodeTopicsAsync(string nodeName, int page = 1)
     {
         try
         {
-            _logger.LogInformation("Bridge: 获取节点话题，参数: {Args}", jsonArgs);
+            _logger.LogInformation("Bridge: 获取节点话题，参数: nodeName={NodeName}, page={Page}", nodeName, page);
 
-            var args = JsonSerializer.Deserialize<GetNodeTopicsArgs>(jsonArgs);
-            var topics = await _v2exService.GetNodeTopicsAsync(args?.NodeName ?? "", args?.Page);
+            var topics = await _v2exService.GetNodeTopicsAsync(nodeName, page);
 
             return JsonSerializer.Serialize(topics, new JsonSerializerOptions
             {
