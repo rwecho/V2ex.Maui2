@@ -18,7 +18,17 @@
       "Bash(npm run build:*)",
       "Bash(xcrun simctl list:*)",
       "Bash(xcrun simctl boot:*)",
-      "Bash(xcrun simctl spawn:*)"
+      "Bash(xcrun simctl spawn:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm dev)",
+      "Bash(lsof:*)",
+      "Bash(ps:*)",
+      "Bash(kill:*)",
+      "Bash(xargs kill:*)",
+      "Bash(pkill:*)",
+      "Bash(timeout:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(echo:*)"
     ]
   }
 }

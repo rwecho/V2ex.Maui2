@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Refit;
 using V2ex.Maui2.Core.Models.Api;
 using V2ex.Maui2.Core.Services.Interfaces;
+using V2ex.Maui2.Core.Services.V2ex;
 
 namespace V2ex.Maui2.Api.Controllers;
 
@@ -11,11 +12,13 @@ namespace V2ex.Maui2.Api.Controllers;
 public class NodesController : ApiControllerBase
 {
     private readonly IV2exJsonApi _v2ex;
+    private readonly V2exJsonService _v2exService;
     private readonly ILogger<NodesController> _logger;
 
-    public NodesController(IV2exJsonApi v2ex, ILogger<NodesController> logger)
+    public NodesController(IV2exJsonApi v2ex, V2exJsonService v2exService, ILogger<NodesController> logger)
     {
         _v2ex = v2ex;
+        _v2exService = v2exService;
         _logger = logger;
     }
 
@@ -76,17 +79,18 @@ public class NodesController : ApiControllerBase
 
         try
         {
-            var topics = await _v2ex.GetNodeTopicsAsync(nodeName, page);
+            _logger.LogInformation("Fetching topics for node: {NodeName}, page: {Page}", nodeName, page ?? 1);
+
+            // 使用 V2exJsonService 的 HTML 解析方法
+            var topics = await _v2exService.GetNodeTopicsAsync(nodeName, page ?? 1);
+
+            _logger.LogInformation("Successfully fetched {Count} topics for node: {NodeName}", topics.Count, nodeName);
+
             return Ok(topics);
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogError(ex, "V2EX API error while fetching node topics for {NodeName}", nodeName);
-            return UpstreamProblem(ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while fetching node topics for {NodeName}", nodeName);
+            _logger.LogError(ex, "Error fetching topics for node: {NodeName}", nodeName);
             return Problem(statusCode: StatusCodes.Status502BadGateway, title: ex.Message);
         }
     }

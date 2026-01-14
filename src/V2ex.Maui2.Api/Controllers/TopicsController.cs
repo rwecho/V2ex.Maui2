@@ -19,7 +19,7 @@ public class TopicsController : ApiControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
+    [HttpGet("latest")]
     public async Task<ActionResult<List<V2exTopic>>> GetLatest([FromQuery] int? page)
     {
         try

@@ -11,11 +11,13 @@ public class V2exJsonService
 {
     private readonly IV2exJsonApi _api;
     private readonly ILogger<V2exJsonService> _logger;
+    private readonly V2exHtmlParser _htmlParser;
 
-    public V2exJsonService(IV2exJsonApi api, ILogger<V2exJsonService> logger)
+    public V2exJsonService(IV2exJsonApi api, ILogger<V2exJsonService> logger, V2exHtmlParser htmlParser)
     {
         _api = api;
         _logger = logger;
+        _htmlParser = htmlParser;
     }
 
     /// <summary>
@@ -91,26 +93,20 @@ public class V2exJsonService
     }
 
     /// <summary>
-    /// 获取节点话题列表
+    /// 获取节点话题列表（通过 HTML 解析）
     /// </summary>
     public async Task<List<V2exTopic>> GetNodeTopicsAsync(string nodeName, int? page = null)
     {
-        try
-        {
-            _logger.LogInformation("Fetching topics for node {NodeName}, page {Page}", nodeName, page ?? 1);
+        return await _htmlParser.GetNodeTopicsAsync(nodeName, page ?? 1);
+    }
 
-            var topics = await _api.GetNodeTopicsAsync(nodeName, page);
-
-            _logger.LogInformation("Successfully fetched {Count} topics for node {NodeName}",
-                topics.Count, nodeName);
-
-            return topics;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching topics for node {NodeName}", nodeName);
-            return new List<V2exTopic>();
-        }
+    /// <summary>
+    /// 获取 Tab 话题列表（通过 HTML 解析）
+    /// 例如: tech, creative, play, apple, jobs...
+    /// </summary>
+    public async Task<List<V2exTopic>> GetTabTopicsAsync(string tab)
+    {
+        return await _htmlParser.GetTabTopicsAsync(tab);
     }
 
     /// <summary>

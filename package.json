@@ -1,0 +1,11 @@
+{
+	"dependencies": {
+		"@ionic/react": "^8.7.16",
+		"@ionic/react-router": "^8.7.16",
+		"react-router": "^5.3.4",
+		"react-router-dom": "^5.3.4"
+	},
+	"devDependencies": {
+		"@types/react-router-dom": "^5.3.3"
+	}
+}

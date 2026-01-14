@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using Refit;
 using Serilog;
 using V2ex.Maui2.Core.Services.Interfaces;
+using V2ex.Maui2.Core.Services.V2ex;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,7 +71,7 @@ builder.Services
     .ConfigureHttpClient(client =>
     {
         var baseUrl = builder.Configuration["V2ex:BaseUrl"]
-            ?? "https://proxy.0x2a.top/https://www.v2ex.com";
+            ?? "https://www.v2ex.com";
 
         client.BaseAddress = new Uri(baseUrl);
 
@@ -88,6 +89,21 @@ builder.Services
         // 开发环境禁用 SSL 证书验证
         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
     });
+
+// 注册 V2exJsonService 和 V2exHtmlParser
+builder.Services.AddSingleton<HttpClient>(serviceProvider =>
+{
+    return new HttpClient(new HttpClientHandler
+    {
+        AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+    })
+    {
+        Timeout = TimeSpan.FromSeconds(30)
+    };
+});
+builder.Services.AddSingleton<V2exHtmlParser>();
+builder.Services.AddSingleton<V2exJsonService>();
 
 var app = builder.Build();
 

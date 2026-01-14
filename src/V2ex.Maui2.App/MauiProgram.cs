@@ -7,6 +7,7 @@ using V2ex.Maui2.Core.Services.Interfaces;
 using V2ex.Maui2.Core.Services.V2ex;
 using System.Net;
 using CommunityToolkit.Maui;
+using System.Reflection;
 
 namespace V2ex.Maui2.App;
 
@@ -57,7 +58,7 @@ public static class MauiProgram
 		})
 		.ConfigureHttpClient(client =>
 		{
-			client.BaseAddress = new Uri("https://proxy.0x2a.top/https://www.v2ex.com");
+			client.BaseAddress = new Uri("https://www.v2ex.com");
 			// 设置 User-Agent 模拟浏览器
 			client.DefaultRequestHeaders.Add("User-Agent",
 				"Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1");
@@ -67,6 +68,20 @@ public static class MauiProgram
 			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
 		})
 		;
+
+		// 注册 V2EX HTML 解析器（用于 Tab 和 Node 话题）
+		builder.Services.AddSingleton<HttpClient>(serviceProvider =>
+		{
+			return new HttpClient(new HttpClientHandler
+			{
+				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+			})
+			{
+				BaseAddress = new Uri("https://www.v2ex.com"),
+				Timeout = TimeSpan.FromSeconds(30)
+			};
+		});
+		builder.Services.AddSingleton<V2exHtmlParser>();
 
 		// 注册 V2EX 服务
 		builder.Services.AddSingleton<V2exJsonService>();

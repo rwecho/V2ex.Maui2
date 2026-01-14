@@ -23,9 +23,8 @@ public class MauiBridge
     /// <summary>
     /// 获取最新话题列表
     /// </summary>
-    /// <param name="jsonArgs">JSON 参数，例如: {"page": 1}</param>
     /// <returns>JSON 格式的话题列表</returns>
-    public async Task<string> GetTopicsAsync()
+    public async Task<string> GetLatestTopicsAsync()
     {
         try
         {
@@ -66,6 +65,32 @@ public class MauiBridge
         catch (Exception ex)
         {
             _logger.LogError(ex, "Bridge: 获取热门话题失败");
+            return JsonSerializer.Serialize(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 获取 Tab 话题列表（通过 HTML 解析）
+    /// </summary>
+    /// <param name="tab">Tab 名称，例如: tech, creative, play</param>
+    /// <returns>JSON 格式的话题列表</returns>
+    public async Task<string> GetTabTopicsAsync(string tab)
+    {
+        try
+        {
+            _logger.LogInformation("Bridge: 获取 Tab 话题，Tab={Tab}", tab);
+
+            var topics = await _v2exService.GetTabTopicsAsync(tab);
+
+            return JsonSerializer.Serialize(topics, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bridge: 获取 Tab 话题失败");
             return JsonSerializer.Serialize(new { error = ex.Message });
         }
     }
@@ -249,20 +274,6 @@ public class MauiBridge
     }
 
 
-    public string GetAppVersion()
-    {
-        try
-        {
-            var version = AppInfo.VersionString;
-            _logger.LogInformation("Bridge: 获取应用版本 - {Version}", version);
-            return version;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Bridge: 获取应用版本失败");
-            return "Unknown";
-        }
-    }
     public Task<string?> GetStringValue(string key)
     {
         return Task.FromResult((string?)Preferences.Default.Get(key, string.Empty));
@@ -286,6 +297,20 @@ public class MauiBridge
     public void ShowToast(string message)
     {
         Toast.Make(message, CommunityToolkit.Maui.Core.ToastDuration.Short).Show();
+    }
+
+    public Task<SystemInfo> GetSystemInfo()
+    {
+        var systemInfo = new SystemInfo
+        {
+            Platform = DeviceInfo.Platform.ToString(),
+            AppVersion = AppInfo.VersionString,
+            DeviceModel = DeviceInfo.Model,
+            Manufacturer = DeviceInfo.Manufacturer,
+            DeviceName = DeviceInfo.Name,
+            OperatingSystem = DeviceInfo.VersionString
+        };
+        return Task.FromResult(systemInfo);
     }
 
     #region 参数类
@@ -313,3 +338,4 @@ public class MauiBridge
 
     #endregion
 }
+

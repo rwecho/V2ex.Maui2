@@ -60,6 +60,6 @@ public interface IV2exJsonApi
     /// 获取用户信息
     /// </summary>
     /// <param name="username">用户名</param>
-    [Get("/api/member/show.json")]
+    [Get("/api/members/show.json")]
     Task<V2exMember> GetMemberInfoAsync([Query] string username);
 }
