@@ -101,6 +101,12 @@ jobs:
         with:
           files: './src/V2ex.Maui2.App/bin/Release/net10.0-android/**/*.aab'
 
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-build
+          path: "src/V2ex.Maui2.App/bin/Release/net10.0-android/*.aab"
+
   # iOS 构建
   build-ios:
     runs-on: macos-latest
