@@ -175,7 +175,7 @@ jobs:
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: ios-build
           path: "src/V2ex.Maui2.App/bin/Release/net10.0-ios/ios-arm64/publish/*.ipa"
