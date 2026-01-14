@@ -37,7 +37,7 @@ jobs:
           npm run build
         working-directory: ./src/V2ex.Maui2.IonicApp
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v6
         with:
           name: react-build
           path: ./src/V2ex.Maui2.IonicApp/dist
