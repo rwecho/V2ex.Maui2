@@ -37,7 +37,7 @@ jobs:
           npm run build
         working-directory: ./src/V2ex.Maui2.IonicApp
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v7
         with:
           name: react-build
           path: ./src/V2ex.Maui2.IonicApp/dist
@@ -63,7 +63,7 @@ jobs:
           dotnet workload install android 
 
       - name: Download React build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v7
         with:
           name: react-build
           path: ./src/V2ex.Maui2.App/Resources/Raw/wwwroot
@@ -175,7 +175,7 @@ jobs:
   #         api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
   #     - name: Upload a Build Artifact
-  #       uses: actions/upload-artifact@v3.0.0
+  #       uses: actions/upload-artifact@v7
   #       with:
   #         name: ios-build
   #         path: "src/V2ex.Maui2.App/bin/Release/net10.0-ios/ios-arm64/publish/*.ipa"
