@@ -124,20 +124,14 @@ public class MauiBridge
     /// <summary>
     /// 获取话题详情（包含回复）
     /// </summary>
-    /// <param name="jsonArgs">JSON 参数，例如: {"topicId": 12345}</param>
     /// <returns>JSON 格式的话题详情</returns>
-    public async Task<string> GetTopicDetailAsync(string jsonArgs)
+    public async Task<string> GetTopicDetailAsync(int topicId)
     {
         try
         {
-            _logger.LogInformation("Bridge: 获取话题详情，参数: {Args}", jsonArgs);
+            _logger.LogInformation("Bridge: 获取话题详情，参数: {topicId}", topicId);
 
-            var args = JsonSerializer.Deserialize<GetTopicArgs>(jsonArgs);
-            var topicId = args?.TopicId ?? 0;
-            if (topicId <= 0)
-            {
-                return JsonSerializer.Serialize(new { error = "Invalid topicId" });
-            }
+            //var topicIdInt = int.Parse(topicId);
 
             // 并行获取 topic 基本信息 + replies
             var topicTask = _v2exService.GetTopicDetailAsync(topicId);

@@ -156,7 +156,6 @@ export const apiFactory = async (): Promise<IV2exApiService> => {
   try {
     // 如果能成功调用 GetSystemInfo，说明 bridge 可用
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    debugger;
     const systemInfo = await (window as any).HybridWebView.InvokeDotNet(
       "GetSystemInfo",
       []
