@@ -19,10 +19,10 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>V2ex.Maui2.App</ApplicationTitle>
+		<ApplicationTitle>V2</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.v2ex.maui2.app</ApplicationId>
+		<ApplicationId>tech.zb.v2ex.maui.app</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -36,6 +36,11 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+
+		<!-- Android签名配置 -->
+		<AndroidSigningKeyStore>true</AndroidSigningKeyStore>
+		<AndroidSigningKeyAlias>v2ex_key</AndroidSigningKeyAlias>
+		<AndroidKeyStore>true</AndroidKeyStore>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -71,5 +76,11 @@
 	<ItemGroup>
 		<ProjectReference Include="..\V2ex.Maui2.Core\V2ex.Maui2.Core.csproj" />
 	</ItemGroup>
+
+	<!-- Release配置 -->
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-android'">
+		<AndroidPackageFormat>aab</AndroidPackageFormat>
+		<AndroidUseAapt2>true</AndroidUseAapt2>
+	</PropertyGroup>
 
 </Project>
