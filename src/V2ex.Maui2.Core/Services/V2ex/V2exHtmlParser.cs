@@ -36,7 +36,7 @@ public class V2exHtmlParser
         catch (Exception ex)
         {
             _logger.LogError(ex, "解析 Tab 页面失败: {Tab}", tab);
-            return new List<V2exTopic>();
+            throw;
         }
     }
 
@@ -61,7 +61,7 @@ public class V2exHtmlParser
         catch (Exception ex)
         {
             _logger.LogError(ex, "解析节点页面失败: {NodeName}, 页码: {Page}", nodeName, page);
-            return new List<V2exTopic>();
+            throw;
         }
     }
 
