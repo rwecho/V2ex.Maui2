@@ -1,6 +1,7 @@
 import { Redirect, Route } from "react-router-dom";
 import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
+import { createHashHistory } from "history";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -37,9 +38,14 @@ import TopicPage from "./pages/Topic";
 
 setupIonicReact();
 
+// Use hash history so the document URL remains at '/', which keeps WKWebView's
+// Referer header to the origin (fragments are not included in Referer).
+// This helps MAUI HybridWebView's InvokeDotNet request validation on iOS.
+const history = createHashHistory();
+
 const App: React.FC = () => (
   <IonApp>
-    <IonReactRouter>
+    <IonReactRouter history={history}>
       <IonRouterOutlet>
         <Route
           path="/dashboard"

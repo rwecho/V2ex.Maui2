@@ -182,10 +182,12 @@ declare global {
     }
     const message = JSON.stringify(body);
     // send the request to .NET
-    const requestUrl = `${window.location.origin}/__hwvInvokeDotNet`;
-    console.log("Invoking .NET ", requestUrl, message);
+    const requestUrl = `/__hwvInvokeDotNet`;
     const rawResponse = await fetch(requestUrl, {
       method: "POST",
+      // iOS (WKWebView) does not allow setting certain headers (e.g., Origin/Referer).
+      // MAUI validates the request using Origin/Referer, so we force an origin-only referrer.
+      referrerPolicy: "origin",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
