@@ -98,7 +98,8 @@ public class MauiBridge
     /// <summary>
     /// 获取节点话题列表
     /// </summary>
-    /// <param name="jsonArgs">JSON 参数，例如: {"nodeName": "python", "page": 1}</param>
+    /// <param name="nodeName">节点名，例如: python</param>
+    /// <param name="page">页码，从 1 开始</param>
     /// <returns>JSON 格式的话题列表</returns>
     public async Task<string> GetNodeTopicsAsync(string nodeName, int page = 1)
     {
