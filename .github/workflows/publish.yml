@@ -95,11 +95,11 @@ jobs:
            -p:ApplicationDisplayVersion=$DISPLAY_VERSION
         working-directory: ./src/V2ex.Maui2.App
 
-      - name: Upload Android AAB to Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: './src/V2ex.Maui2.App/bin/Release/net10.0-android/**/*.aab'
+      # - name: Upload Android AAB to Release
+      #   uses: softprops/action-gh-release@v1
+      #   if: startsWith(github.ref, 'refs/tags/')
+      #   with:
+      #     files: './src/V2ex.Maui2.App/bin/Release/net10.0-android/**/*.aab'
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v6
