@@ -20,11 +20,25 @@ jobs:
       - name: setup version
         id: setup_version
         run: |
-          echo "VERSION=$(echo ${GITHUB_REF#refs/tags/v})" >> $GITHUB_ENV
-          echo "DISPLAY_VERSION=$VERSION" >> $GITHUB_ENV
-          # Convert to build number: 1.0.1 -> 1000001
-          BUILD_VERSION=$(echo $VERSION | sed -e 's/\./ /g' | xargs printf "%d%03d%03d")
-          echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_ENV
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # ApplicationDisplayVersion -> CFBundleShortVersionString (e.g. 1.0.0)
+          DISPLAY_VERSION="$VERSION"
+
+          # ApplicationVersion -> CFBundleVersion MUST monotonically increase for every upload.
+          # Base from semver (1.2.3 -> 1002003) + append the GitHub run number for uniqueness.
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          MAJOR=${MAJOR:-0}
+          MINOR=${MINOR:-0}
+          PATCH=${PATCH:-0}
+          BASE_BUILD=$(printf "%d%03d%03d" "$MAJOR" "$MINOR" "$PATCH")
+          BUILD_VERSION="${BASE_BUILD}${GITHUB_RUN_NUMBER}"
+
+          echo "DISPLAY_VERSION=$DISPLAY_VERSION" >> "$GITHUB_ENV"
+          echo "BUILD_VERSION=$BUILD_VERSION" >> "$GITHUB_ENV"
+
+          echo "DISPLAY_VERSION=$DISPLAY_VERSION" >> "$GITHUB_OUTPUT"
+          echo "BUILD_VERSION=$BUILD_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
