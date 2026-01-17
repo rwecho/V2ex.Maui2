@@ -30,6 +30,7 @@ import {
   setStoredMode,
   type ColorMode,
 } from "../../theme/colorMode";
+import { useShallow } from "zustand/shallow";
 
 interface RefresherEventDetail {
   complete(): void;
@@ -38,9 +39,11 @@ interface RefresherEventDetail {
 const HomePage = () => {
   const tabs = useTabStore((state) => state.tabs);
 
-  const fetchLatestTopics = useTopicStore((s) => s.fetchLatestTopics);
-  const fetchHotTopics = useTopicStore((s) => s.fetchHotTopics);
-  const fetchTabTopics = useTopicStore((s) => s.fetchTabTopics);
+  const fetchLatestTopics = useTopicStore(
+    useShallow((s) => s.fetchLatestTopics)
+  );
+  const fetchHotTopics = useTopicStore(useShallow((s) => s.fetchHotTopics));
+  const fetchTabTopics = useTopicStore(useShallow((s) => s.fetchTabTopics));
 
   const [colorMode, setColorMode] = useState<ColorMode>(
     () => getStoredMode() ?? getSystemPreferredMode()

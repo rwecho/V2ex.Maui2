@@ -1,5 +1,6 @@
 import {
   IonBadge,
+  IonButton,
   IonItem,
   IonLabel,
   IonList,
@@ -35,6 +36,21 @@ const TopicList = (props: TopicListProps) => {
   const fetchHotTopics = useTopicStore(useShallow((s) => s.fetchHotTopics));
   const fetchTabTopics = useTopicStore(useShallow((s) => s.fetchTabTopics));
 
+  const handleRetry = async () => {
+    if (!isActive) return;
+    switch (kind) {
+      case "latest":
+        await fetchLatestTopics(tabKey);
+        break;
+      case "hot":
+        await fetchHotTopics(tabKey);
+        break;
+      case "tab":
+        await fetchTabTopics(tabKey, tab);
+        break;
+    }
+  };
+
   useEffect(() => {
     // 只有当对应 Segment 激活时才加载数据
     if (!isActive) return;
@@ -68,10 +84,18 @@ const TopicList = (props: TopicListProps) => {
     );
   }
 
-  if (error) {
+  // If we have no cached data, show a full error state.
+  if (error && topics.length === 0) {
     return (
       <div className="topicListSection">
-        <IonText color="danger">加载失败：{error}</IonText>
+        <IonText color="danger">
+          <p className="topicListErrorText">加载失败：{error}</p>
+        </IonText>
+        <div className="topicListErrorActions">
+          <IonButton expand="block" onClick={handleRetry} disabled={!isActive}>
+            重试
+          </IonButton>
+        </div>
       </div>
     );
   }
@@ -89,6 +113,22 @@ const TopicList = (props: TopicListProps) => {
   return (
     <>
       <IonList>
+        {error ? (
+          <IonItem lines="none" color="warning">
+            <IonLabel className="ion-text-wrap">
+              <IonText color="dark">加载失败：{error}</IonText>
+              <div className="topicListErrorBannerActions">
+                <IonButton
+                  size="small"
+                  onClick={handleRetry}
+                  disabled={!isActive}
+                >
+                  重试
+                </IonButton>
+              </div>
+            </IonLabel>
+          </IonItem>
+        ) : null}
         {topics.map((t) => (
           <IonItem
             key={t.id}

@@ -94,7 +94,10 @@
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
 
-		<!-- Splash Screen -->
+		<!-- Splash Screen
+			BaseSize controls how large the SVG is rasterized for platform launch screens.
+			128x128 is too small on modern high-DPI devices and can look like a tiny dot.
+		-->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#ffffff" BaseSize="128,128" />
 
 		<!-- Images -->

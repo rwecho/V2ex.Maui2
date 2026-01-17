@@ -46,6 +46,7 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
         loadingByKey: { ...get().loadingByKey, [key]: false },
       });
     } catch (error) {
+      console.error("Error fetching latest topics:", error);
       const message = isZodError(error)
         ? error.message
         : error instanceof Error
@@ -71,6 +72,7 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
         loadingByKey: { ...get().loadingByKey, [key]: false },
       });
     } catch (error) {
+      console.error("Error fetching hot topics:", error);
       const message = isZodError(error)
         ? error.message
         : error instanceof Error
@@ -99,14 +101,15 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
       errorByKey: { ...get().errorByKey, [key]: null },
     });
 
+    debugger;
     try {
-      debugger;
       const topics = await (await apiFactory()).getTabTopics({ tab });
       set({
         topicsByKey: { ...get().topicsByKey, [key]: topics },
         loadingByKey: { ...get().loadingByKey, [key]: false },
       });
     } catch (error) {
+      console.error(`Error fetching topics for tab "${tab}":`, error);
       const message = isZodError(error)
         ? error.message
         : error instanceof Error
@@ -149,6 +152,7 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
         },
       });
     } catch (error) {
+      console.error(`Error fetching topic detail for ID ${topicId}:`, error);
       const message = isZodError(error)
         ? error.message
         : error instanceof Error

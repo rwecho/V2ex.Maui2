@@ -25,3 +25,15 @@
   display: flex;
   justify-content: center;
 }
+
+.topicListErrorText {
+  margin: 0;
+}
+
+.topicListErrorActions {
+  margin-top: 12px;
+}
+
+.topicListErrorBannerActions {
+  margin-top: 8px;
+}
