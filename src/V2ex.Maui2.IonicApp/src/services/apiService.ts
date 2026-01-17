@@ -177,7 +177,7 @@ class HttpApiService implements IV2exApiService {
     try {
       return ok(schema.parse(input));
     } catch (e) {
-      return err(`${schemaName} schema error: ${toErrorMessage(e)}`);
+      return err(`数据解析失败（${schemaName}）：${toErrorMessage(e)}`);
     }
   }
 

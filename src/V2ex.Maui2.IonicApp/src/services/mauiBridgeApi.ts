@@ -54,7 +54,7 @@ function parseJsonOrError<T>(
   try {
     data = JSON.parse(jsonText) as unknown;
   } catch (e) {
-    return err(`${schemaName} JSON parse error: ${toErrorMessage(e)}`);
+    return err(`返回内容解析失败（${schemaName}）：${toErrorMessage(e)}`);
   }
 
   // MAUI side may return `{ error: "..." }` on exception
@@ -70,7 +70,7 @@ function parseJsonOrError<T>(
   try {
     return ok(schema.parse(data));
   } catch (e) {
-    return err(`${schemaName} schema error: ${toErrorMessage(e)}`);
+    return err(`数据解析失败（${schemaName}）：${toErrorMessage(e)}`);
   }
 }
 
@@ -120,14 +120,14 @@ export const mauiBridgeApi = {
     try {
       data = JSON.parse(res.data) as unknown;
     } catch (e) {
-      return err(`TopicDetail JSON parse error: ${toErrorMessage(e)}`);
+      return err(`返回内容解析失败（TopicDetail）：${toErrorMessage(e)}`);
     }
     // backend may return null if not found
     if (data === null) return ok(null);
     try {
       return ok(TopicDetailSchema.parse(data));
     } catch (e) {
-      return err(`TopicDetail schema error: ${toErrorMessage(e)}`);
+      return err(`数据解析失败（TopicDetail）：${toErrorMessage(e)}`);
     }
   },
 
@@ -143,13 +143,13 @@ export const mauiBridgeApi = {
     try {
       data = JSON.parse(res.data) as unknown;
     } catch (e) {
-      return err(`Member JSON parse error: ${toErrorMessage(e)}`);
+      return err(`返回内容解析失败（Member）：${toErrorMessage(e)}`);
     }
     if (data === null) return ok(null);
     try {
       return ok(MemberSchema.parse(data) as MemberType);
     } catch (e) {
-      return err(`Member schema error: ${toErrorMessage(e)}`);
+      return err(`数据解析失败（Member）：${toErrorMessage(e)}`);
     }
   },
 
@@ -171,13 +171,13 @@ export const mauiBridgeApi = {
     try {
       data = JSON.parse(res.data) as unknown;
     } catch (e) {
-      return err(`NodeInfo JSON parse error: ${toErrorMessage(e)}`);
+      return err(`返回内容解析失败（NodeInfo）：${toErrorMessage(e)}`);
     }
     if (data === null) return ok(null);
     try {
       return ok(NodeInfoSchema.parse(data));
     } catch (e) {
-      return err(`NodeInfo schema error: ${toErrorMessage(e)}`);
+      return err(`数据解析失败（NodeInfo）：${toErrorMessage(e)}`);
     }
   },
 };

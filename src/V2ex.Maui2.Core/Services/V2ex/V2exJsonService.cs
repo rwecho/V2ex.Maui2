@@ -27,6 +27,7 @@ public class V2exJsonService
     {
         try
         {
+
             _logger.LogInformation("Fetching hot topics from V2EX API");
 
             var topics = await _api.GetHotTopicsAsync();
@@ -37,7 +38,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching hot topics");
-            return new List<V2exTopic>();
+            throw;
         }
     }
 
@@ -58,7 +59,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching latest topics");
-            return new List<V2exTopic>();
+            throw;
         }
     }
 
@@ -88,7 +89,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching topic detail for topic {TopicId}", topicId);
-            return null;
+            throw
         }
     }
 
@@ -133,7 +134,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching node info for {NodeName}", nodeName);
-            return null;
+            throw
         }
     }
 
@@ -155,7 +156,8 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching all nodes");
-            return new List<V2exNodeInfo>();
+
+            throw;
         }
     }
 
@@ -183,7 +185,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching member info for {Username}", username);
-            return null;
+            throw;
         }
     }
 
@@ -204,7 +206,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching replies for topic {TopicId}", topicId);
-            return new List<V2exReply>();
+            throw
         }
     }
 }
