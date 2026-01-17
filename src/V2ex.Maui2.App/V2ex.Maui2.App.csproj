@@ -61,35 +61,7 @@
 		<AndroidSigningKeyPass>$(AndroidSigningKeyPass)</AndroidSigningKeyPass>
 	</PropertyGroup>
 
-	<!--
-		Release size/perf optimizations.
-		Note: This project uses reflection (HybridWebView InvokeDotNet -> MauiBridge methods),
-		so we keep trimming conservative (SDK-only) to avoid trimming app code.
-	-->
-	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
-		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-android'">
-		<!-- Trim/link BCL/framework code only (keeps reflection-heavy app code intact) -->
-		<AndroidLinkMode>SdkOnly</AndroidLinkMode>
-
-		<!-- Android AOT: improves startup/perf, increases build time and app size -->
-		<RunAOTCompilation>true</RunAOTCompilation>
-		<AndroidEnableProfiledAot>true</AndroidEnableProfiledAot>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-ios'">
-		<!-- iOS is AOT by design; enable linker + LLVM for smaller/faster builds -->
-		<MtouchLink>SdkOnly</MtouchLink>
-		<MtouchUseLlvm>true</MtouchUseLlvm>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-maccatalyst'">
-		<MtouchLink>SdkOnly</MtouchLink>
-		<MtouchUseLlvm>true</MtouchUseLlvm>
-	</PropertyGroup>
-
+	
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
