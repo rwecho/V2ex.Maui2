@@ -89,7 +89,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching topic detail for topic {TopicId}", topicId);
-            throw
+            throw;
         }
     }
 
@@ -134,7 +134,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching node info for {NodeName}", nodeName);
-            throw
+            throw;
         }
     }
 
@@ -206,7 +206,7 @@ public class V2exJsonService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching replies for topic {TopicId}", topicId);
-            throw
+            throw;
         }
     }
 }
