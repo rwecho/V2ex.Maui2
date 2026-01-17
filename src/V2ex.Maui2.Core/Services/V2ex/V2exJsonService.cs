@@ -106,6 +106,7 @@ public class V2exJsonService
     /// </summary>
     public async Task<List<V2exTopic>> GetTabTopicsAsync(string tab)
     {
+        throw new NotImplementedException();
         return await _htmlParser.GetTabTopicsAsync(tab);
     }
 

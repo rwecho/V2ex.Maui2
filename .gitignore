@@ -31,5 +31,8 @@ logs/
 # Temp
 *.tmp
 .vs/
-**/Raw/wwwroot/
-**/Raw/wwwroot_1/
+**/Raw/wwwroot/assets/
+**/Raw/wwwroot/index.html
+**/Raw/wwwroot/favicon.png
+**/Raw/wwwroot/manifest.json
+**/Raw/wwwroot/vite.svg

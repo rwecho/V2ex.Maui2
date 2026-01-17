@@ -100,6 +100,7 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
     });
 
     try {
+      debugger;
       const topics = await (await apiFactory()).getTabTopics({ tab });
       set({
         topicsByKey: { ...get().topicsByKey, [key]: topics },
