@@ -3,8 +3,6 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonRefresher,
-  IonRefresherContent,
   IonSpinner,
   IonText,
 } from "@ionic/react";
@@ -61,28 +59,6 @@ const TopicList = (props: TopicListProps) => {
     }
   }, [isActive, tabKey, kind, tab]);
 
-  const handleRefresh = async (event: CustomEvent) => {
-    try {
-      // 非当前 segment 时不触发刷新
-      if (!isActive) return;
-
-      switch (kind) {
-        case "latest":
-          await fetchLatestTopics(tabKey);
-          break;
-        case "hot":
-          await fetchHotTopics(tabKey);
-          break;
-        case "tab":
-          await fetchTabTopics(tabKey, tab);
-          break;
-      }
-    } finally {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (event as any).detail?.complete?.();
-    }
-  };
-
   if (loading && topics.length === 0) {
     return (
       <div className="topicListLoadingRow">
@@ -112,14 +88,6 @@ const TopicList = (props: TopicListProps) => {
 
   return (
     <>
-      <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-        <IonRefresherContent
-          pullingIcon="chevron-down-circle-outline"
-          pullingText="下拉刷新"
-          refreshingSpinner="crescent"
-          refreshingText="刷新中…"
-        />
-      </IonRefresher>
       <IonList>
         {topics.map((t) => (
           <IonItem

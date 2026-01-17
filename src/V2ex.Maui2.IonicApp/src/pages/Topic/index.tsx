@@ -17,12 +17,18 @@ import {
   IonList,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
+  IonToast,
 } from "@ionic/react";
 import { useEffect, useMemo, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { useTopicStore } from "../../store/topicStore";
 import "./Topic.css";
 import { useShallow } from "zustand/shallow";
+import {
+  ColorMode,
+  getStoredMode,
+  getSystemPreferredMode,
+} from "../../theme/colorMode";
 
 interface TopicPageProps
   extends RouteComponentProps<{
@@ -49,9 +55,6 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
   // 从路由状态获取初始 title，用于在加载前显示（如果列表页传了的话）
   const initialTitle = (location.state as { title?: string } | null)?.title;
-  const [displayTitle, setDisplayTitle] = useState<string | undefined>(
-    initialTitle
-  );
 
   const parsedTopicId = useMemo(() => {
     if (!id) return null;
@@ -93,10 +96,14 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     fetchTopicDetail(parsedTopicId);
   }, [parsedTopicId, error, loading, topicDetail, fetchTopicDetail]);
 
-  useEffect(() => {
-    const nextTitle = topicDetail?.topic?.title;
-    if (nextTitle) setDisplayTitle(nextTitle);
-  }, [topicDetail?.topic?.title]);
+  const headerTitle = useMemo(() => {
+    return topicDetail?.topic?.title ?? initialTitle ?? `Topic ${id}`;
+  }, [topicDetail?.topic?.title, initialTitle, id]);
+  const [colorMode] = useState<ColorMode>(
+    () => getStoredMode() ?? getSystemPreferredMode()
+  );
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string>("");
 
   useEffect(() => {
     // When navigating between topics, start with the first page of replies again.
@@ -117,6 +124,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       await fetchTopicDetail(parsedTopicId, { force: true });
     }
     event.detail.complete();
+    const toastMessage = error ? `刷新失败：${error}` : "刷新成功";
+    setToastMessage(toastMessage);
+    setToastOpen(true);
   };
 
   const replyCount = topicDetail?.replies?.length ?? 0;
@@ -134,15 +144,20 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton />
+            <IonBackButton color={colorMode === "dark" ? "light" : "medium"} />
           </IonButtons>
-          <IonTitle>{displayTitle || `Topic ${id}`}</IonTitle>
+          <IonTitle>{headerTitle}</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-          <IonRefresherContent></IonRefresherContent>
+          <IonRefresherContent
+            pullingIcon="chevron-down-circle-outline"
+            pullingText="下拉刷新"
+            refreshingSpinner="crescent"
+            refreshingText="刷新中…"
+          />
         </IonRefresher>
 
         <div className="topicPageBody">
@@ -279,6 +294,14 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
             </>
           )}
         </div>
+
+        <IonToast
+          isOpen={toastOpen}
+          message={toastMessage}
+          duration={1200}
+          position="top"
+          onDidDismiss={() => setToastOpen(false)}
+        />
       </IonContent>
     </IonPage>
   );

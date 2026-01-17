@@ -31,3 +31,5 @@ logs/
 # Temp
 *.tmp
 .vs/
+**/Raw/wwwroot/
+**/Raw/wwwroot_1/

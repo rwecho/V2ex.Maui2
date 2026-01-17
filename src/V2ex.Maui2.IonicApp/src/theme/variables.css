@@ -1,2 +1,10 @@
 /* For information on how to create your own theme, please refer to:
 http://ionicframework.com/docs/theming/ */
+
+body {
+  /* 顶部避让刘海 */
+  padding-top: env(safe-area-inset-top);
+
+  /* 底部避让黑条 */
+  padding-bottom: env(safe-area-inset-bottom);
+}
