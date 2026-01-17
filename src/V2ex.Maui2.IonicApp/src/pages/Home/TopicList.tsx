@@ -24,11 +24,20 @@ const TopicList = (props: TopicListProps) => {
 
   const history = useHistory();
 
-  const topics = useTopicStore(useShallow((s) => s.topicsByKey[tabKey] ?? []));
+  const topicsRaw = useTopicStore(
+    useShallow((s) => s.topicsByKey[tabKey] ?? [])
+  );
+  const topics = Array.isArray(topicsRaw) ? topicsRaw : [];
+  const topicsShapeError =
+    topicsRaw != null && !Array.isArray(topicsRaw)
+      ? "列表数据格式异常（非数组）"
+      : null;
   const loading = useTopicStore(
     useShallow((s) => s.loadingByKey[tabKey] ?? false)
   );
   const error = useTopicStore(useShallow((s) => s.errorByKey[tabKey] ?? null));
+
+  const combinedError = topicsShapeError ?? error;
 
   const fetchLatestTopics = useTopicStore(
     useShallow((s) => s.fetchLatestTopics)
@@ -57,7 +66,7 @@ const TopicList = (props: TopicListProps) => {
 
     // 如果上一次请求已经失败，不要自动重试（避免 429/死循环）。
     // 需要重试请通过 UI 触发（后续可加“重试”按钮或下拉刷新）。
-    if (error) return;
+    if (combinedError) return;
 
     // 简单缓存：已加载过就不重复请求（后续可加下拉刷新/手动刷新来强制刷新）
     if (loading || topics.length > 0) return;
@@ -85,11 +94,11 @@ const TopicList = (props: TopicListProps) => {
   }
 
   // If we have no cached data, show a full error state.
-  if (error && topics.length === 0) {
+  if (combinedError && topics.length === 0) {
     return (
       <div className="topicListSection">
         <IonText color="danger">
-          <p className="topicListErrorText">加载失败：{error}</p>
+          <p className="topicListErrorText">加载失败：{combinedError}</p>
         </IonText>
         <div className="topicListErrorActions">
           <IonButton expand="block" onClick={handleRetry} disabled={!isActive}>
@@ -113,10 +122,10 @@ const TopicList = (props: TopicListProps) => {
   return (
     <>
       <IonList>
-        {error ? (
+        {combinedError ? (
           <IonItem lines="none" color="warning">
             <IonLabel className="ion-text-wrap">
-              <IonText color="dark">加载失败：{error}</IonText>
+              <IonText color="dark">加载失败：{combinedError}</IonText>
               <div className="topicListErrorBannerActions">
                 <IonButton
                   size="small"

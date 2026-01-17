@@ -5,7 +5,6 @@
  * 此处只提供“获取数据”的能力（HTTP 或 MAUI Bridge），具体状态管理在 store 层完成。
  */
 
-import { z } from "zod";
 import {
   MemberSchema,
   NodeInfoListSchema,
@@ -23,21 +22,24 @@ import {
   type TopicType,
 } from "../schemas/topicSchema";
 import { mauiBridgeApi } from "./mauiBridgeApi";
+import { err, ok, toErrorMessage, type Result } from "./result";
 
 export interface IV2exApiService {
-  getLatestTopics(): Promise<TopicType[]>;
-  getHotTopics(): Promise<TopicType[]>;
-  getTabTopics(params: GetTabTopicsParams): Promise<TopicType[]>;
-  getNodeTopics(params: GetNodeTopicsParams): Promise<TopicType[]>;
-  getTopicDetail(params: GetTopicParams): Promise<TopicDetailType | null>;
-  getUserProfile(params: GetUserParams): Promise<MemberType | null>;
-  getNodes(): Promise<NodeInfoType[]>;
-  getNodeDetail(params: GetNodeParams): Promise<NodeInfoType | null>;
+  getLatestTopics(): Promise<Result<TopicType[]>>;
+  getHotTopics(): Promise<Result<TopicType[]>>;
+  getTabTopics(params: GetTabTopicsParams): Promise<Result<TopicType[]>>;
+  getNodeTopics(params: GetNodeTopicsParams): Promise<Result<TopicType[]>>;
+  getTopicDetail(
+    params: GetTopicParams
+  ): Promise<Result<TopicDetailType | null>>;
+  getUserProfile(params: GetUserParams): Promise<Result<MemberType | null>>;
+  getNodes(): Promise<Result<NodeInfoType[]>>;
+  getNodeDetail(params: GetNodeParams): Promise<Result<NodeInfoType | null>>;
 }
 
 class HttpApiService implements IV2exApiService {
   private readonly baseUrl: string;
-  private readonly inFlight = new Map<string, Promise<unknown>>();
+  private readonly inFlight = new Map<string, Promise<Result<unknown>>>();
 
   constructor() {
     // 允许通过 Vite env 覆盖，方便本地调试/真机调试
@@ -47,10 +49,10 @@ class HttpApiService implements IV2exApiService {
       "https://localhost:5199/api/v2ex";
   }
 
-  private async fetchApi<T>(
+  private async fetchApi(
     endpoint: string,
     queryParams?: Record<string, string | number>
-  ): Promise<T> {
+  ): Promise<Result<unknown>> {
     const url = new URL(`${this.baseUrl}${endpoint}`);
 
     if (queryParams) {
@@ -63,85 +65,178 @@ class HttpApiService implements IV2exApiService {
 
     const existing = this.inFlight.get(requestKey);
     if (existing) {
-      return (await existing) as T;
+      return await existing;
     }
 
     const p = (async () => {
-      const response = await fetch(requestKey, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-      });
+      try {
+        const response = await fetch(requestKey, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        });
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          const retryAfter = response.headers.get("Retry-After");
-          throw new Error(
-            `HTTP 429 Too Many Requests${
-              retryAfter ? ` (Retry-After: ${retryAfter}s)` : ""
-            }`
-          );
+        const tryParseProblemDetails = (payload: unknown): string | null => {
+          if (!payload || typeof payload !== "object") return null;
+          const obj = payload as Record<string, unknown>;
+
+          // ASP.NET Core ProblemDetails: { type, title, status, detail, instance, traceId }
+          const title = typeof obj.title === "string" ? obj.title : null;
+          const detail = typeof obj.detail === "string" ? obj.detail : null;
+          const status =
+            typeof obj.status === "number" ? String(obj.status) : null;
+          const traceId = typeof obj.traceId === "string" ? obj.traceId : null;
+
+          // ValidationProblemDetails has `errors: Record<string, string[]>`
+          const errors = obj.errors;
+          if (errors && typeof errors === "object") {
+            try {
+              const pairs = Object.entries(errors as Record<string, unknown>)
+                .map(([k, v]) => {
+                  if (Array.isArray(v)) return `${k}: ${v.join(", ")}`;
+                  if (typeof v === "string") return `${k}: ${v}`;
+                  return null;
+                })
+                .filter(Boolean) as string[];
+              if (pairs.length > 0) {
+                return `${title ?? "Validation error"}: ${pairs.join("; ")}`;
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          if (title || detail) {
+            const base = [title, detail].filter(Boolean).join(" - ");
+            const extra = [
+              status ? `status=${status}` : null,
+              traceId ? `traceId=${traceId}` : null,
+            ]
+              .filter(Boolean)
+              .join(", ");
+            return extra ? `${base} (${extra})` : base;
+          }
+
+          return null;
+        };
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            const retryAfter = response.headers.get("Retry-After");
+            return err(
+              `HTTP 429 Too Many Requests${
+                retryAfter ? ` (Retry-After: ${retryAfter}s)` : ""
+              }`
+            );
+          }
+
+          // Try to surface ProblemDetails message from body (if any)
+          try {
+            const contentType = response.headers.get("Content-Type") ?? "";
+            if (contentType.includes("application/json")) {
+              const body = (await response.json()) as unknown;
+              const msg = tryParseProblemDetails(body);
+              if (msg) return err(msg);
+            } else {
+              const text = await response.text();
+              if (text) return err(text);
+            }
+          } catch {
+            // ignore parsing errors
+          }
+
+          return err(`HTTP error! status: ${response.status}`);
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
-      return (await response.json()) as unknown;
+        // 204 or empty body
+        if (response.status === 204) return ok(null);
+
+        const json = (await response.json()) as unknown;
+        const problemMsg = tryParseProblemDetails(json);
+        if (problemMsg) return err(problemMsg);
+        return ok(json);
+      } catch (e) {
+        return err(toErrorMessage(e, "Network error"));
+      }
     })();
 
     this.inFlight.set(requestKey, p);
     try {
-      return (await p) as T;
+      return await p;
     } finally {
       this.inFlight.delete(requestKey);
     }
   }
 
-  async getLatestTopics(): Promise<TopicType[]> {
-    const data = await this.fetchApi<unknown>("/topics/latest");
-    return TopicListSchema.parse(data);
+  private parseOrError<T>(
+    schemaName: string,
+    schema: { parse: (data: unknown) => T },
+    input: unknown
+  ): Result<T> {
+    try {
+      return ok(schema.parse(input));
+    } catch (e) {
+      return err(`${schemaName} schema error: ${toErrorMessage(e)}`);
+    }
   }
 
-  async getHotTopics(): Promise<TopicType[]> {
-    const data = await this.fetchApi<unknown>("/topics/hot");
-    return TopicListSchema.parse(data);
+  async getLatestTopics(): Promise<Result<TopicType[]>> {
+    const res = await this.fetchApi("/topics/latest");
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("TopicList", TopicListSchema, res.data);
   }
 
-  async getTabTopics(params: GetTabTopicsParams): Promise<TopicType[]> {
-    const data = await this.fetchApi<unknown>(`/tabs/${params.tab}`);
-    return TopicListSchema.parse(data);
+  async getHotTopics(): Promise<Result<TopicType[]>> {
+    const res = await this.fetchApi("/topics/hot");
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("TopicList", TopicListSchema, res.data);
   }
 
-  async getNodeTopics(params: GetNodeTopicsParams): Promise<TopicType[]> {
-    const data = await this.fetchApi<unknown>(
-      `/nodes/${params.nodeName}/topics`,
-      {
-        page: params.page ?? 1,
-      }
-    );
-    return TopicListSchema.parse(data);
+  async getTabTopics(params: GetTabTopicsParams): Promise<Result<TopicType[]>> {
+    const res = await this.fetchApi(`/tabs/${params.tab}`);
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("TopicList", TopicListSchema, res.data);
+  }
+
+  async getNodeTopics(
+    params: GetNodeTopicsParams
+  ): Promise<Result<TopicType[]>> {
+    const res = await this.fetchApi(`/nodes/${params.nodeName}/topics`, {
+      page: params.page ?? 1,
+    });
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("TopicList", TopicListSchema, res.data);
   }
 
   async getTopicDetail(
     params: GetTopicParams
-  ): Promise<TopicDetailType | null> {
-    const data = await this.fetchApi<unknown>(`/topics/${params.topicId}`);
-    return TopicDetailSchema.parse(data);
+  ): Promise<Result<TopicDetailType | null>> {
+    const res = await this.fetchApi(`/topics/${params.topicId}`);
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("TopicDetail", TopicDetailSchema, res.data);
   }
 
-  async getUserProfile(params: GetUserParams): Promise<MemberType | null> {
-    const data = await this.fetchApi<unknown>(`/members/${params.username}`);
-    return MemberSchema.parse(data) as MemberType;
+  async getUserProfile(
+    params: GetUserParams
+  ): Promise<Result<MemberType | null>> {
+    const res = await this.fetchApi(`/members/${params.username}`);
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("Member", MemberSchema, res.data);
   }
 
-  async getNodes(): Promise<NodeInfoType[]> {
-    const data = await this.fetchApi<unknown>("/nodes");
-    return NodeInfoListSchema.parse(data);
+  async getNodes(): Promise<Result<NodeInfoType[]>> {
+    const res = await this.fetchApi("/nodes");
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("NodeInfoList", NodeInfoListSchema, res.data);
   }
 
-  async getNodeDetail(params: GetNodeParams): Promise<NodeInfoType | null> {
-    const data = await this.fetchApi<unknown>(`/nodes/${params.nodeName}`);
-    return NodeInfoSchema.parse(data);
+  async getNodeDetail(
+    params: GetNodeParams
+  ): Promise<Result<NodeInfoType | null>> {
+    const res = await this.fetchApi(`/nodes/${params.nodeName}`);
+    if (res.error !== null) return err(res.error);
+    return this.parseOrError("NodeInfo", NodeInfoSchema, res.data);
   }
 }
 
@@ -169,9 +264,4 @@ export const apiFactory = async (): Promise<IV2exApiService> => {
     );
     return httpApiService;
   }
-};
-
-// 预留：如需对 schema 错误统一包装
-export const isZodError = (err: unknown): err is z.ZodError => {
-  return err instanceof z.ZodError;
 };
