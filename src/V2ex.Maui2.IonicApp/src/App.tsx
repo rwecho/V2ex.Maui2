@@ -37,6 +37,10 @@ import HomePage from "./pages/Home";
 import TopicPage from "./pages/Topic";
 import { initColorMode } from "./theme/colorMode";
 import TestPage from "./pages/Test";
+import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
+import ErrorDebugScreen, {
+  CapturedError,
+} from "./components/ErrorDebug/ErrorDebugScreen";
 
 setupIonicReact();
 
@@ -46,28 +50,80 @@ setupIonicReact();
 const history = createHashHistory();
 
 const App: React.FC = () => {
+  const [fatalError, setFatalError] = useState<CapturedError | null>(null);
+
   useEffect(() => {
     initColorMode();
   }, []);
 
+  useEffect(() => {
+    // Capture async/runtime errors (Promise rejections, script errors) that
+    // React error boundaries won't catch.
+    const onError = (event: ErrorEvent) => {
+      const err: any = event.error;
+      setFatalError({
+        name: err?.name,
+        message: String(err?.message ?? event.message ?? "Unknown error"),
+        stack: err?.stack,
+        timestamp: Date.now(),
+        source: "window.onerror",
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      });
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason: any = event.reason;
+      setFatalError({
+        name: reason?.name,
+        message: String(reason?.message ?? reason ?? "Unhandled rejection"),
+        stack: reason?.stack,
+        timestamp: Date.now(),
+        source: "unhandledrejection",
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      });
+    };
+
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+    };
+  }, []);
+
+  if (fatalError) {
+    return (
+      <IonApp>
+        <ErrorDebugScreen
+          error={fatalError}
+          onReload={() => window.location.reload()}
+        />
+      </IonApp>
+    );
+  }
+
   return (
     <IonApp>
-      <IonReactRouter history={history}>
-        <IonRouterOutlet>
-          <Route
-            path="/dashboard"
-            render={(props) => <DashboardPage {...props} />}
-          />
-          <Route path="/home">
-            <HomePage />
-          </Route>
-          <Route path="/test" render={() => <TestPage />} />
-          <Route exact path="/topic/:id" component={TopicPage} />
-          <Route exact path="/">
-            <Redirect to="/home" />
-          </Route>
-        </IonRouterOutlet>
-      </IonReactRouter>
+      <FatalErrorBoundary onFatal={setFatalError}>
+        <IonReactRouter history={history}>
+          <IonRouterOutlet>
+            <Route
+              path="/dashboard"
+              render={(props) => <DashboardPage {...props} />}
+            />
+            <Route path="/home">
+              <HomePage />
+            </Route>
+            <Route path="/test" render={() => <TestPage />} />
+            <Route exact path="/topic/:id" component={TopicPage} />
+            <Route exact path="/">
+              <Redirect to="/home" />
+            </Route>
+          </IonRouterOutlet>
+        </IonReactRouter>
+      </FatalErrorBoundary>
     </IonApp>
   );
 };
