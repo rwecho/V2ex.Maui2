@@ -144,6 +144,12 @@ jobs:
           dotnet workload install maui 
           dotnet workload install ios 
 
+      - name: Download React build artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: react-build
+          path: ./src/V2ex.Maui2.App/Resources/Raw/wwwroot
+
       - name: Restore dependencies
         run: dotnet restore
         working-directory: ./src/V2ex.Maui2.App
@@ -183,7 +189,7 @@ jobs:
             -p:ArchiveOnBuild=true \
             -p:RuntimeIdentifier=ios-arm64 \
             -p:CodesignKey="${{ secrets.APPLE_SIGNING_IDENTITY }}" \
-            -p:CodesignProvision="${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}" \
+            -p:CodesignProvision="${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}"
         working-directory: ./src/V2ex.Maui2.App
 
       - name: Upload to TestFlight
