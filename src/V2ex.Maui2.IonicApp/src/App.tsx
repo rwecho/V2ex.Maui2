@@ -36,6 +36,7 @@ import DashboardPage from "./pages/Dashboard";
 import HomePage from "./pages/Home";
 import TopicPage from "./pages/Topic";
 import { initColorMode } from "./theme/colorMode";
+import TestPage from "./pages/Test";
 
 setupIonicReact();
 
@@ -60,9 +61,10 @@ const App: React.FC = () => {
           <Route path="/home">
             <HomePage />
           </Route>
+          <Route path="/test" render={() => <TestPage />} />
           <Route exact path="/topic/:id" component={TopicPage} />
           <Route exact path="/">
-            <Redirect to="/home" />
+            <Redirect to="/test" />
           </Route>
         </IonRouterOutlet>
       </IonReactRouter>
