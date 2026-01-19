@@ -104,4 +104,21 @@
 		<AndroidUseAapt2>true</AndroidUseAapt2>
 	</PropertyGroup>
 
+	<!--
+		iOS TestFlight 仍出现 Arg_ArrayTypeMismatchException：
+		先彻底关闭 trimming/linker（等问题定位后再逐步打开）。
+		注意：这会显著增加 IPA 体积，但最利于稳定性/排障。
+	-->
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-ios'">
+		<!--
+			iOS (net10) requires PublishTrimmed=true.
+			To effectively disable trimming/linking, set MtouchLink=None.
+		-->
+		<PublishTrimmed>true</PublishTrimmed>
+		<EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+
+		<!-- iOS linker (mtouch) - disables assembly trimming/linking -->
+		<MtouchLink>None</MtouchLink>
+	</PropertyGroup>
+
 </Project>
