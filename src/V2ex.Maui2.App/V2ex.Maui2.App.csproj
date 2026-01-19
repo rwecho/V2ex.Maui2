@@ -90,6 +90,14 @@
 		<ProjectReference Include="..\V2ex.Maui2.Core\V2ex.Maui2.Core.csproj" />
 	</ItemGroup>
 
+	<!--
+		iOS Release/TestFlight uses the linker/trimmer.
+		HybridWebView invokes .NET methods by name (reflection), so we must preserve them.
+	-->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<TrimmerRootDescriptor Include="linker.xml" />
+	</ItemGroup>
+
 	<!-- Release配置 -->
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-android'">
 		<AndroidPackageFormat>aab</AndroidPackageFormat>

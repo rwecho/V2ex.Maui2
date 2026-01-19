@@ -64,7 +64,7 @@ const App: React.FC = () => {
           <Route path="/test" render={() => <TestPage />} />
           <Route exact path="/topic/:id" component={TopicPage} />
           <Route exact path="/">
-            <Redirect to="/test" />
+            <Redirect to="/home" />
           </Route>
         </IonRouterOutlet>
       </IonReactRouter>
