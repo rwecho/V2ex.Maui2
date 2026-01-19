@@ -10,6 +10,8 @@ import {
   IonButton,
   IonText,
   IonBadge,
+  IonAvatar,
+  IonImg,
   IonRefresher,
   IonRefresherContent,
   IonItem,
@@ -30,10 +32,9 @@ import {
   getSystemPreferredMode,
 } from "../../theme/colorMode";
 
-interface TopicPageProps
-  extends RouteComponentProps<{
-    id: string;
-  }> {}
+interface TopicPageProps extends RouteComponentProps<{
+  id: string;
+}> {}
 
 interface RefresherEventDetail {
   complete(): void;
@@ -44,17 +45,54 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const [visibleCount, setVisibleCount] = useState(30);
   const [nowSeconds, setNowSeconds] = useState<number | null>(null);
 
+  const normalizeAvatarUrl = (url?: string | null): string | null => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    if (trimmed.startsWith("https:")) return trimmed;
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    if (trimmed.startsWith("/")) return `https://www.v2ex.com${trimmed}`;
+    return trimmed;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getMemberAvatarUrl = (member: any): string | null => {
+    if (!member) return null;
+    const raw =
+      member.avatarMini ??
+      member.avatar_mini ??
+      member.avatarMini ??
+      member.avatar_normal ??
+      member.avatarNormal ??
+      member.avatarLarge ??
+      member.avatar_large ??
+      member.avatarLarge ??
+      null;
+    return normalizeAvatarUrl(raw);
+  };
+
   const fetchTopicDetail = useTopicStore(useShallow((s) => s.fetchTopicDetail));
   const topicDetailById = useTopicStore(useShallow((s) => s.topicDetailById));
   const topicDetailLoadingById = useTopicStore(
-    useShallow((s) => s.topicDetailLoadingById)
+    useShallow((s) => s.topicDetailLoadingById),
   );
   const topicDetailErrorById = useTopicStore(
-    useShallow((s) => s.topicDetailErrorById)
+    useShallow((s) => s.topicDetailErrorById),
   );
 
-  // 从路由状态获取初始 title，用于在加载前显示（如果列表页传了的话）
-  const initialTitle = (location.state as { title?: string } | null)?.title;
+  // 从路由状态 / URL query 获取初始 title，用于在加载前显示。
+  // 说明：history state 在刷新/深链/新开页面时会丢失，query 则更稳。
+  const initialTitle = useMemo(() => {
+    const stateTitle = (location.state as { title?: string } | null)?.title;
+    if (stateTitle) return stateTitle;
+
+    const qs = new URLSearchParams(location.search);
+    const qTitle = qs.get("title");
+    return qTitle || undefined;
+  }, [location.state, location.search]);
 
   const parsedTopicId = useMemo(() => {
     if (!id) return null;
@@ -97,10 +135,10 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   }, [parsedTopicId, error, loading, topicDetail, fetchTopicDetail]);
 
   const headerTitle = useMemo(() => {
-    return topicDetail?.topic?.title ?? initialTitle ?? `Topic ${id}`;
+    return topicDetail?.topic?.title ?? initialTitle ?? `加载中…`;
   }, [topicDetail?.topic?.title, initialTitle, id]);
   const [colorMode] = useState<ColorMode>(
-    () => getStoredMode() ?? getSystemPreferredMode()
+    () => getStoredMode() ?? getSystemPreferredMode(),
   );
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");
@@ -248,6 +286,37 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                       <IonItem key={reply.id} lines="full">
                         <IonLabel className="ion-text-wrap">
                           <div className="replyMeta">
+                            {(() => {
+                              const username =
+                                reply.member?.username || "unknown";
+                              const avatarUrl = getMemberAvatarUrl(
+                                reply.member,
+                              );
+                              const initial = username
+                                .trim()
+                                .slice(0, 1)
+                                .toUpperCase();
+
+                              return avatarUrl ? (
+                                <IonAvatar
+                                  className="replyAvatar"
+                                  aria-hidden="true"
+                                >
+                                  <IonImg
+                                    src={avatarUrl}
+                                    alt={`${username} avatar`}
+                                  />
+                                </IonAvatar>
+                              ) : (
+                                <div
+                                  className="replyAvatarFallback"
+                                  aria-hidden="true"
+                                  title={username}
+                                >
+                                  {initial || "?"}
+                                </div>
+                              );
+                            })()}
                             <span className="replyUser">
                               @{reply.member?.username || "unknown"}
                             </span>
@@ -294,6 +363,8 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
             </>
           )}
         </div>
+
+        <div className="topicPageBottomSpacer" aria-hidden="true" />
 
         <IonToast
           isOpen={toastOpen}

@@ -18,6 +18,11 @@
   padding-top: 8px;
 }
 
+.topicPageBottomSpacer {
+  /* Give users a little breathing room when they reach the bottom. */
+  height: calc(72px + env(safe-area-inset-bottom));
+}
+
 .topicHeader {
   padding: 10px 16px 12px;
 }
@@ -62,6 +67,26 @@
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+.replyAvatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.replyAvatarFallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
 }
 
 .replyUser {
@@ -175,8 +200,9 @@
 }
 
 .prose code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 .topicReplySection {

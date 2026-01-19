@@ -66,6 +66,8 @@ public class V2exHtmlParserTests : IAsyncLifetime
         Console.WriteLine($"  ID: {firstTopic.Id}");
         Console.WriteLine($"  节点: {firstTopic.Node?.Name}");
         Console.WriteLine($"  作者: {firstTopic.Member?.Username}");
+        Console.WriteLine($"  头像(mini): {firstTopic.Member?.AvatarMini}");
+        Console.WriteLine($"  头像(large): {firstTopic.Member?.AvatarLarge}");
         Console.WriteLine($"  回复数: {firstTopic.Replies}");
     }
 
@@ -197,6 +199,8 @@ public class V2exHtmlParserTests : IAsyncLifetime
         Assert.NotEmpty(topic.Title);
         Assert.NotNull(topic.Member);
         Assert.NotEmpty(topic.Member?.Username);
+        Assert.False(string.IsNullOrWhiteSpace(topic.Member?.AvatarMini));
+        Assert.StartsWith("http", topic.Member!.AvatarMini);
         Assert.NotNull(topic.Node);
         Assert.NotEmpty(topic.Node?.Name);
         Assert.True(topic.Replies >= 0);
@@ -206,6 +210,7 @@ public class V2exHtmlParserTests : IAsyncLifetime
         Console.WriteLine($"  ID: {topic.Id}");
         Console.WriteLine($"  标题: {topic.Title}");
         Console.WriteLine($"  作者: {topic.Member?.Username}");
+        Console.WriteLine($"  头像(mini): {topic.Member?.AvatarMini}");
         Console.WriteLine($"  节点: {topic.Node?.Name} ({topic.Node?.Title})");
         Console.WriteLine($"  回复: {topic.Replies}");
     }

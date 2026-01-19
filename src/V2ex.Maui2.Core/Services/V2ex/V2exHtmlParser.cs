@@ -1,5 +1,6 @@
 using AngleSharp.Html.Parser;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 using V2ex.Maui2.Core.Models.Api;
 
 namespace V2ex.Maui2.Core.Services.V2ex;
@@ -31,7 +32,7 @@ public class V2exHtmlParser
             var url = $"https://www.v2ex.com/?tab={tab}";
             var html = await _httpClient.GetStringAsync(url);
 
-            return ParseTopicsFromHtml(html);
+            return ParseTabTopicsFromHtml(html);
         }
         catch (Exception ex)
         {
@@ -56,7 +57,7 @@ public class V2exHtmlParser
 
             var html = await _httpClient.GetStringAsync(url);
 
-            return ParseTopicsFromHtml(html);
+            return ParseNodeTopicsFromHtml(html, nodeName);
         }
         catch (Exception ex)
         {
@@ -65,43 +66,123 @@ public class V2exHtmlParser
         }
     }
 
+    private static string NormalizeUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return string.Empty;
+        }
+
+        url = url.Trim();
+        if (url.StartsWith("//", StringComparison.Ordinal))
+        {
+            return "https:" + url;
+        }
+
+        if (url.StartsWith("/", StringComparison.Ordinal))
+        {
+            return "https://www.v2ex.com" + url;
+        }
+
+        return url;
+    }
+
+    private static void TryFillMemberAvatarFromItem(AngleSharp.Dom.IElement item, V2exMember member)
+    {
+        // V2EX 页面里头像通常在 <a class="avatar"><img ... /></a>
+        // 不同页面结构可能不同，因此使用多 selector + fallback.
+        var avatarImg =
+            item.QuerySelector("a.avatar img") ??
+            item.QuerySelector("img.avatar") ??
+            item.QuerySelector("img[src*='avatar']") ??
+            item.QuerySelector("img[src*='/avatar/']") ??
+            item.QuerySelector("img[src*='cdn.v2ex.com/avatar']");
+
+        var src = NormalizeUrl(avatarImg?.GetAttribute("src"));
+        if (string.IsNullOrWhiteSpace(src))
+        {
+            return;
+        }
+
+        member.AvatarMini = src;
+
+        // 尝试从 mini/normal 推导 large（若本来就是 large，则保持原样）
+        var large = src;
+        try
+        {
+            var parts = src.Split('?', 2);
+            var path = parts[0];
+            var query = parts.Length > 1 ? "?" + parts[1] : string.Empty;
+
+            path = Regex.Replace(
+                path,
+                @"/(mini|normal)\.(png|jpg|jpeg|gif)$",
+                "/large.$2",
+                RegexOptions.IgnoreCase);
+
+            large = path + query;
+        }
+        catch
+        {
+            // ignore fallback
+        }
+
+        member.AvatarLarge = large;
+    }
+
+    private static void ParseTopicCommon(AngleSharp.Dom.IElement item, V2exTopic topic)
+    {
+        // 标题和话题 ID
+        var titleLink = item.QuerySelector("span.item_title a.topic-link") ?? item.QuerySelector("a.topic-link");
+        if (titleLink != null)
+        {
+            topic.Title = titleLink.TextContent.Trim();
+            var href = titleLink.GetAttribute("href");
+            if (!string.IsNullOrEmpty(href))
+            {
+                var match = Regex.Match(href, @"/t/(\d+)");
+                if (match.Success && int.TryParse(match.Groups[1].Value, out var topicId))
+                {
+                    topic.Id = topicId;
+                }
+            }
+        }
+
+        // 回复数
+        var replyCountLink = item.QuerySelector("td[align=\"right\"] a.count_livid, a.count_livid");
+        if (replyCountLink != null)
+        {
+            var countText = replyCountLink.TextContent.Trim();
+            if (int.TryParse(countText, out var replies))
+            {
+                topic.Replies = replies;
+            }
+        }
+
+        // 时间字段（V2EX 使用相对时间，此处暂不解析）
+        topic.Created = 0;
+        topic.LastModified = 0;
+        topic.LastTouched = 0;
+    }
+
     /// <summary>
-    /// 从 HTML 中解析话题列表
+    /// 从 Tab 页 HTML 中解析话题列表（/?tab=xxx）
     /// </summary>
-    private List<V2exTopic> ParseTopicsFromHtml(string html)
+    private List<V2exTopic> ParseTabTopicsFromHtml(string html)
     {
         var parser = new HtmlParser();
         var document = parser.ParseDocument(html);
         var topics = new List<V2exTopic>();
 
-        // 查找所有话题项: <div class="cell item">
         var topicItems = document.QuerySelectorAll("div.cell.item");
-
         foreach (var item in topicItems)
         {
             try
             {
                 var topic = new V2exTopic();
+                ParseTopicCommon(item, topic);
 
-                // 提取标题和链接
-                var titleLink = item.QuerySelector("span.item_title a.topic-link");
-                if (titleLink != null)
-                {
-                    topic.Title = titleLink.TextContent.Trim();
-                    var href = titleLink.GetAttribute("href");
-                    // 或直接链接: /t/1185086#reply4
-                    if (!string.IsNullOrEmpty(href))
-                    {
-                        // 从 URL 中提取话题 ID
-                        var match = System.Text.RegularExpressions.Regex.Match(href, @"/t/(\d+)");
-                        if (match.Success && int.TryParse(match.Groups[1].Value, out var topicId))
-                        {
-                            topic.Id = topicId;
-                        }
-                    }
-                }
-
-                // 提取节点信息
+                // 节点信息（Tab 列表通常会显示节点）
                 var nodeLink = item.QuerySelector("span.topic_info a.node");
                 if (nodeLink != null)
                 {
@@ -109,7 +190,7 @@ public class V2exHtmlParser
                     var href = nodeLink.GetAttribute("href");
                     if (!string.IsNullOrEmpty(href))
                     {
-                        var match = System.Text.RegularExpressions.Regex.Match(href, @"/go/([a-z0-9_-]+)");
+                        var match = Regex.Match(href, @"/go/([a-z0-9_-]+)");
                         if (match.Success)
                         {
                             nodeName = match.Groups[1].Value;
@@ -123,33 +204,17 @@ public class V2exHtmlParser
                     };
                 }
 
-                // 提取作者信息
-                var memberLink = item.QuerySelector("span.topic_info strong a");
+                // 作者信息（Tab 页通常在 topic_info 内）
+                var memberLink = item.QuerySelector("span.topic_info strong a") ?? item.QuerySelector("a[href^='/member/']");
                 if (memberLink != null)
                 {
                     topic.Member = new V2exMember
                     {
                         Username = memberLink.TextContent.Trim()
                     };
+                    TryFillMemberAvatarFromItem(item, topic.Member);
                 }
 
-                // 提取回复数
-                var replyCountLink = item.QuerySelector("td[align=\"right\"] a.count_livid, a.count_livid");
-                if (replyCountLink != null)
-                {
-                    var countText = replyCountLink.TextContent.Trim();
-                    if (int.TryParse(countText, out var replies))
-                    {
-                        topic.Replies = replies;
-                    }
-                }
-
-                // 提取创建时间（V2EX 使用相对时间，暂时设置为 0）
-                topic.Created = 0;
-                topic.LastModified = 0;
-                topic.LastTouched = 0;
-
-                // 只有有效的 ID 才添加到列表
                 if (topic.Id > 0)
                 {
                     topics.Add(topic);
@@ -157,11 +222,65 @@ public class V2exHtmlParser
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "解析单个话题失败");
+                _logger.LogWarning(ex, "解析 Tab 单个话题失败");
             }
         }
 
-        _logger.LogInformation("成功解析 {Count} 个话题", topics.Count);
+        _logger.LogInformation("成功解析 {Count} 个 Tab 话题", topics.Count);
+        return topics;
+    }
+
+    /// <summary>
+    /// 从 Node 页 HTML 中解析话题列表（/go/{node}）
+    /// </summary>
+    private List<V2exTopic> ParseNodeTopicsFromHtml(string html, string nodeName)
+    {
+        var parser = new HtmlParser();
+        var document = parser.ParseDocument(html);
+        var topics = new List<V2exTopic>();
+
+        var topicItems = document.QuerySelectorAll("div.cell.item");
+        foreach (var item in topicItems)
+        {
+            try
+            {
+                var topic = new V2exTopic();
+                ParseTopicCommon(item, topic);
+
+                // Node 列表页通常不重复显示节点链接，直接使用入参 nodeName。
+                topic.Node = new V2exNodeInfo
+                {
+                    Name = nodeName,
+                    Title = nodeName
+                };
+
+                // 作者信息：Node 页结构可能与 Tab 不同，因此更宽松选择器。
+                var memberLink =
+                    item.QuerySelector("span.topic_info strong a") ??
+                    item.QuerySelector("strong a[href^='/member/']") ??
+                    item.QuerySelector("a[href^='/member/']");
+
+                if (memberLink != null)
+                {
+                    topic.Member = new V2exMember
+                    {
+                        Username = memberLink.TextContent.Trim()
+                    };
+                    TryFillMemberAvatarFromItem(item, topic.Member);
+                }
+
+                if (topic.Id > 0)
+                {
+                    topics.Add(topic);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "解析 Node 单个话题失败: {NodeName}", nodeName);
+            }
+        }
+
+        _logger.LogInformation("成功解析 {Count} 个 Node 话题: {NodeName}", topics.Count, nodeName);
         return topics;
     }
 }

@@ -1,6 +1,8 @@
 import {
   IonBadge,
+  IonAvatar,
   IonButton,
+  IonImg,
   IonItem,
   IonLabel,
   IonList,
@@ -23,6 +25,35 @@ const TopicList = (props: TopicListProps) => {
   const { topics, loading, error, isActive, onRetry, emptyText } = props;
 
   const history = useHistory();
+
+  const normalizeAvatarUrl = (url?: string | null): string | null => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    if (trimmed.startsWith("https:")) return trimmed;
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    // If backend returns a relative path, treat it as v2ex static.
+    if (trimmed.startsWith("/")) return `https://www.v2ex.com${trimmed}`;
+    return trimmed;
+  };
+
+  const getMemberAvatarUrl = (topic: TopicType): string | null => {
+    const m: any = topic.member as any;
+    const raw =
+      topic.member?.avatarMini ??
+      m?.avatar_mini ??
+      m?.avatarMini ??
+      m?.avatar_normal ??
+      m?.avatarNormal ??
+      topic.member?.avatarLarge ??
+      m?.avatar_large ??
+      m?.avatarLarge ??
+      null;
+    return normalizeAvatarUrl(raw);
+  };
 
   const handleRetry = () => {
     if (!isActive) return;
@@ -91,12 +122,43 @@ const TopicList = (props: TopicListProps) => {
             key={t.id}
             button
             detail={false}
-            onClick={() =>
-              history.push(`/topic/${t.id}`, {
-                title: t.title,
-              })
-            }
+            onClick={() => {
+              const search = t.title
+                ? `?title=${encodeURIComponent(t.title)}`
+                : undefined;
+
+              history.push({
+                pathname: `/topic/${t.id}`,
+                search,
+                state: {
+                  title: t.title,
+                },
+              });
+            }}
           >
+            <IonAvatar className="topicListAvatar" slot="start">
+              {(() => {
+                const avatarUrl = getMemberAvatarUrl(t);
+                if (avatarUrl) {
+                  return (
+                    <IonImg
+                      src={avatarUrl}
+                      alt={
+                        t.member?.username
+                          ? `${t.member.username} avatar`
+                          : "avatar"
+                      }
+                    />
+                  );
+                }
+                const initial = t.member?.username?.slice(0, 1)?.toUpperCase();
+                return (
+                  <div className="topicListAvatarFallback">
+                    <span>{initial ?? "?"}</span>
+                  </div>
+                );
+              })()}
+            </IonAvatar>
             <IonLabel className="ion-text-wrap">
               <div className="topicListTitle">{t.title}</div>
               <div className="topicListMeta">
@@ -121,6 +183,7 @@ const TopicList = (props: TopicListProps) => {
           </div>
         ) : null}
       </IonList>
+      <div className="topicListBottomSpacer" aria-hidden="true" />
     </>
   );
 };
