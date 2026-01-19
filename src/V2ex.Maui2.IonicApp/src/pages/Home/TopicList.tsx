@@ -7,82 +7,28 @@ import {
   IonSpinner,
   IonText,
 } from "@ionic/react";
-import { useEffect } from "react";
-import { useTopicStore } from "../../store/topicStore";
-import { useShallow } from "zustand/shallow";
 import { useHistory } from "react-router";
+import type { TopicType } from "../../schemas/topicSchema";
 import "./TopicList.css";
 
 type TopicListProps = {
-  tabKey: string;
-  kind: string;
-  tab?: string;
+  topics: TopicType[];
+  loading: boolean;
+  error: string | null;
   isActive: boolean;
+  onRetry?: () => void | Promise<void>;
+  emptyText?: string;
 };
 const TopicList = (props: TopicListProps) => {
-  const { tabKey, kind, tab, isActive } = props;
+  const { topics, loading, error, isActive, onRetry, emptyText } = props;
 
   const history = useHistory();
 
-  const topicsRaw = useTopicStore(
-    useShallow((s) => s.topicsByKey[tabKey] ?? [])
-  );
-  const topics = Array.isArray(topicsRaw) ? topicsRaw : [];
-  const topicsShapeError =
-    topicsRaw != null && !Array.isArray(topicsRaw)
-      ? "列表数据格式异常（非数组）"
-      : null;
-  const loading = useTopicStore(
-    useShallow((s) => s.loadingByKey[tabKey] ?? false)
-  );
-  const error = useTopicStore(useShallow((s) => s.errorByKey[tabKey] ?? null));
-
-  const combinedError = topicsShapeError ?? error;
-
-  const fetchLatestTopics = useTopicStore(
-    useShallow((s) => s.fetchLatestTopics)
-  );
-  const fetchHotTopics = useTopicStore(useShallow((s) => s.fetchHotTopics));
-  const fetchTabTopics = useTopicStore(useShallow((s) => s.fetchTabTopics));
-
-  const handleRetry = async () => {
+  const handleRetry = () => {
     if (!isActive) return;
-    switch (kind) {
-      case "latest":
-        await fetchLatestTopics(tabKey);
-        break;
-      case "hot":
-        await fetchHotTopics(tabKey);
-        break;
-      case "tab":
-        await fetchTabTopics(tabKey, tab);
-        break;
-    }
+    if (!onRetry) return;
+    void onRetry();
   };
-
-  useEffect(() => {
-    // 只有当对应 Segment 激活时才加载数据
-    if (!isActive) return;
-
-    // 如果上一次请求已经失败，不要自动重试（避免 429/死循环）。
-    // 需要重试请通过 UI 触发（后续可加“重试”按钮或下拉刷新）。
-    if (combinedError) return;
-
-    // 简单缓存：已加载过就不重复请求（后续可加下拉刷新/手动刷新来强制刷新）
-    if (loading || topics.length > 0) return;
-
-    switch (kind) {
-      case "latest":
-        fetchLatestTopics(tabKey);
-        break;
-      case "hot":
-        fetchHotTopics(tabKey);
-        break;
-      case "tab":
-        fetchTabTopics(tabKey, tab);
-        break;
-    }
-  }, [isActive, tabKey, kind, tab]);
 
   if (loading && topics.length === 0) {
     return (
@@ -94,14 +40,18 @@ const TopicList = (props: TopicListProps) => {
   }
 
   // If we have no cached data, show a full error state.
-  if (combinedError && topics.length === 0) {
+  if (error && topics.length === 0) {
     return (
       <div className="topicListSection">
         <IonText color="danger">
-          <p className="topicListErrorText">加载失败：{combinedError}</p>
+          <p className="topicListErrorText">加载失败：{error}</p>
         </IonText>
         <div className="topicListErrorActions">
-          <IonButton expand="block" onClick={handleRetry} disabled={!isActive}>
+          <IonButton
+            expand="block"
+            onClick={handleRetry}
+            disabled={!isActive || !onRetry}
+          >
             重试
           </IonButton>
         </div>
@@ -112,9 +62,7 @@ const TopicList = (props: TopicListProps) => {
   if (!loading && topics.length === 0) {
     return (
       <div className="topicListSection">
-        <IonText>
-          暂无话题 {tabKey} {isActive.toString()}
-        </IonText>
+        <IonText>{emptyText ?? "暂无话题"}</IonText>
       </div>
     );
   }
@@ -122,15 +70,15 @@ const TopicList = (props: TopicListProps) => {
   return (
     <>
       <IonList>
-        {combinedError ? (
+        {error ? (
           <IonItem lines="none" color="warning">
             <IonLabel className="ion-text-wrap">
-              <IonText color="dark">加载失败：{combinedError}</IonText>
+              <IonText color="dark">加载失败：{error}</IonText>
               <div className="topicListErrorBannerActions">
                 <IonButton
                   size="small"
                   onClick={handleRetry}
-                  disabled={!isActive}
+                  disabled={!isActive || !onRetry}
                 >
                   重试
                 </IonButton>

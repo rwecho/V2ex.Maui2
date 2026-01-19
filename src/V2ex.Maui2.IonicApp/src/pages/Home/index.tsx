@@ -39,18 +39,22 @@ interface RefresherEventDetail {
 const HomePage = () => {
   const tabs = useTabStore((state) => state.tabs);
 
-  const fetchLatestTopics = useTopicStore(
-    useShallow((s) => s.fetchLatestTopics)
-  );
-  const fetchHotTopics = useTopicStore(useShallow((s) => s.fetchHotTopics));
-  const fetchTabTopics = useTopicStore(useShallow((s) => s.fetchTabTopics));
+  const { topicsByKey, loadingByKey, errorByKey, fetchTabTopics } =
+    useTopicStore(
+      useShallow((s) => ({
+        topicsByKey: s.topicsByKey,
+        loadingByKey: s.loadingByKey,
+        errorByKey: s.errorByKey,
+        fetchTabTopics: s.fetchTabTopics,
+      })),
+    );
 
   const [colorMode, setColorMode] = useState<ColorMode>(
-    () => getStoredMode() ?? getSystemPreferredMode()
+    () => getStoredMode() ?? getSystemPreferredMode(),
   );
 
   const [activeKey, setActiveKey] = useState<string>(
-    () => tabs[0]?.key ?? "latest"
+    () => tabs[0]?.key ?? "latest",
   );
 
   const [toastOpen, setToastOpen] = useState(false);
@@ -67,6 +71,39 @@ const HomePage = () => {
     setStoredMode(colorMode);
   }, [colorMode]);
 
+  const getTabData = (key: string) => {
+    const topicsRaw = (topicsByKey as any)?.[key] ?? [];
+    const topics = Array.isArray(topicsRaw) ? topicsRaw : [];
+    const topicsShapeError =
+      topicsRaw != null && !Array.isArray(topicsRaw)
+        ? "列表数据格式异常（非数组）"
+        : null;
+    const loading = loadingByKey[key] ?? false;
+    const error = topicsShapeError ?? errorByKey[key] ?? null;
+    return { topics, loading, error };
+  };
+
+  const fetchForTab = async (tab: (typeof tabs)[number]) => {
+    await fetchTabTopics(tab.key, tab.tab);
+  };
+
+  // 首次进入/切换 Segment 时，按需加载当前 Tab。
+  useEffect(() => {
+    const activeTab = tabs.find((t) => t.key === activeKey);
+    if (!activeTab) return;
+
+    const { topics, loading, error } = getTabData(activeTab.key);
+
+    // 如果上一次请求已经失败，不要自动重试（避免 429/死循环），交给用户点“重试”或下拉刷新。
+    if (error) return;
+
+    // 简单缓存：已加载过就不重复请求
+    if (loading || topics.length > 0) return;
+
+    void fetchForTab(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey, tabs, topicsByKey, loadingByKey, errorByKey]);
+
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     try {
       const activeTab = tabs.find((t) => t.key === activeKey);
@@ -75,23 +112,7 @@ const HomePage = () => {
         setToastOpen(true);
         return;
       }
-
-      switch (activeTab.kind) {
-        case "latest":
-          await fetchLatestTopics(activeTab.key);
-          break;
-        case "hot":
-          await fetchHotTopics(activeTab.key);
-          break;
-        case "tab":
-          await fetchTabTopics(activeTab.key, activeTab.tab);
-          break;
-        default:
-          setToastMessage("刷新失败：不支持的 Tab 类型");
-          setToastOpen(true);
-          return;
-      }
-
+      await fetchTabTopics(activeTab.key, activeTab.tab);
       const err = useTopicStore.getState().errorByKey[activeTab.key];
       if (err) {
         setToastMessage(`刷新失败：${err}`);
@@ -166,12 +187,19 @@ const HomePage = () => {
           <IonSegmentView>
             {tabs.map((tab) => (
               <IonSegmentContent key={tab.key} id={tab.key}>
-                <TopicList
-                  tabKey={tab.key}
-                  tab={tab.tab}
-                  kind={tab.kind}
-                  isActive={tab.key === activeKey}
-                />
+                {(() => {
+                  const { topics, loading, error } = getTabData(tab.key);
+                  return (
+                    <TopicList
+                      topics={topics}
+                      loading={loading}
+                      error={error}
+                      isActive={tab.key === activeKey}
+                      onRetry={() => fetchForTab(tab)}
+                      emptyText={`暂无话题：${tab.label}`}
+                    />
+                  );
+                })()}
               </IonSegmentContent>
             ))}
           </IonSegmentView>

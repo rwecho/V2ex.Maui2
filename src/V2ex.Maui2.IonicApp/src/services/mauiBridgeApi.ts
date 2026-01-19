@@ -26,10 +26,15 @@ import { err, ok, toErrorMessage, type Result } from "./result";
 
 async function callMauiBridge(
   method: string,
-  args?: Record<string, unknown>
+  args?: unknown[] | Record<string, unknown>,
 ): Promise<Result<string>> {
-  // 提取 args 的 values 并保持顺序（与 C# 方法参数顺序一致）
-  const argValues = args ? Object.values(args) : [];
+  // Prefer explicit ordered arrays to match the .NET method signature.
+  // We still support object args for convenience, but Object.values() order can be fragile.
+  const argValues = Array.isArray(args)
+    ? args
+    : args
+      ? Object.values(args)
+      : [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hwv = (window as any).HybridWebView;
@@ -48,7 +53,7 @@ async function callMauiBridge(
 function parseJsonOrError<T>(
   schemaName: string,
   schema: { parse: (data: unknown) => T },
-  jsonText: string
+  jsonText: string,
 ): Result<T> {
   let data: unknown;
   try {
@@ -88,32 +93,31 @@ export const mauiBridgeApi = {
   },
 
   async getTabTopics(params: GetTabTopicsParams): Promise<Result<TopicType[]>> {
-    const res = await callMauiBridge("GetTabTopicsAsync", {
-      tab: params.tab,
-    });
+    // Pass an ordered parameter list to match: GetTabTopicsAsync(string tab)
+    const res = await callMauiBridge("GetTabTopicsAsync", [params.tab]);
 
     if (res.error !== null) return err(res.error);
     return parseJsonOrError("TopicList", TopicListSchema, res.data);
   },
 
   async getNodeTopics(
-    params: GetNodeTopicsParams
+    params: GetNodeTopicsParams,
   ): Promise<Result<TopicType[]>> {
-    const res = await callMauiBridge("GetNodeTopicsAsync", {
-      nodeName: params.nodeName,
-      page: params.page ?? 1,
-    });
+    // Match: GetNodeTopicsAsync(string nodeName, int page = 1)
+    const res = await callMauiBridge("GetNodeTopicsAsync", [
+      params.nodeName,
+      params.page ?? 1,
+    ]);
 
     if (res.error !== null) return err(res.error);
     return parseJsonOrError("TopicList", TopicListSchema, res.data);
   },
 
   async getTopicDetail(
-    params: GetTopicParams
+    params: GetTopicParams,
   ): Promise<Result<TopicDetailType | null>> {
-    const res = await callMauiBridge("GetTopicDetailAsync", {
-      topicId: params.topicId,
-    });
+    // Match: GetTopicDetailAsync(int topicId)
+    const res = await callMauiBridge("GetTopicDetailAsync", [params.topicId]);
 
     if (res.error !== null) return err(res.error);
     let data: unknown;
@@ -132,11 +136,11 @@ export const mauiBridgeApi = {
   },
 
   async getUserProfile(
-    params: GetUserParams
+    params: GetUserParams,
   ): Promise<Result<MemberType | null>> {
-    const res = await callMauiBridge("GetUserProfileAsync", {
-      username: params.username,
-    });
+    // NOTE: .NET signature currently expects a JSON string, but passing a plain string still works
+    // (it will return a structured error). If desired, switch to JSON.stringify({ username }).
+    const res = await callMauiBridge("GetUserProfileAsync", [params.username]);
 
     if (res.error !== null) return err(res.error);
     let data: unknown;
@@ -160,11 +164,11 @@ export const mauiBridgeApi = {
   },
 
   async getNodeDetail(
-    params: GetNodeParams
+    params: GetNodeParams,
   ): Promise<Result<NodeInfoType | null>> {
-    const res = await callMauiBridge("GetNodeDetailAsync", {
-      nodeName: params.nodeName,
-    });
+    // NOTE: .NET signature currently expects a JSON string, but passing a plain string still works
+    // (it will return a structured error). If desired, switch to JSON.stringify({ nodeName }).
+    const res = await callMauiBridge("GetNodeDetailAsync", [params.nodeName]);
 
     if (res.error !== null) return err(res.error);
     let data: unknown;

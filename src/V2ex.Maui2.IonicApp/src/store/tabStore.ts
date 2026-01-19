@@ -6,16 +6,6 @@ interface TabState {
 }
 
 const defaultTabs: TabType[] = [
-  {
-    key: "latest",
-    label: "全部",
-    kind: "latest",
-  },
-  {
-    key: "hot",
-    label: "最热",
-    kind: "hot",
-  },
   { key: "tech", label: "技术", kind: "tab", tab: "tech" },
   { key: "creative", label: "创意", kind: "tab", tab: "creative" },
   { key: "play", label: "好玩", kind: "tab", tab: "play" },
@@ -24,6 +14,18 @@ const defaultTabs: TabType[] = [
   { key: "deals", label: "交易", kind: "tab", tab: "deals" },
   { key: "city", label: "城市", kind: "tab", tab: "city" },
   { key: "qna", label: "问与答", kind: "tab", tab: "qna" },
+  {
+    key: "hot",
+    label: "最热",
+    kind: "tab",
+    tab: "hot",
+  },
+  {
+    key: "all",
+    label: "全部",
+    kind: "tab",
+    tab: "all",
+  },
   { key: "r2", label: "R2", kind: "tab", tab: "r2" },
 ];
 
@@ -34,6 +36,6 @@ export const useTabStore = create<TabState>()(
     }),
     {
       name: "tab-store",
-    }
-  )
+    },
+  ),
 );
