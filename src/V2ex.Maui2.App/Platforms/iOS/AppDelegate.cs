@@ -1,6 +1,5 @@
 ﻿using Foundation;
-using Plugin.Firebase.Bundled.Platforms.iOS;
-using Plugin.Firebase.Bundled.Shared;
+using Plugin.Firebase.Core.Platforms.iOS;
 using Plugin.Firebase.Crashlytics;
 
 namespace V2ex.Maui2.App;
@@ -12,11 +11,8 @@ public class AppDelegate : MauiUIApplicationDelegate
 	{
 		try
 		{
-			CrossFirebase.Initialize(new CrossFirebaseSettings(
-				isAnalyticsEnabled: true,
-				isCrashlyticsEnabled: true,
-				isStorageEnabled: true
-			));
+
+			CrossFirebase.Initialize();
 		}
 		catch (Exception ex)
 		{

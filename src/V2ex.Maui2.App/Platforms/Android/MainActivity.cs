@@ -1,8 +1,7 @@
 ﻿using Android.App;
 using Android.Content.PM;
 using Android.OS;
-using Plugin.Firebase.Bundled.Platforms.Android;
-using Plugin.Firebase.Bundled.Shared;
+using Plugin.Firebase.Core.Platforms.Android;
 
 namespace V2ex.Maui2.App;
 
@@ -16,11 +15,7 @@ public class MainActivity : MauiAppCompatActivity
         // 初始化 Firebase
         try
         {
-            CrossFirebase.Initialize(this, () => this, new(
-                isAnalyticsEnabled: true,
-                isCrashlyticsEnabled: true,
-                isStorageEnabled: true
-            ));
+            CrossFirebase.Initialize(this, () => this);
         }
         catch (Exception ex)
         {
