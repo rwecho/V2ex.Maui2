@@ -1,8 +1,8 @@
-import { Redirect, Route } from "react-router-dom";
+import { MemoryRouter, Redirect, Route, Switch } from "react-router-dom";
 import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { createHashHistory } from "history";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -35,6 +35,7 @@ import "./theme/variables.css";
 import DashboardPage from "./pages/Dashboard";
 import HomePage from "./pages/Home";
 import TopicPage from "./pages/Topic";
+import NotFoundPage from "./pages/NotFound";
 import { initColorMode } from "./theme/colorMode";
 import TestPage from "./pages/Test";
 import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
@@ -48,6 +49,11 @@ setupIonicReact();
 // Referer header to the origin (fragments are not included in Referer).
 // This helps MAUI HybridWebView's InvokeDotNet request validation on iOS.
 const history = createHashHistory();
+
+const isTestEnv =
+  typeof import.meta !== "undefined" &&
+  typeof import.meta.env !== "undefined" &&
+  import.meta.env.MODE === "test";
 
 const App: React.FC = () => {
   const [fatalError, setFatalError] = useState<CapturedError | null>(null);
@@ -107,22 +113,36 @@ const App: React.FC = () => {
   return (
     <IonApp>
       <FatalErrorBoundary onFatal={setFatalError}>
-        <IonReactRouter history={history}>
-          <IonRouterOutlet>
-            <Route
-              path="/dashboard"
-              render={(props) => <DashboardPage {...props} />}
-            />
-            <Route path="/home">
-              <HomePage />
-            </Route>
-            <Route path="/test" render={() => <TestPage />} />
-            <Route exact path="/topic/:id" component={TopicPage} />
-            <Route exact path="/">
-              <Redirect to="/home" />
-            </Route>
-          </IonRouterOutlet>
-        </IonReactRouter>
+        {isTestEnv ? (
+          <MemoryRouter>
+            <Switch>
+              <Route
+                path="/dashboard"
+                render={(props) => <DashboardPage {...props} />}
+              />
+              <Route exact path="/home" component={HomePage} />
+              <Route path="/test" render={() => <TestPage />} />
+              <Route exact path="/topic/:id" component={TopicPage} />
+              <Route exact path="/" render={() => <Redirect to="/home" />} />
+              <Route component={NotFoundPage} />
+            </Switch>
+          </MemoryRouter>
+        ) : (
+          <IonReactRouter history={history}>
+            <IonRouterOutlet>
+              <Redirect exact from="/" to="/home" />
+              <Route
+                path="/dashboard"
+                render={(props) => <DashboardPage {...props} />}
+              />
+              <Route exact path="/home" component={HomePage} />
+              <Route path="/test" render={() => <TestPage />} />
+              <Route exact path="/topic/:id" component={TopicPage} />
+
+              <Route component={NotFoundPage} />
+            </IonRouterOutlet>
+          </IonReactRouter>
+        )}
       </FatalErrorBoundary>
     </IonApp>
   );

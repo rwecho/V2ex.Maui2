@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
     plugins: [react(), legacy()],
     // build: {
-    //     sourcemap: true,
+    //   sourcemap: true,
     // },
     test: {
         globals: true,

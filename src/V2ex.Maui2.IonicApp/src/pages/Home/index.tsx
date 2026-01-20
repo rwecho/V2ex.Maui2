@@ -144,6 +144,10 @@ const HomePage = () => {
                 }
               />
             </IonItem>
+
+            <IonItem lines="full" routerLink="/test">
+              <IonLabel>Test Page</IonLabel>
+            </IonItem>
           </IonList>
         </IonContent>
       </IonMenu>
