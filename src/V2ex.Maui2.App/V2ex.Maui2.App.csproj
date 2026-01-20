@@ -39,7 +39,7 @@
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">23.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 	</PropertyGroup>
@@ -79,6 +79,7 @@
 		<PackageReference Include="CommunityToolkit.Maui" Version="12.3.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="Plugin.Firebase" Version="4.0.0" />
 		<PackageReference Include="Refit" Version="9.0.2" />
 		<PackageReference Include="Refit.HttpClientFactory" Version="9.0.2" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
@@ -104,4 +105,12 @@
 		<AndroidUseAapt2>true</AndroidUseAapt2>
 	</PropertyGroup>
 
+	<ItemGroup Condition="$(TargetFramework.Contains('-ios'))">
+		<BundleResource Include="Platforms\iOS\GoogleService-Info.plist" Link="GoogleService-Info.plist" />
+	</ItemGroup>
+
+
+	<ItemGroup Condition="$(TargetFramework.Contains('-android'))">
+		<GoogleServicesJson Include="Platforms\Android\google-services.json" Link="google-services.json" />
+	</ItemGroup>
 </Project>
