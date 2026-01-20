@@ -8,6 +8,7 @@ using V2ex.Maui2.Core.Services.V2ex;
 using System.Net;
 using CommunityToolkit.Maui;
 using System.Reflection;
+using V2ex.Maui2.App.Services;
 
 namespace V2ex.Maui2.App;
 
@@ -27,6 +28,7 @@ public static class MauiProgram
 				retainedFileCountLimit: 7,
 				outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
 			)
+			.WriteTo.FirebaseCrashlytics()
 			.CreateLogger();
 
 		builder
