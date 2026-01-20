@@ -6,8 +6,16 @@ import {
   IonContent,
   IonButton,
 } from "@ionic/react";
+import { useEffect } from "react";
+import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 
 const TestPage = () => {
+  const logAnalytics = usePageAnalytics();
+
+  useEffect(() => {
+    void logAnalytics("page_view", { page: "test" });
+  }, [logAnalytics]);
+
   return (
     <IonPage id="testPage">
       <IonHeader>
@@ -21,6 +29,7 @@ const TestPage = () => {
         <IonButton
           onClick={() => {
             console.log("按钮被点击了！");
+            void logAnalytics("test_button_click");
           }}
         >
           点击我

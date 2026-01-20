@@ -7,11 +7,21 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import "./NotFound.css";
+import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 
 const NotFoundPage = () => {
   const location = useLocation();
+  const logAnalytics = usePageAnalytics();
+
+  useEffect(() => {
+    void logAnalytics("page_view", {
+      page: "not_found",
+      path: location.pathname,
+    });
+  }, [location.pathname, logAnalytics]);
 
   return (
     <IonPage>

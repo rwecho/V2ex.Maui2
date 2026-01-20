@@ -31,6 +31,7 @@ import {
   getStoredMode,
   getSystemPreferredMode,
 } from "../../theme/colorMode";
+import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 
 interface TopicPageProps extends RouteComponentProps<{
   id: string;
@@ -44,6 +45,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const id = match.params.id;
   const [visibleCount, setVisibleCount] = useState(30);
   const [nowSeconds, setNowSeconds] = useState<number | null>(null);
+  const logAnalytics = usePageAnalytics();
 
   const normalizeAvatarUrl = (url?: string | null): string | null => {
     if (!url) return null;
@@ -148,6 +150,15 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     setVisibleCount(30);
   }, [parsedTopicId]);
 
+  useEffect(() => {
+    if (parsedTopicId == null) return;
+    void logAnalytics("page_view", {
+      page: "topic",
+      topic_id: parsedTopicId,
+      title: headerTitle,
+    });
+  }, [parsedTopicId, headerTitle, logAnalytics]);
+
   const formatTime = (timestamp?: number): string => {
     if (!timestamp || nowSeconds == null) return "";
     const diff = nowSeconds - timestamp;
@@ -162,7 +173,15 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       await fetchTopicDetail(parsedTopicId, { force: true });
     }
     event.detail.complete();
-    const toastMessage = error ? `刷新失败：${error}` : "刷新成功";
+    const latestError =
+      parsedTopicId == null
+        ? error
+        : useTopicStore.getState().topicDetailErrorById[String(parsedTopicId)];
+    const toastMessage = latestError ? `刷新失败：${latestError}` : "刷新成功";
+    void logAnalytics("refresh_topic", {
+      topic_id: parsedTopicId ?? undefined,
+      success: !latestError,
+    });
     setToastMessage(toastMessage);
     setToastOpen(true);
   };
@@ -171,7 +190,12 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const visibleReplies = (topicDetail?.replies ?? []).slice(0, visibleCount);
 
   const handleInfinite = async (event: CustomEvent<void>) => {
-    setVisibleCount((c) => Math.min(c + 30, replyCount));
+    const nextCount = Math.min(visibleCount + 30, replyCount);
+    setVisibleCount(nextCount);
+    void logAnalytics("load_more_replies", {
+      topic_id: parsedTopicId ?? undefined,
+      visible_count: nextCount,
+    });
     // Ionic expects calling complete() to unblock the infinite scroll.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (event.target as any).complete();

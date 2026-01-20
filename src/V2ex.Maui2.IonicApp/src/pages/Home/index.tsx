@@ -31,6 +31,7 @@ import {
   type ColorMode,
 } from "../../theme/colorMode";
 import { useShallow } from "zustand/shallow";
+import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 
 interface RefresherEventDetail {
   complete(): void;
@@ -59,6 +60,7 @@ const HomePage = () => {
 
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");
+  const logAnalytics = usePageAnalytics();
 
   useEffect(() => {
     if (tabs.length > 0 && !tabs.some((t) => t.key === activeKey)) {
@@ -67,9 +69,18 @@ const HomePage = () => {
   }, [tabs, activeKey]);
 
   useEffect(() => {
+    void logAnalytics("page_view", { page: "home" });
+  }, [logAnalytics]);
+
+  useEffect(() => {
     applyColorMode(colorMode);
     setStoredMode(colorMode);
   }, [colorMode]);
+
+  useEffect(() => {
+    if (!activeKey) return;
+    void logAnalytics("tab_view", { tab_key: activeKey });
+  }, [activeKey, logAnalytics]);
 
   const getTabData = (key: string) => {
     const topicsRaw = (topicsByKey as any)?.[key] ?? [];
@@ -110,14 +121,28 @@ const HomePage = () => {
       if (!activeTab) {
         setToastMessage("刷新失败：未找到当前 Tab");
         setToastOpen(true);
+        void logAnalytics("refresh_tab", {
+          tab_key: activeKey,
+          success: false,
+          reason: "tab_not_found",
+        });
         return;
       }
       await fetchTabTopics(activeTab.key, activeTab.tab);
       const err = useTopicStore.getState().errorByKey[activeTab.key];
       if (err) {
         setToastMessage(`刷新失败：${err}`);
+        void logAnalytics("refresh_tab", {
+          tab_key: activeTab.key,
+          success: false,
+          reason: "fetch_error",
+        });
       } else {
         setToastMessage("刷新成功");
+        void logAnalytics("refresh_tab", {
+          tab_key: activeTab.key,
+          success: true,
+        });
       }
       setToastOpen(true);
     } finally {

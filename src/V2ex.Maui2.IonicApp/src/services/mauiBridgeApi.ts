@@ -23,6 +23,7 @@ import {
   MemberSchema,
 } from "../schemas/topicSchema";
 import { err, ok, toErrorMessage, type Result } from "./result";
+import { createFirebaseAnalytics, type AnalyticsParams } from "./firebase";
 
 async function callMauiBridge(
   method: string,
@@ -78,6 +79,12 @@ function parseJsonOrError<T>(
     return err(`数据解析失败（${schemaName}）：${toErrorMessage(e)}`);
   }
 }
+
+const firebaseAnalytics = createFirebaseAnalytics(async (method, args) => {
+  const res = await callMauiBridge(method, args);
+  if (res.error !== null) throw new Error(res.error);
+  return res.data;
+});
 
 export const mauiBridgeApi = {
   async getLatestTopics(): Promise<Result<TopicType[]>> {
@@ -182,6 +189,51 @@ export const mauiBridgeApi = {
       return ok(NodeInfoSchema.parse(data));
     } catch (e) {
       return err(`数据解析失败（NodeInfo）：${toErrorMessage(e)}`);
+    }
+  },
+
+  /** 获取原生持久化字符串 */
+  async getStringValue(key: string): Promise<Result<string | null>> {
+    const res = await callMauiBridge("GetStringValue", [key]);
+    if (res.error !== null) return err(res.error);
+    return ok(res.data.length ? res.data : null);
+  },
+
+  /** 设置原生持久化字符串 */
+  async setStringValue(key: string, value: string): Promise<Result<void>> {
+    const res = await callMauiBridge("SetStringValue", [key, value]);
+    if (res.error !== null) return err(res.error);
+    if (res.data && res.data.startsWith("error")) return err(res.data);
+    return ok(undefined);
+  },
+
+  /** 原生 Snackbar 提示 */
+  async showSnackbar(message: string): Promise<Result<void>> {
+    const res = await callMauiBridge("ShowSnackbar", [message]);
+    if (res.error !== null) return err(res.error);
+    return ok(undefined);
+  },
+
+  /** 原生 Toast 提示 */
+  async showToast(message: string): Promise<Result<void>> {
+    const res = await callMauiBridge("ShowToast", [message]);
+    if (res.error !== null) return err(res.error);
+    return ok(undefined);
+  },
+
+  /**
+   * 通过 MAUI Bridge 上报 Analytics 事件（由原生侧统一提交）
+   * 对应 C# 签名: TrackAnalyticsEventAsync(string eventName, Dictionary<string, object?>? parameters = null)
+   */
+  async trackAnalyticsEvent(
+    eventName: string,
+    parameters?: AnalyticsParams,
+  ): Promise<Result<void>> {
+    try {
+      await firebaseAnalytics.logEvent(eventName, parameters);
+      return ok(undefined);
+    } catch (e) {
+      return err(toErrorMessage(e, "bridge analytics failed"));
     }
   },
 };

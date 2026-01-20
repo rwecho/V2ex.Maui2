@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   IonPage,
   IonHeader,
@@ -11,8 +11,15 @@ import {
   IonButton,
 } from "@ionic/react";
 import { Link, RouteComponentProps } from "react-router-dom";
+import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 
 const UsersListPage: React.FC<RouteComponentProps> = ({ history }) => {
+  const logAnalytics = usePageAnalytics();
+
+  useEffect(() => {
+    void logAnalytics("page_view", { page: "dashboard_users" });
+  }, [logAnalytics]);
+
   return (
     <IonPage>
       <IonHeader>
@@ -279,6 +286,7 @@ const UsersListPage: React.FC<RouteComponentProps> = ({ history }) => {
             <IonButton
               onClick={(e) => {
                 e.preventDefault();
+                void logAnalytics("navigate_user_detail", { user_id: "3" });
                 history.push("/dashboard/users/3");
               }}
             >

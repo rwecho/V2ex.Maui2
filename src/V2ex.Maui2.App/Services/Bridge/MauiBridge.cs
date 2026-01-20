@@ -1,8 +1,10 @@
 using System.Text.Json;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using V2ex.Maui2.Core.Models.Api;
 using V2ex.Maui2.Core.Services.V2ex;
 using CommunityToolkit.Maui.Alerts;
+using Plugin.Firebase.Analytics;
 
 namespace V2ex.Maui2.App.Services.Bridge;
 
@@ -190,14 +192,12 @@ public class MauiBridge
     /// </summary>
     /// <param name="jsonArgs">JSON 参数，例如: {"nodeName": "python"}</param>
     /// <returns>JSON 格式的节点详情</returns>
-    public async Task<string> GetNodeDetailAsync(string jsonArgs)
+    public async Task<string> GetNodeDetailAsync(string nodeName)
     {
         try
         {
-            _logger.LogInformation("Bridge: 获取节点详情，参数: {Args}", jsonArgs);
-
-            var args = JsonSerializer.Deserialize<GetNodeArgs>(jsonArgs);
-            var node = await _v2exService.GetNodeInfoAsync(args?.NodeName ?? "");
+            _logger.LogInformation("Bridge: 获取节点详情，参数: {NodeName}", nodeName);
+            var node = await _v2exService.GetNodeInfoAsync(nodeName);
 
             return JsonSerializer.Serialize(node, new JsonSerializerOptions
             {
@@ -215,16 +215,14 @@ public class MauiBridge
     /// <summary>
     /// 获取用户信息
     /// </summary>
-    /// <param name="jsonArgs">JSON 参数，例如: {"username": "username"}</param>
+    /// <param name="username">用户名</param>
     /// <returns>JSON 格式的用户信息</returns>
-    public async Task<string> GetUserProfileAsync(string jsonArgs)
+    public async Task<string> GetUserProfileAsync(string username)
     {
         try
         {
-            _logger.LogInformation("Bridge: 获取用户信息，参数: {Args}", jsonArgs);
-
-            var args = JsonSerializer.Deserialize<GetUserArgs>(jsonArgs);
-            var user = await _v2exService.GetMemberInfoAsync(args?.Username ?? "");
+            _logger.LogInformation("Bridge: 获取用户信息，参数: {Username}", username);
+            var user = await _v2exService.GetMemberInfoAsync(username);
 
             return JsonSerializer.Serialize(user, new JsonSerializerOptions
             {
@@ -308,29 +306,26 @@ public class MauiBridge
         return Task.FromResult(systemInfo);
     }
 
-    #region 参数类
-
-    private class GetNodeTopicsArgs
+    /// <summary>
+    /// 前端通过桥调用，记录 Analytics 事件（统一在原生侧上报）
+    /// 期望 JSON 结构: {"name":"event_name","params":{"key":"value", "num":123, "flag":true}}
+    /// </summary>
+    public Task<string> TrackAnalyticsEventAsync(string eventName,
+        Dictionary<string, object?>? parameters = null)
     {
-        public string NodeName { get; set; } = string.Empty;
-        public int? Page { get; set; }
+        try
+        {
+            CrossFirebaseAnalytics.Current.LogEvent(eventName!, parameters);
+            _logger.LogInformation("Analytics event sent via bridge: {Event}", eventName);
+            return Task.FromResult("ok");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to log analytics event via bridge: {Event}", eventName);
+            return Task.FromResult($"error: {ex.Message}");
+        }
     }
 
-    private class GetTopicArgs
-    {
-        public int TopicId { get; set; }
-    }
 
-    private class GetUserArgs
-    {
-        public string Username { get; set; } = string.Empty;
-    }
-
-    private class GetNodeArgs
-    {
-        public string NodeName { get; set; } = string.Empty;
-    }
-
-    #endregion
 }
 

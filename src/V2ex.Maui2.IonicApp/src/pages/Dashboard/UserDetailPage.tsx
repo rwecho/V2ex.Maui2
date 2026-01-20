@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   IonPage,
   IonHeader,
@@ -9,13 +9,22 @@ import {
   IonButtons,
 } from "@ionic/react";
 import { RouteComponentProps } from "react-router";
+import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 
-interface UserDetailPageProps
-  extends RouteComponentProps<{
-    id: string;
-  }> {}
+interface UserDetailPageProps extends RouteComponentProps<{
+  id: string;
+}> {}
 
 const UserDetailPage: React.FC<UserDetailPageProps> = ({ match, history }) => {
+  const logAnalytics = usePageAnalytics();
+
+  useEffect(() => {
+    void logAnalytics("page_view", {
+      page: "dashboard_user_detail",
+      user_id: match.params.id,
+    });
+  }, [logAnalytics, match.params.id]);
+
   return (
     <IonPage>
       <IonHeader>
