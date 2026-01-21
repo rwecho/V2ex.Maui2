@@ -159,9 +159,18 @@ jobs:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
           PROVISIONING_PROFILE_PATH: ${{ runner.temp }}/v2ex_maui2.mobileprovision
         run: |
+          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/v2ex_maui2.mobileprovision || true
           echo "$PROVISIONING_PROFILE_BASE64" | base64 -d > $PROVISIONING_PROFILE_PATH
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PROVISIONING_PROFILE_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Clean stale signing keychain
+        run: |
+          # apple-actions/import-codesign-certs uses signing_temp.keychain by default.
+          # On self-hosted runners it may already exist from previous runs and cause SecKeychainCreate errors.
+          if security list-keychains | grep -q "signing_temp.keychain"; then
+            security delete-keychain signing_temp.keychain || true
+          fi
 
       - name: Install Apple Certificate
         uses: apple-actions/import-codesign-certs@v1
