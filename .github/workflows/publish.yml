@@ -135,9 +135,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest
+  #    - uses: maxim-lobanov/setup-xcode@v1
+        #with:
+          #xcode-version: latest
 
       - name: Install iOS workload
         run: |
