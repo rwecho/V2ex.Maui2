@@ -35,5 +35,20 @@
 		<true/>
 	</dict>
 
+	<!-- Privacy Description Strings (required by App Store for dependency libraries) -->
+	<key>NSContactsUsageDescription</key>
+	<string>This app uses contact information to improve your experience. This permission is required by third-party libraries.</string>
+	
+	<key>NSAppleMusicUsageDescription</key>
+	<string>This app may access Apple Music data. This permission is required by third-party libraries.</string>
+	
+	<key>NSSiriUsageDescription</key>
+	<string>This app may interact with Siri. This permission is required by third-party libraries.</string>
+	
+	<key>NSCalendarsUsageDescription</key>
+	<string>This app may access calendar information. This permission is required by third-party libraries.</string>
+	
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires microphone access for certain features provided by third-party libraries.</string>
 </dict>
 </plist>

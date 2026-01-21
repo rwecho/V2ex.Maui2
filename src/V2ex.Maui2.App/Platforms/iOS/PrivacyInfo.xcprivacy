@@ -40,7 +40,25 @@
 			</array>
 		</dict>
 		
-		<!-- Contacts / Calendar removed: not accessed -->
+        <!-- Contacts (if dependency uses it) -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryContactsAPI</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		
+		<!-- Calendar (if dependency uses it) -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryCalendarsAPI</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
 	</NSPrivacyAccessedAPITypes>
 </dict>
 </plist>
