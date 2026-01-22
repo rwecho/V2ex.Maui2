@@ -2,8 +2,8 @@ import { useHistory } from "react-router-dom";
 import { useEffect } from "react";
 
 export interface LinkHandlerOptions {
-  onExternalLink?: (url: string) => void;
-  onInternalLink?: (path: string) => void;
+  onExternalLink?: (url: string) => boolean;
+  onInternalLink?: (path: string, href: string) => boolean;
 }
 
 export const useLinkInterceptor = (options: LinkHandlerOptions = {}) => {
@@ -26,10 +26,23 @@ export const useLinkInterceptor = (options: LinkHandlerOptions = {}) => {
 
       if (isInternalLink) {
         const path = extractInternalPath(href);
-        options.onInternalLink?.(path);
-        history.push(path);
+        const handled = options.onInternalLink?.(path, href);
+
+        if (handled !== true) {
+          history.push(path);
+        }
       } else {
-        options.onExternalLink?.(href);
+        const handled = options.onExternalLink?.(href);
+        if (handled !== true) {
+          try {
+            if (window.HybridWebView) {
+              window.HybridWebView.InvokeDotNet("OpenExternalLinkAsync", href);
+            }
+          } catch (error) {
+            console.error("Failed to open external link:", error);
+            window.open(href, "_blank");
+          }
+        }
       }
     };
 

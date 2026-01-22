@@ -147,16 +147,44 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const [toastMessage, setToastMessage] = useState<string>("");
 
   useLinkInterceptor({
-    onExternalLink: async (url) => {
-      try {
-        if (window.HybridWebView) {
-          await window.HybridWebView.InvokeDotNet("OpenExternalLinkAsync", url);
+    onExternalLink: (url) => {
+      return true;
+    },
+    onInternalLink: (path, href) => {
+      const usernameMatch = href.match(/\/member\/([a-zA-Z0-9_-]+)/);
+
+      if (usernameMatch) {
+        const username = usernameMatch[1];
+        const replies = topicDetail?.replies ?? [];
+
+        const userReplies = replies.filter(
+          (reply) => reply.member?.username === username,
+        );
+
+        if (userReplies.length > 0) {
+          const lastReply = userReplies[userReplies.length - 1];
+          const replyElement = document.querySelector(
+            `[data-reply-id="${lastReply.id}"]`,
+          );
+
+          if (replyElement) {
+            replyElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            replyElement.classList.add("highlight");
+
+            setTimeout(() => {
+              replyElement.classList.remove("highlight");
+            }, 2000);
+          }
+
+          return true;
         }
-      } catch (error) {
-        console.error("Failed to open external link:", error);
-        window.open(url, "_blank");
       }
-    }
+
+      return false;
+    },
   });
 
   useEffect(() => {
@@ -321,7 +349,12 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                 <>
                   <IonList>
                     {visibleReplies.map((reply, index) => (
-                      <IonItem key={reply.id} lines="full">
+                      <IonItem
+                        key={reply.id}
+                        data-reply-id={reply.id}
+                        lines="full"
+                        className="replyItem"
+                      >
                         <IonLabel className="ion-text-wrap">
                           <div className="replyMeta">
                             {(() => {
@@ -358,8 +391,12 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                             <span className="replyUser">
                               @{reply.member?.username || "unknown"}
                             </span>
-                            {reply.isOp ? (
-                              <IonBadge color="warning">OP</IonBadge>
+
+                            {reply.member?.username ===
+                            topicDetail?.topic?.member?.username ? (
+                              <IonBadge color="medium" className="opBadge">
+                                OP
+                              </IonBadge>
                             ) : null}
                             <span className="replyRight">
                               #{index + 1}

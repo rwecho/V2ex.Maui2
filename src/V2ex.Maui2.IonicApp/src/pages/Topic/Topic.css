@@ -247,3 +247,42 @@
   display: flex;
   justify-content: center;
 }
+
+.opBadge {
+  /* 覆盖默认的 padding 变量 */
+  --padding-top: 2px;
+  --padding-bottom: 2px;
+  --padding-start: 4px;
+  --padding-end: 4px;
+
+  /* 直接修改字体大小 */
+  font-size: 8px;
+}
+
+.replyItem.highlight {
+  animation: highlightFade 2s ease-in-out;
+}
+
+.replyItem.highlight .replyUser {
+  animation: usernamePulse 0.8s ease-in-out 3;
+}
+
+@keyframes highlightFade {
+  0% {
+    background-color: rgba(124, 171, 255, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes usernamePulse {
+  0%, 100% {
+    color: var(--ion-color-dark);
+    transform: scale(1);
+  }
+  50% {
+    color: #7cabff;
+    transform: scale(1.1);
+  }
+}
