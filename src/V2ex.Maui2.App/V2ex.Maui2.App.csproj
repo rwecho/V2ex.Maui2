@@ -75,7 +75,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngleSharp" Version="1.4.0" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="12.3.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
@@ -109,7 +108,9 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-ios'">
 		<MtouchLink>SdkOnly</MtouchLink>
-		<UseInterpreter>true</UseInterpreter>
+
+		<!-- AngleSharp 1.1.2 不支持AOT -->
+		<!-- <UseInterpreter>true</UseInterpreter> -->
 	</PropertyGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-ios'))">

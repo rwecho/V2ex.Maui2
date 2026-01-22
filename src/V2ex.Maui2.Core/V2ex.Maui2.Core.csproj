@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Refit" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-    <PackageReference Include="AngleSharp" Version="1.1.2" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-using AngleSharp.Html.Parser;
+using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using V2ex.Maui2.Core.Models.Api;
@@ -87,18 +87,18 @@ public class V2exHtmlParser
         return url;
     }
 
-    private static void TryFillMemberAvatarFromItem(AngleSharp.Dom.IElement item, V2exMember member)
+    private static void TryFillMemberAvatarFromItem(HtmlNode item, V2exMember member)
     {
         // V2EX 页面里头像通常在 <a class="avatar"><img ... /></a>
         // 不同页面结构可能不同，因此使用多 selector + fallback.
         var avatarImg =
-            item.QuerySelector("a.avatar img") ??
-            item.QuerySelector("img.avatar") ??
-            item.QuerySelector("img[src*='avatar']") ??
-            item.QuerySelector("img[src*='/avatar/']") ??
-            item.QuerySelector("img[src*='cdn.v2ex.com/avatar']");
+            item.SelectSingleNode(".//a[contains(@class, 'avatar')]//img") ??
+            item.SelectSingleNode(".//img[contains(@class, 'avatar')]") ??
+            item.SelectSingleNode(".//img[contains(@src, 'avatar')]") ??
+            item.SelectSingleNode(".//img[contains(@src, '/avatar/')]") ??
+            item.SelectSingleNode(".//img[contains(@src, 'cdn.v2ex.com/avatar')]");
 
-        var src = NormalizeUrl(avatarImg?.GetAttribute("src"));
+        var src = NormalizeUrl(avatarImg?.GetAttributeValue("src", null));
         if (string.IsNullOrWhiteSpace(src))
         {
             return;
@@ -130,14 +130,15 @@ public class V2exHtmlParser
         member.AvatarLarge = large;
     }
 
-    private static void ParseTopicCommon(AngleSharp.Dom.IElement item, V2exTopic topic)
+    private static void ParseTopicCommon(HtmlNode item, V2exTopic topic)
     {
         // 标题和话题 ID
-        var titleLink = item.QuerySelector("span.item_title a.topic-link") ?? item.QuerySelector("a.topic-link");
+        var titleLink = item.SelectSingleNode(".//span[contains(@class, 'item_title')]//a[contains(@class, 'topic-link')]") ??
+                        item.SelectSingleNode(".//a[contains(@class, 'topic-link')]");
         if (titleLink != null)
         {
-            topic.Title = titleLink.TextContent.Trim();
-            var href = titleLink.GetAttribute("href");
+            topic.Title = titleLink.InnerText.Trim();
+            var href = titleLink.GetAttributeValue("href", null);
             if (!string.IsNullOrEmpty(href))
             {
                 var match = Regex.Match(href, @"/t/(\d+)");
@@ -149,10 +150,11 @@ public class V2exHtmlParser
         }
 
         // 回复数
-        var replyCountLink = item.QuerySelector("td[align=\"right\"] a.count_livid, a.count_livid");
+        var replyCountLink = item.SelectSingleNode(".//td[@align='right']//a[contains(@class, 'count_livid')]") ??
+                            item.SelectSingleNode(".//a[contains(@class, 'count_livid')]");
         if (replyCountLink != null)
         {
-            var countText = replyCountLink.TextContent.Trim();
+            var countText = replyCountLink.InnerText.Trim();
             if (int.TryParse(countText, out var replies))
             {
                 topic.Replies = replies;
@@ -170,11 +172,13 @@ public class V2exHtmlParser
     /// </summary>
     private List<V2exTopic> ParseTabTopicsFromHtml(string html)
     {
-        var parser = new HtmlParser();
-        var document = parser.ParseDocument(html);
+        var document = new HtmlDocument();
+        document.LoadHtml(html);
         var topics = new List<V2exTopic>();
 
-        var topicItems = document.QuerySelectorAll("div.cell.item");
+        var topicItems = document.DocumentNode.SelectNodes("//div[contains(@class, 'cell') and contains(@class, 'item')]");
+        if (topicItems == null) return topics;
+
         foreach (var item in topicItems)
         {
             try
@@ -183,11 +187,11 @@ public class V2exHtmlParser
                 ParseTopicCommon(item, topic);
 
                 // 节点信息（Tab 列表通常会显示节点）
-                var nodeLink = item.QuerySelector("span.topic_info a.node");
+                var nodeLink = item.SelectSingleNode(".//span[contains(@class, 'topic_info')]//a[contains(@class, 'node')]");
                 if (nodeLink != null)
                 {
-                    var nodeName = nodeLink.TextContent.Trim();
-                    var href = nodeLink.GetAttribute("href");
+                    var nodeName = nodeLink.InnerText.Trim();
+                    var href = nodeLink.GetAttributeValue("href", null);
                     if (!string.IsNullOrEmpty(href))
                     {
                         var match = Regex.Match(href, @"/go/([a-z0-9_-]+)");
@@ -200,17 +204,18 @@ public class V2exHtmlParser
                     topic.Node = new V2exNodeInfo
                     {
                         Name = nodeName,
-                        Title = nodeLink.GetAttribute("title") ?? nodeName
+                        Title = nodeLink.GetAttributeValue("title", nodeName)
                     };
                 }
 
                 // 作者信息（Tab 页通常在 topic_info 内）
-                var memberLink = item.QuerySelector("span.topic_info strong a") ?? item.QuerySelector("a[href^='/member/']");
+                var memberLink = item.SelectSingleNode(".//span[contains(@class, 'topic_info')]//strong//a") ??
+                                item.SelectSingleNode(".//a[starts-with(@href, '/member/')]");
                 if (memberLink != null)
                 {
                     topic.Member = new V2exMember
                     {
-                        Username = memberLink.TextContent.Trim()
+                        Username = memberLink.InnerText.Trim()
                     };
                     TryFillMemberAvatarFromItem(item, topic.Member);
                 }
@@ -235,11 +240,13 @@ public class V2exHtmlParser
     /// </summary>
     private List<V2exTopic> ParseNodeTopicsFromHtml(string html, string nodeName)
     {
-        var parser = new HtmlParser();
-        var document = parser.ParseDocument(html);
+        var document = new HtmlDocument();
+        document.LoadHtml(html);
         var topics = new List<V2exTopic>();
 
-        var topicItems = document.QuerySelectorAll("div.cell.item");
+        var topicItems = document.DocumentNode.SelectNodes("//div[contains(@class, 'cell') and contains(@class, 'item')]");
+        if (topicItems == null) return topics;
+
         foreach (var item in topicItems)
         {
             try
@@ -256,15 +263,15 @@ public class V2exHtmlParser
 
                 // 作者信息：Node 页结构可能与 Tab 不同，因此更宽松选择器。
                 var memberLink =
-                    item.QuerySelector("span.topic_info strong a") ??
-                    item.QuerySelector("strong a[href^='/member/']") ??
-                    item.QuerySelector("a[href^='/member/']");
+                    item.SelectSingleNode(".//span[contains(@class, 'topic_info')]//strong//a") ??
+                    item.SelectSingleNode(".//strong//a[starts-with(@href, '/member/')]") ??
+                    item.SelectSingleNode(".//a[starts-with(@href, '/member/')]");
 
                 if (memberLink != null)
                 {
                     topic.Member = new V2exMember
                     {
-                        Username = memberLink.TextContent.Trim()
+                        Username = memberLink.InnerText.Trim()
                     };
                     TryFillMemberAvatarFromItem(item, topic.Member);
                 }
