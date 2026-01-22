@@ -99,6 +99,7 @@
 	-->
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
 		<TrimmerRootDescriptor Include="linker.xml" />
+		<UseInterpreter>true</UseInterpreter>
 	</ItemGroup>
 
 	<!-- Release配置 -->
