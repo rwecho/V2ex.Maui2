@@ -40,7 +40,6 @@ public partial class App : Application
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		var handler = new Microsoft.Maui.Handlers.HybridWebViewHandler();
 		return new Window(new AppShell());
 	}
 }
