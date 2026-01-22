@@ -32,10 +32,7 @@
     <path d="M 321 140 Q 271 235 251 335" 
             style="fill:none;stroke:url(#accentGradient);stroke-width:32;stroke-linecap:round;stroke-linejoin:round"/>
     
-    <!-- 发光的中心线 -->
-    <path d="M 135 140 Q 228 235 228 340" 
-            style="fill:none;stroke:#ffffff;stroke-width:6;stroke-linecap:round;opacity:0.4"/>
-    
+   
     <!-- V底部高亮圆点 -->
     <circle cx="228" cy="350" r="10" style="fill:#ec4899"/>
     <circle cx="228" cy="350" r="6" style="fill:#ffffff;opacity:0.7"/>
