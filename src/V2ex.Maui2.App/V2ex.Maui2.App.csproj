@@ -99,13 +99,17 @@
 	-->
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
 		<TrimmerRootDescriptor Include="linker.xml" />
-		<UseInterpreter>true</UseInterpreter>
 	</ItemGroup>
 
 	<!-- Release配置 -->
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-android'">
 		<AndroidPackageFormat>aab</AndroidPackageFormat>
 		<AndroidUseAapt2>true</AndroidUseAapt2>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-ios'">
+		<MtouchLink>SdkOnly</MtouchLink>
+		<UseInterpreter>true</UseInterpreter>
 	</PropertyGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-ios'))">
