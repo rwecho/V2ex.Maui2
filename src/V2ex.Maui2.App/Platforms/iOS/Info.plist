@@ -50,5 +50,12 @@
 	
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app requires microphone access for certain features provided by third-party libraries.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app requires access to your location while in use for enhanced functionality.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app requires Bluetooth access for connecting to devices.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app requires access to your location at all times for better service.</string>
+	<string>This app requires microphone access for certain features provided by third-party libraries.</string>
 </dict>
 </plist>
