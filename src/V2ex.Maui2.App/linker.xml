@@ -7,4 +7,17 @@
     <type fullname="V2ex.Maui2.App.Services.Bridge.MauiBridge" preserve="all" />
     <type fullname="V2ex.Maui2.App.Services.Bridge.SystemInfo" preserve="all" />
   </assembly>
+
+  <!--
+    V2EX API models are deserialized from JSON by Refit and System.Text.Json.
+    These types must be preserved to ensure JSON deserialization works in Release builds.
+  -->
+  <assembly fullname="V2ex.Maui2.Core">
+    <type fullname="V2ex.Maui2.Core.Models.Api.V2exMember" preserve="all" />
+    <type fullname="V2ex.Maui2.Core.Models.Api.V2exNodeInfo" preserve="all" />
+    <type fullname="V2ex.Maui2.Core.Models.Api.V2exNodeList" preserve="all" />
+    <type fullname="V2ex.Maui2.Core.Models.Api.V2exReply" preserve="all" />
+    <type fullname="V2ex.Maui2.Core.Models.Api.V2exTopic" preserve="all" />
+    <type fullname="V2ex.Maui2.Core.Models.Api.V2exTopicDetail" preserve="all" />
+  </assembly>
 </linker>
