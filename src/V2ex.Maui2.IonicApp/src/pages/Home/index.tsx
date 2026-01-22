@@ -209,7 +209,7 @@ const HomePage = () => {
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonMenuButton color={colorMode === "dark" ? "light" : "dark"} />
+              <IonMenuButton color={"medium"} />
             </IonButtons>
             <IonSegment
               value={activeKey}

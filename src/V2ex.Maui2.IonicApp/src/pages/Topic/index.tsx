@@ -206,10 +206,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton
-              color={colorMode === "dark" ? "light" : "medium"}
-              text=""
-            />
+            <IonBackButton color={"medium"} text="" />
           </IonButtons>
           <IonTitle>{headerTitle}</IonTitle>
         </IonToolbar>

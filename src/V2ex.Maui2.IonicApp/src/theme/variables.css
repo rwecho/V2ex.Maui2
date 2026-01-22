@@ -9,40 +9,12 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-:root {
-  /* 主题主色改为柔和灰色 */
-  --ion-color-primary: #4b5563;
-  --ion-color-primary-rgb: 75, 85, 99;
-  --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #434c59;
-  --ion-color-primary-tint: #5f6975;
-
-  /* 让 light 调色板更亮一些（原默认 #f4f5f8） */
-  --ion-color-light: #fbfcff;
-  --ion-color-light-rgb: 251, 252, 255;
-  --ion-color-light-contrast: #000000;
-  --ion-color-light-contrast-rgb: 0, 0, 0;
-  --ion-color-light-shade: #e1e5ed;
-  --ion-color-light-tint: #ffffff;
+/* 隐藏所有 Ionic 组件的滚动条 */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* Dark palette tweaks: 提高 primary 在深色模式下的可见度 */
-:root.ion-palette-dark {
-  --ion-color-primary: #cbd5e1;
-  --ion-color-primary-rgb: 203, 213, 225;
-  --ion-color-primary-contrast: #0a0c10;
-  --ion-color-primary-contrast-rgb: 10, 12, 16;
-  --ion-color-primary-shade: #b6c0cb;
-  --ion-color-primary-tint: #d5dde8;
-}
-
-body.dark {
-  /* 兼容 legacy dark.class.css 选择器 */
-  --ion-color-primary: #cbd5e1;
-  --ion-color-primary-rgb: 203, 213, 225;
-  --ion-color-primary-contrast: #0a0c10;
-  --ion-color-primary-contrast-rgb: 10, 12, 16;
-  --ion-color-primary-shade: #b6c0cb;
-  --ion-color-primary-tint: #d5dde8;
+*::-webkit-scrollbar {
+  display: none;
 }
