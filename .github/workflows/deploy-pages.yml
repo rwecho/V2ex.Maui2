@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch || 'main' }}
+          ref: ${{ inputs.branch || 'gh-pages' }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
