@@ -195,7 +195,7 @@ jobs:
           dotnet publish -f net10.0-ios -c Release \
             -p:ApplicationVersion=$BUILD_VERSION \
             -p:ApplicationDisplayVersion=$DISPLAY_VERSION \
-            -p:MtouchLink=None \
+            # -p:MtouchLink=None \
             -p:ArchiveOnBuild=true \
             -p:RuntimeIdentifier=ios-arm64 \
             -p:CodesignKey="${{ secrets.APPLE_SIGNING_IDENTITY }}" \
