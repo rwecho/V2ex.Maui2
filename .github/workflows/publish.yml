@@ -201,6 +201,9 @@ jobs:
             -p:CodesignKey="${{ secrets.APPLE_SIGNING_IDENTITY }}" \
             -p:CodesignProvision="${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}"
         working-directory: ./src/V2ex.Maui2.App
+        env:
+          http_proxy: http://127.0.0.1:1081
+          https_proxy: http://127.0.0.1:1081
 
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
