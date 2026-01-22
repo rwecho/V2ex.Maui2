@@ -25,6 +25,15 @@ import {
 import { err, ok, toErrorMessage, type Result } from "./result";
 import { createFirebaseAnalytics, type AnalyticsParams } from "./firebase";
 
+export interface SystemInfo {
+  platform: string;
+  appVersion: string;
+  deviceModel: string;
+  manufacturer: string;
+  deviceName: string;
+  operatingSystem: string;
+}
+
 export async function callMauiBridge(
   method: string,
   args?: unknown[] | Record<string, unknown>,
@@ -219,6 +228,25 @@ export const mauiBridgeApi = {
     const res = await callMauiBridge("ShowToast", [message]);
     if (res.error !== null) return err(res.error);
     return ok(undefined);
+  },
+
+  /** 获取原生系统信息（含版本号） */
+  async getSystemInfo(): Promise<Result<SystemInfo>> {
+    const res = await callMauiBridge("GetSystemInfo");
+    if (res.error !== null) return err(res.error);
+    try {
+      const parsed = JSON.parse(res.data) as Partial<SystemInfo>;
+      return ok({
+        platform: parsed.platform ?? "",
+        appVersion: parsed.appVersion ?? "",
+        deviceModel: parsed.deviceModel ?? "",
+        manufacturer: parsed.manufacturer ?? "",
+        deviceName: parsed.deviceName ?? "",
+        operatingSystem: parsed.operatingSystem ?? "",
+      });
+    } catch (e) {
+      return err(`返回内容解析失败（SystemInfo）：${toErrorMessage(e)}`);
+    }
   },
 
   /**

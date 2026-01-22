@@ -140,7 +140,6 @@ const App: React.FC = () => {
               <Route path="/logs" render={() => <LogsPage />} />
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
-
               <Route component={NotFoundPage} />
             </IonRouterOutlet>
           </IonReactRouter>

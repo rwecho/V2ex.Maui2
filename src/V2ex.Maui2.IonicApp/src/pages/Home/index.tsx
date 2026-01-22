@@ -10,6 +10,7 @@ import {
   IonPage,
   IonRefresher,
   IonRefresherContent,
+  IonFooter,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
@@ -23,6 +24,8 @@ import { useEffect, useState } from "react";
 import { useTabStore } from "../../store/tabStore";
 import { useTopicStore } from "../../store/topicStore";
 import TopicList from "./TopicList";
+import packageJson from "../../../package.json";
+import { mauiBridgeApi } from "../../services/mauiBridgeApi";
 import {
   applyColorMode,
   getStoredMode,
@@ -60,6 +63,7 @@ const HomePage = () => {
 
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");
+  const [appVersion, setAppVersion] = useState<string>("");
   const logAnalytics = usePageAnalytics();
 
   useEffect(() => {
@@ -71,6 +75,19 @@ const HomePage = () => {
   useEffect(() => {
     void logAnalytics("page_view", { page: "home" });
   }, [logAnalytics]);
+
+  useEffect(() => {
+    const loadVersion = async () => {
+      const res = await mauiBridgeApi.getSystemInfo();
+      if (res.error === null && res.data.appVersion) {
+        setAppVersion(res.data.appVersion);
+      } else {
+        setAppVersion(packageJson.version);
+      }
+    };
+
+    void loadVersion();
+  }, []);
 
   useEffect(() => {
     applyColorMode(colorMode);
@@ -179,15 +196,21 @@ const HomePage = () => {
             </IonItem>
           </IonList>
         </IonContent>
+
+        <IonFooter>
+          <IonToolbar>
+            <IonTitle size="small">
+              版本 {appVersion || packageJson.version}
+            </IonTitle>
+          </IonToolbar>
+        </IonFooter>
       </IonMenu>
 
       <IonPage id="homePage">
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonMenuButton
-                color={colorMode === "dark" ? "light" : "medium"}
-              />
+              <IonMenuButton color={colorMode === "dark" ? "light" : "dark"} />
             </IonButtons>
             <IonSegment
               value={activeKey}
