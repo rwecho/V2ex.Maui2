@@ -20,6 +20,7 @@ public class MainActivity : MauiAppCompatActivity
         catch (Exception ex)
         {
             // ignore - don't crash startup if Firebase isn't configured
+            System.Diagnostics.Trace.WriteLine($"Firebase initialization error: {ex}");
         }
     }
 }

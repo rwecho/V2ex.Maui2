@@ -491,5 +491,43 @@ public class MauiBridge
         }
     }
 
+    public Task OpenExternalLinkAsync(string url)
+    {
+        try
+        {
+            _logger.LogInformation("Bridge: 打开外部链接: {Url}", url);
+
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                throw new ArgumentException("URL cannot be empty", nameof(url));
+            }
+
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                try
+                {
+                    var browserPage = new BrowserPage(url);
+                    var window = Application.Current?.Windows[0];
+                    var mainPage = window?.Page;
+                    if (mainPage != null)
+                    {
+                        await mainPage.Navigation.PushAsync(browserPage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to open browser page for URL: {Url}", url);
+                    await Browser.Default.OpenAsync(url);
+                }
+            });
+
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bridge: 打开外部链接失败");
+            return Task.FromException(ex);
+        }
+    }
 
 }

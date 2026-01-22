@@ -1,5 +1,7 @@
 import {
+  IonBackButton,
   IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
   IonPage,
@@ -27,6 +29,9 @@ const NotFoundPage = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton color={"medium"} text="" />
+          </IonButtons>
           <IonTitle>404</IonTitle>
         </IonToolbar>
       </IonHeader>

@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { useTopicStore } from "../../store/topicStore";
 import "./Topic.css";
+import { useLinkInterceptor } from "../../hooks/useLinkInterceptor";
 import { useShallow } from "zustand/shallow";
 import {
   ColorMode,
@@ -144,6 +145,19 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   );
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");
+
+  useLinkInterceptor({
+    onExternalLink: async (url) => {
+      try {
+        if (window.HybridWebView) {
+          await window.HybridWebView.InvokeDotNet("OpenExternalLinkAsync", url);
+        }
+      } catch (error) {
+        console.error("Failed to open external link:", error);
+        window.open(url, "_blank");
+      }
+    }
+  });
 
   useEffect(() => {
     // When navigating between topics, start with the first page of replies again.

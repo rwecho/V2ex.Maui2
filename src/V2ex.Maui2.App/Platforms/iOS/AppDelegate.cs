@@ -1,4 +1,5 @@
-﻿using Foundation;
+﻿using System.Diagnostics;
+using Foundation;
 using Plugin.Firebase.Core.Platforms.iOS;
 using Plugin.Firebase.Crashlytics;
 
@@ -17,6 +18,7 @@ public class AppDelegate : MauiUIApplicationDelegate
 		catch (Exception ex)
 		{
 			// ignore - don't crash startup if Firebase isn't configured
+			Trace.WriteLine($"Firebase initialization error: {ex}");
 		}
 
 		return base.WillFinishLaunching(application, launchOptions);
