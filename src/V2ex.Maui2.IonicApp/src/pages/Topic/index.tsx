@@ -178,9 +178,8 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               replyElement.classList.remove("highlight");
             }, 2000);
           }
-
-          return true;
         }
+        return true;
       }
 
       return false;
