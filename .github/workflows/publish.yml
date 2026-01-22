@@ -191,6 +191,8 @@ jobs:
         env:
           BUILD_VERSION: ${{ needs.build-react.outputs.build_version }}
           DISPLAY_VERSION: ${{ needs.build-react.outputs.display_version }}
+          http_proxy: http://127.0.0.1:1081
+          https_proxy: http://127.0.0.1:1081
         run: |
           dotnet publish -f net10.0-ios -c Release \
             -p:ApplicationVersion=$BUILD_VERSION \
@@ -201,9 +203,6 @@ jobs:
             -p:CodesignKey="${{ secrets.APPLE_SIGNING_IDENTITY }}" \
             -p:CodesignProvision="${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}"
         working-directory: ./src/V2ex.Maui2.App
-        env:
-          http_proxy: http://127.0.0.1:1081
-          https_proxy: http://127.0.0.1:1081
 
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
