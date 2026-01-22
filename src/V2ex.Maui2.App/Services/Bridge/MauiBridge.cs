@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using V2ex.Maui2.Core.Models.Api;
 using V2ex.Maui2.Core.Services.V2ex;
@@ -326,6 +327,169 @@ public class MauiBridge
         }
     }
 
+    /// <summary>
+    /// 获取日志文件列表
+    /// </summary>
+    /// <returns>日志文件列表（JSON 格式）</returns>
+    public async Task<string> GetLogFilesAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Bridge: 获取日志文件列表");
+
+            var logsDir = Path.Combine(FileSystem.AppDataDirectory, "logs");
+
+            if (!Directory.Exists(logsDir))
+            {
+                _logger.LogWarning("Logs directory does not exist: {LogsDir}", logsDir);
+                return JsonSerializer.Serialize(new { files = new List<object>() });
+            }
+
+            var files = Directory.GetFiles(logsDir, "v2ex-*.txt")
+                .OrderByDescending(f => File.GetLastWriteTime(f))
+                .Select(f => new
+                {
+                    name = Path.GetFileName(f),
+                    path = f,
+                    size = new FileInfo(f).Length,
+                    lastModified = File.GetLastWriteTime(f)
+                })
+                .ToList();
+
+            _logger.LogInformation("Found {Count} log files", files.Count);
+
+            return JsonSerializer.Serialize(new { files }, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bridge: 获取日志文件列表失败");
+            return JsonSerializer.Serialize(new { error = ex.Message, files = new List<object>() });
+        }
+    }
+
+    /// <summary>
+    /// 读取指定日志文件的内容
+    /// </summary>
+    /// <param name="fileName">日志文件名</param>
+    /// <returns>日志文件内容</returns>
+    public async Task<string> GetLogFileContentAsync(string fileName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return JsonSerializer.Serialize(new { error = "Invalid fileName" });
+            }
+
+            // 防止路径穿越攻击
+            var safeFileName = Path.GetFileName(fileName);
+            var filePath = Path.Combine(FileSystem.AppDataDirectory, "logs", safeFileName);
+
+            if (!File.Exists(filePath))
+            {
+                _logger.LogWarning("Log file not found: {FilePath}", filePath);
+                return JsonSerializer.Serialize(new { error = "File not found" });
+            }
+
+            _logger.LogInformation("Bridge: 读取日志文件 {FileName}", fileName);
+
+            var content = await File.ReadAllTextAsync(filePath);
+
+            return JsonSerializer.Serialize(new
+            {
+                fileName = safeFileName,
+                content = content,
+                size = new FileInfo(filePath).Length,
+                lastModified = File.GetLastWriteTime(filePath)
+            }, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bridge: 读取日志文件失败");
+            return JsonSerializer.Serialize(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 删除指定日志文件
+    /// </summary>
+    /// <param name="fileName">日志文件名</param>
+    /// <returns>操作结果</returns>
+    public async Task<string> DeleteLogFileAsync(string fileName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return JsonSerializer.Serialize(new { error = "Invalid fileName" });
+            }
+
+            var safeFileName = Path.GetFileName(fileName);
+            var filePath = Path.Combine(FileSystem.AppDataDirectory, "logs", safeFileName);
+
+            if (!File.Exists(filePath))
+            {
+                return JsonSerializer.Serialize(new { error = "File not found" });
+            }
+
+            _logger.LogInformation("Bridge: 删除日志文件 {FileName}", fileName);
+
+            File.Delete(filePath);
+
+            return JsonSerializer.Serialize(new { success = true, message = "File deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bridge: 删除日志文件失败");
+            return JsonSerializer.Serialize(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 清空所有日志文件
+    /// </summary>
+    /// <returns>操作结果</returns>
+    public async Task<string> ClearAllLogsAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Bridge: 清空所有日志文件");
+
+            var logsDir = Path.Combine(FileSystem.AppDataDirectory, "logs");
+
+            if (!Directory.Exists(logsDir))
+            {
+                return JsonSerializer.Serialize(new { success = true, message = "Logs directory does not exist" });
+            }
+
+            var files = Directory.GetFiles(logsDir, "v2ex-*.txt");
+            foreach (var file in files)
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete log file: {FilePath}", file);
+                }
+            }
+
+            return JsonSerializer.Serialize(new { success = true, message = $"Deleted {files.Length} log files" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Bridge: 清空日志文件失败");
+            return JsonSerializer.Serialize(new { error = ex.Message });
+        }
+    }
+
 
 }
-

@@ -25,7 +25,7 @@ import {
 import { err, ok, toErrorMessage, type Result } from "./result";
 import { createFirebaseAnalytics, type AnalyticsParams } from "./firebase";
 
-async function callMauiBridge(
+export async function callMauiBridge(
   method: string,
   args?: unknown[] | Record<string, unknown>,
 ): Promise<Result<string>> {

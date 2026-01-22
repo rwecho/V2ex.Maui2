@@ -36,6 +36,7 @@ import DashboardPage from "./pages/Dashboard";
 import HomePage from "./pages/Home";
 import TopicPage from "./pages/Topic";
 import NotFoundPage from "./pages/NotFound";
+import LogsPage from "./pages/Logs";
 import { initColorMode } from "./theme/colorMode";
 import TestPage from "./pages/Test";
 import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
@@ -136,6 +137,7 @@ const App: React.FC = () => {
                 render={(props) => <DashboardPage {...props} />}
               />
               <Route exact path="/home" component={HomePage} />
+              <Route path="/logs" render={() => <LogsPage />} />
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
 

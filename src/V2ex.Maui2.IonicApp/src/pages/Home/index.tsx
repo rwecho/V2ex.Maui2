@@ -170,6 +170,10 @@ const HomePage = () => {
               />
             </IonItem>
 
+            <IonItem lines="full" routerLink="/logs">
+              <IonLabel>Logs</IonLabel>
+            </IonItem>
+
             <IonItem lines="full" routerLink="/test">
               <IonLabel>Test Page</IonLabel>
             </IonItem>
