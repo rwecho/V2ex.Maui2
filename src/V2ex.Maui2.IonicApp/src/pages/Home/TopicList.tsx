@@ -100,7 +100,7 @@ const TopicList = (props: TopicListProps) => {
 
   return (
     <>
-      <IonList>
+      <IonList inset={false} lines="full">
         {error ? (
           <IonItem lines="none" color="warning">
             <IonLabel className="ion-text-wrap">
