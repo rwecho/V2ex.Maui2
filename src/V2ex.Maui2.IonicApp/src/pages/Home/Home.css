@@ -1,0 +1,14 @@
+/* Disable scrolling on IonSegmentView to prevent nested scrolling with IonContent */
+.no-scroll {
+  overflow-y: hidden !important;
+}
+
+/* Ensure IonSegmentContent doesn't create scroll containers */
+ion-segment-content {
+  overflow: hidden !important;
+}
+
+/* Ensure IonList doesn't create its own scroll container */
+ion-list {
+  overflow: hidden !important;
+}

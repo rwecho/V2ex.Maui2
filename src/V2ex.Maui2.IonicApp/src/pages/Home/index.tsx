@@ -12,8 +12,6 @@ import {
   IonRefresherContent,
   IonSegment,
   IonSegmentButton,
-  IonSegmentContent,
-  IonSegmentView,
   IonTitle,
   IonToast,
   IonToggle,
@@ -35,6 +33,7 @@ import {
 } from "../../theme/colorMode";
 import { useShallow } from "zustand/shallow";
 import { usePageAnalytics } from "../../hooks/usePageAnalytics";
+import "./Home.css";
 
 interface RefresherEventDetail {
   complete(): void;
@@ -217,11 +216,7 @@ const HomePage = () => {
               onIonChange={(e) => setActiveKey(String(e.detail.value))}
             >
               {tabs.map((tab) => (
-                <IonSegmentButton
-                  key={tab.key}
-                  value={tab.key}
-                  contentId={tab.key}
-                >
+                <IonSegmentButton key={tab.key} value={tab.key}>
                   <IonLabel>{tab.label}</IonLabel>
                 </IonSegmentButton>
               ))}
@@ -238,26 +233,23 @@ const HomePage = () => {
               refreshingText="刷新中…"
             />
           </IonRefresher>
-
-          <IonSegmentView>
-            {tabs.map((tab) => (
-              <IonSegmentContent key={tab.key} id={tab.key}>
-                {(() => {
-                  const { topics, loading, error } = getTabData(tab.key);
-                  return (
-                    <TopicList
-                      topics={topics}
-                      loading={loading}
-                      error={error}
-                      isActive={tab.key === activeKey}
-                      onRetry={() => fetchForTab(tab)}
-                      emptyText={`暂无话题：${tab.label}`}
-                    />
-                  );
-                })()}
-              </IonSegmentContent>
-            ))}
-          </IonSegmentView>
+          <div>
+            {(() => {
+              const activeTab = tabs.find((t) => t.key === activeKey);
+              if (!activeTab) return null;
+              const { topics, loading, error } = getTabData(activeTab.key);
+              return (
+                <TopicList
+                  topics={topics}
+                  loading={loading}
+                  error={error}
+                  isActive={true}
+                  onRetry={() => fetchForTab(activeTab)}
+                  emptyText={`暂无话题：${activeTab.label}`}
+                />
+              );
+            })()}
+          </div>
 
           <IonToast
             isOpen={toastOpen}
