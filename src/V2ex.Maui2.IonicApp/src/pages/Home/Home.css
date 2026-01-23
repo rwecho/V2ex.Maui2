@@ -1,14 +1,15 @@
-/* Disable scrolling on IonSegmentView to prevent nested scrolling with IonContent */
-.no-scroll {
+/* Disable vertical scrolling on IonSegmentView to prevent nested scrolling with IonContent
+   while preserving horizontal swipe functionality */
+.no-vertical-scroll {
   overflow-y: hidden !important;
 }
 
-/* Ensure IonSegmentContent doesn't create scroll containers */
+/* Ensure IonSegmentContent doesn't create vertical scroll containers */
 ion-segment-content {
-  overflow: hidden !important;
+  overflow-y: hidden !important;
 }
 
 /* Ensure IonList doesn't create its own scroll container */
 ion-list {
-  overflow: hidden !important;
+  overflow-y: hidden !important;
 }
