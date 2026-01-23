@@ -19,7 +19,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>V2</ApplicationTitle>
+		<ApplicationTitle>MV2</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>tech.zb.v2ex.maui.app</ApplicationId>
