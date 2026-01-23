@@ -1,493 +1,545 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>V2 - V2EX 社区客户端</title>
-  <meta name="description" content="V2EX 社区第三方客户端，支持 iOS 和 Android 平台，提供流畅的浏览体验。">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
-      color: #1f2937;
-      background: #f9fafb;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    header {
-      background: linear-gradient(135deg, #7cabff, #4d8dff);
-      color: white;
-      padding: 80px 0;
-      text-align: center;
-    }
-
-    header h1 {
-      font-size: 48px;
-      font-weight: 700;
-      margin-bottom: 16px;
-    }
-
-    header .subtitle {
-      font-size: 20px;
-      opacity: 0.95;
-      margin-bottom: 32px;
-    }
-
-    .store-buttons {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .store-button {
-      display: inline-flex;
-      align-items: center;
-      padding: 12px 24px;
-      border-radius: 12px;
-      text-decoration: none;
-      color: white;
-      font-weight: 500;
-      transition: transform 0.2s, box-shadow 0.2s;
-      min-width: 160px;
-      justify-content: center;
-    }
-
-    .store-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .store-button.app-store {
-      background: #000;
-    }
-
-    .store-button.google-play {
-      background: linear-gradient(135deg, #4285f4, #34a853);
-    }
-
-    .store-button svg {
-      width: 24px;
-      height: 24px;
-      margin-right: 8px;
-    }
-
-    .features {
-      padding: 80px 0;
-    }
-
-    .features h2 {
-      font-size: 32px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 48px;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 32px;
-    }
-
-    .feature-card {
-      background: white;
-      padding: 32px;
-      border-radius: 16px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .feature-icon {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, #7cabff, #4d8dff);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 16px;
-    }
-
-    .feature-icon svg {
-      width: 24px;
-      height: 24px;
-      color: white;
-    }
-
-    .feature-card h3 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-
-    .feature-card p {
-      color: #6b7280;
-      font-size: 15px;
-    }
-
-    .screenshots {
-      background: white;
-      padding: 80px 0;
-    }
-
-    .screenshots h2 {
-      font-size: 32px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 48px;
-    }
-
-    .screenshots-section {
-      background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
-      padding: 80px 0;
-    }
-
-    .screenshots-section h2 {
-      font-size: 32px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 16px;
-      color: #111827;
-    }
-
-    .screenshots-section .subtitle {
-      text-align: center;
-      color: #6b7280;
-      margin-bottom: 48px;
-      font-size: 16px;
-    }
-
-    .screenshots-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .screenshot {
-      position: relative;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .screenshot:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    .screenshot img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    .screenshot-overlay {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-      padding: 20px 16px 16px;
-      color: white;
-      font-size: 14px;
-      font-weight: 500;
-      text-align: center;
-    }
-
-    .screenshot-number {
-      display: inline-block;
-      background: rgba(124, 171, 255, 0.9);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .screenshot-label {
-      font-size: 13px;
-      opacity: 0.9;
-    }
-
-    @media (max-width: 1024px) {
-      .screenshots-grid {
-        grid-template-columns: repeat(2, 1fr);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MV2 - 为浏览注入动能，基于 .NET MAUI 构建</title>
+    <meta
+      name="description"
+      content="V2EX 社区第三方客户端，支持 iOS 和 Android 平台，提供流畅的浏览体验。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-    }
 
-    @media (max-width: 640px) {
-      .screenshots-grid {
-        grid-template-columns: 1fr;
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        line-height: 1.6;
+        color: #1f2937;
+        background: #f9fafb;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      header {
+        background: linear-gradient(135deg, #7cabff, #4d8dff);
+        color: white;
+        padding: 80px 0;
+        text-align: center;
       }
 
       header h1 {
-        font-size: 36px;
-      }
-
-      .features h2,
-      .screenshots-section h2 {
-        font-size: 24px;
-      }
-
-      .screenshots-section {
-        padding: 60px 0;
-      }
-    }
-
-    .footer {
-      background: #1f2937;
-      color: white;
-      padding: 48px 0 32px;
-      text-align: center;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 24px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
-
-    .footer-links a {
-      color: #d1d5db;
-      text-decoration: none;
-      font-size: 14px;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: white;
-    }
-
-    .copyright {
-      color: #9ca3af;
-      font-size: 13px;
-    }
-
-    @media (max-width: 768px) {
-      header h1 {
-        font-size: 36px;
+        font-size: 48px;
+        font-weight: 700;
+        margin-bottom: 16px;
       }
 
       header .subtitle {
-        font-size: 16px;
+        font-size: 20px;
+        opacity: 0.95;
+        margin-bottom: 32px;
       }
 
-      .features h2,
-      .screenshots h2 {
-        font-size: 24px;
+      .store-buttons {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .store-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 12px 24px;
+        border-radius: 12px;
+        text-decoration: none;
+        color: white;
+        font-weight: 500;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        min-width: 160px;
+        justify-content: center;
+      }
+
+      .store-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .store-button.app-store {
+        background: #000;
+      }
+
+      .store-button.google-play {
+        background: linear-gradient(135deg, #4285f4, #34a853);
+      }
+
+      .store-button svg {
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+      }
+
+      .features {
+        padding: 80px 0;
+      }
+
+      .features h2 {
+        font-size: 32px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 48px;
       }
 
       .features-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 32px;
       }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="container">
-      <h1>V2</h1>
-      <p class="subtitle">V2EX 社区第三方客户端 · 现代 · 流畅</p>
-      <div class="store-buttons">
-        <a href="#" class="store-button app-store">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-2.71 3.51-.86.92-1.73 1.68-2.63 2.23-.04.02-.08.03-.12.03-.08 0-.15-.04-.2-.1-.06-.1-.15-.14-.24-.12-.27.01-.11.08-.16.13-.23.31-.49.48-.84.62-1.21.31-.84.37-1.62.31-2.22-.13-.94-.15-1.62-.52-1.94-.09-.08-.15-.23-.12-.32.04-.12.1-.21.22-.26.25-.21.07-.38.15-.48.16-.16.03-.32.04-.43.08-.11.04-.22.06-.29.1l-.29.1c-.16.04-.32.06-.43.07-.23.03-.39.13-.44.21-.1.1-.15.23-.22.35-.31.83-.43 1.39-.31 2.1-.13.94.12-1.63.52-1.95.09-.08.15-.23.12-.32-.04-.12-.1-.21-.22-.26-.25-.21-.07-.38-.15-.48-.16-.16-.03-.32-.04-.43-.08-.11-.04-.22-.06-.29-.1l-.29-.1c-.16-.04-.32-.06-.43-.07-.23-.03-.39-.13-.44-.21-.1-.1-.15-.23-.22-.35-.31-.83-.43-1.39-.31-2.1.13-.94-.15-1.63-.52-1.95-.09-.08-.15-.23-.12-.32.04-.12.1-.21.22-.26.25-.21.07-.38.15-.48.16.16.03.32.04.43.08.11.04.22.06.29.1l.29.1c.16.04.32.06.43.07.23.03.39-.13.44-.21.1-.1.15-.23.22-.35.31.83.43 1.39.31 2.1.13.94.15 1.63.52 1.95.09.08.15.23.12.32-.04.12-.1.21-.22-.26-.25-.21-.07-.38-.15-.48-.16z"/>
-          </svg>
-          App Store
-        </a>
-        <a href="#" class="store-button google-play">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>
-          </svg>
-          Google Play
-        </a>
+
+      .feature-card {
+        background: white;
+        padding: 32px;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .feature-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #7cabff, #4d8dff);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+
+      .feature-icon svg {
+        width: 24px;
+        height: 24px;
+        color: white;
+      }
+
+      .feature-card h3 {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .feature-card p {
+        color: #6b7280;
+        font-size: 15px;
+      }
+
+      .screenshots {
+        background: white;
+        padding: 80px 0;
+      }
+
+      .screenshots h2 {
+        font-size: 32px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 48px;
+      }
+
+      .screenshots-section {
+        background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+        padding: 80px 0;
+      }
+
+      .screenshots-section h2 {
+        font-size: 32px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 16px;
+        color: #111827;
+      }
+
+      .screenshots-section .subtitle {
+        text-align: center;
+        color: #6b7280;
+        margin-bottom: 48px;
+        font-size: 16px;
+      }
+
+      .screenshots-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .screenshot {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.3s,
+          box-shadow 0.3s;
+      }
+
+      .screenshot:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      .screenshot img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .screenshot-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+        padding: 20px 16px 16px;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      .screenshot-number {
+        display: inline-block;
+        background: rgba(124, 171, 255, 0.9);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .screenshot-label {
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
+      @media (max-width: 1024px) {
+        .screenshots-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .screenshots-grid {
+          grid-template-columns: 1fr;
+        }
+
+        header h1 {
+          font-size: 36px;
+        }
+
+        .features h2,
+        .screenshots-section h2 {
+          font-size: 24px;
+        }
+
+        .screenshots-section {
+          padding: 60px 0;
+        }
+      }
+
+      .footer {
+        background: #1f2937;
+        color: white;
+        padding: 48px 0 32px;
+        text-align: center;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 24px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+
+      .footer-links a {
+        color: #d1d5db;
+        text-decoration: none;
+        font-size: 14px;
+        transition: color 0.2s;
+      }
+
+      .footer-links a:hover {
+        color: white;
+      }
+
+      .copyright {
+        color: #9ca3af;
+        font-size: 13px;
+      }
+
+      @media (max-width: 768px) {
+        header h1 {
+          font-size: 36px;
+        }
+
+        header .subtitle {
+          font-size: 16px;
+        }
+
+        .features h2,
+        .screenshots h2 {
+          font-size: 24px;
+        }
+
+        .features-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>V2</h1>
+        <p class="subtitle">MV2 社区第三方客户端 · 现代 · 流畅</p>
+        <div class="store-buttons">
+          <a href="#" class="store-button app-store">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M18.71 19.5c-.83 1.24-1.71 2.45-2.71 3.51-.86.92-1.73 1.68-2.63 2.23-.04.02-.08.03-.12.03-.08 0-.15-.04-.2-.1-.06-.1-.15-.14-.24-.12-.27.01-.11.08-.16.13-.23.31-.49.48-.84.62-1.21.31-.84.37-1.62.31-2.22-.13-.94-.15-1.62-.52-1.94-.09-.08-.15-.23-.12-.32.04-.12.1-.21.22-.26.25-.21.07-.38.15-.48.16-.16.03-.32.04-.43.08-.11.04-.22.06-.29.1l-.29.1c-.16.04-.32.06-.43.07-.23.03-.39.13-.44.21-.1.1-.15.23-.22.35-.31.83-.43 1.39-.31 2.1-.13.94.12-1.63.52-1.95.09-.08.15-.23.12-.32-.04-.12-.1-.21-.22-.26-.25-.21-.07-.38-.15-.48-.16-.16-.03-.32-.04-.43-.08-.11-.04-.22-.06-.29-.1l-.29-.1c-.16-.04-.32-.06-.43-.07-.23-.03-.39-.13-.44-.21-.1-.1-.15-.23-.22-.35-.31-.83-.43-1.39-.31-2.1.13-.94-.15-1.63-.52-1.95-.09-.08-.15-.23-.12-.32.04-.12.1-.21.22-.26.25-.21.07-.38.15-.48.16.16.03.32.04.43.08.11.04.22.06.29.1l.29.1c.16.04.32.06.43.07.23.03.39-.13.44-.21.1-.1.15-.23.22-.35.31.83.43 1.39.31 2.1.13.94.15 1.63.52 1.95.09.08.15.23.12.32-.04.12-.1.21-.22-.26-.25-.21-.07-.38-.15-.48-.16z"
+              />
+            </svg>
+            App Store
+          </a>
+          <a href="#" class="store-button google-play">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"
+              />
+            </svg>
+            Google Play
+          </a>
+        </div>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <section class="features">
-    <div class="container">
-      <h2>主要功能</h2>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
+    <section class="features">
+      <div class="container">
+        <h2>主要功能</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </div>
+            <h3>流畅浏览</h3>
+            <p>基于现代技术栈构建，提供流畅的浏览体验，支持深色模式</p>
           </div>
-          <h3>流畅浏览</h3>
-          <p>基于现代技术栈构建，提供流畅的浏览体验，支持深色模式</p>
-        </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-            </svg>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              </svg>
+            </div>
+            <h3>话题列表</h3>
+            <p>支持最新、热门话题浏览，以及 Tab 和 Node 分类</p>
           </div>
-          <h3>话题列表</h3>
-          <p>支持最新、热门话题浏览，以及 Tab 和 Node 分类</p>
-        </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            </div>
+            <h3>回复互动</h3>
+            <p>查看话题详情和回复，支持点击用户名快速定位回复</p>
           </div>
-          <h3>回复互动</h3>
-          <p>查看话题详情和回复，支持点击用户名快速定位回复</p>
-        </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-            </svg>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                />
+              </svg>
+            </div>
+            <h3>多主题支持</h3>
+            <p>自动跟随系统主题，支持浅色和深色模式</p>
           </div>
-          <h3>多主题支持</h3>
-          <p>自动跟随系统主题，支持浅色和深色模式</p>
-        </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-            </svg>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <h3>跨平台</h3>
+            <p>支持 iOS 和 Android 平台，统一的使用体验</p>
           </div>
-          <h3>跨平台</h3>
-          <p>支持 iOS 和 Android 平台，统一的使用体验</p>
-        </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <h3>链接智能处理</h3>
-          <p>自动识别内部/外部链接，提供最佳的浏览体验</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-   <section class="screenshots-section">
-    <div class="container">
-      <h2>应用展示</h2>
-      <p class="subtitle">精心设计的界面，极致的用户体验</p>
-      <div class="screenshots-grid">
-        <div class="screenshot">
-          <img src="images/1.png" alt="首页 - 话题列表" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">01</div>
-            <div class="screenshot-label">首页 - 话题列表</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/2.png" alt="热门话题" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">02</div>
-            <div class="screenshot-label">热门话题浏览</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/3.png" alt="话题详情" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">03</div>
-            <div class="screenshot-label">话题详情</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/4.png" alt="回复列表" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">04</div>
-            <div class="screenshot-label">回复列表</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/5.png" alt="节点列表" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">05</div>
-            <div class="screenshot-label">节点话题</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/6.png" alt="用户主页" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">06</div>
-            <div class="screenshot-label">用户主页</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/7.png" alt="深色模式 - 首页" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">07</div>
-            <div class="screenshot-label">深色模式</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/8.png" alt="深色模式 - 详情" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">08</div>
-            <div class="screenshot-label">深色模式 - 详情</div>
-          </div>
-        </div>
-
-        <div class="screenshot">
-          <img src="images/9.png" alt="操作反馈" loading="lazy">
-          <div class="screenshot-overlay">
-            <div class="screenshot-number">09</div>
-            <div class="screenshot-label">用户定位反馈</div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3>链接智能处理</h3>
+            <p>自动识别内部/外部链接，提供最佳的浏览体验</p>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-links">
-        <a href="#">隐私政策</a>
-        <a href="#">使用条款</a>
-        <a href="https://github.com/yourusername/V2ex.Maui2">GitHub</a>
-        <a href="mailto:support@example.com">反馈与支持</a>
+    <section class="screenshots-section">
+      <div class="container">
+        <h2>应用展示</h2>
+        <p class="subtitle">精心设计的界面，极致的用户体验</p>
+        <div class="screenshots-grid">
+          <div class="screenshot">
+            <img src="images/1.png" alt="首页 - 话题列表" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">01</div>
+              <div class="screenshot-label">首页 - 话题列表</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/2.png" alt="热门话题" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">02</div>
+              <div class="screenshot-label">热门话题浏览</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/3.png" alt="话题详情" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">03</div>
+              <div class="screenshot-label">话题详情</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/4.png" alt="回复列表" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">04</div>
+              <div class="screenshot-label">回复列表</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/5.png" alt="节点列表" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">05</div>
+              <div class="screenshot-label">节点话题</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/6.png" alt="用户主页" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">06</div>
+              <div class="screenshot-label">用户主页</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/7.png" alt="深色模式 - 首页" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">07</div>
+              <div class="screenshot-label">深色模式</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/8.png" alt="深色模式 - 详情" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">08</div>
+              <div class="screenshot-label">深色模式 - 详情</div>
+            </div>
+          </div>
+
+          <div class="screenshot">
+            <img src="images/9.png" alt="操作反馈" loading="lazy" />
+            <div class="screenshot-overlay">
+              <div class="screenshot-number">09</div>
+              <div class="screenshot-label">用户定位反馈</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <p class="copyright">© 2025 V2. All rights reserved.</p>
-    </div>
-  </footer>
-</body>
+    </section>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-links">
+          <a href="privacy.html">隐私政策</a>
+          <a href="#">使用条款</a>
+          <a href="https://github.com/rwecho/V2ex.Maui2">GitHub</a>
+          <a href="mailto:rwecho@live.com">反馈与支持</a>
+        </div>
+        <p class="copyright">© 2025 V2. All rights reserved.</p>
+      </div>
+    </footer>
+  </body>
 </html>
