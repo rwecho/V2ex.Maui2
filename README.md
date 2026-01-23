@@ -1,4 +1,4 @@
-# V2EX MAUI Client
+# MV2
 
 使用 **.NET MAUI + Ionic React** 的 V2EX 跨平台客户端（iOS / Android）。前端运行在 HybridWebView 中，通过 MauiBridge 与 C# 服务交互。
 
@@ -96,3 +96,4 @@ MIT
 
 - V2EX (https://www.v2ex.com/)
 - MAUI / Ionic Frameworks
+- Firebase (https://firebase.google.com/)
