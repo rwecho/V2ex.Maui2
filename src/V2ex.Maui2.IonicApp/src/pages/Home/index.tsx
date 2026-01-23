@@ -35,7 +35,6 @@ import {
 } from "../../theme/colorMode";
 import { useShallow } from "zustand/shallow";
 import { usePageAnalytics } from "../../hooks/usePageAnalytics";
-import "./Home.css";
 
 interface RefresherEventDetail {
   complete(): void;
@@ -218,7 +217,11 @@ const HomePage = () => {
               onIonChange={(e) => setActiveKey(String(e.detail.value))}
             >
               {tabs.map((tab) => (
-                <IonSegmentButton key={tab.key} value={tab.key}>
+                <IonSegmentButton
+                  key={tab.key}
+                  value={tab.key}
+                  contentId={tab.key}
+                >
                   <IonLabel>{tab.label}</IonLabel>
                 </IonSegmentButton>
               ))}
@@ -231,6 +234,7 @@ const HomePage = () => {
             slot="fixed"
             onIonRefresh={handleRefresh}
             pullFactor={0.85}
+            pullMin={60}
           >
             <IonRefresherContent
               pullingIcon="chevron-down-circle-outline"
@@ -239,7 +243,7 @@ const HomePage = () => {
               refreshingText="刷新中…"
             />
           </IonRefresher>
-          <IonSegmentView className="no-vertical-scroll">
+          <IonSegmentView>
             {tabs.map((tab) => (
               <IonSegmentContent key={tab.key} id={tab.key}>
                 {(() => {
