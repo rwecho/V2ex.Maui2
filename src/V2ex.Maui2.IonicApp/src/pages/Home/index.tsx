@@ -12,6 +12,8 @@ import {
   IonRefresherContent,
   IonSegment,
   IonSegmentButton,
+  IonSegmentContent,
+  IonSegmentView,
   IonTitle,
   IonToast,
   IonToggle,
@@ -225,7 +227,11 @@ const HomePage = () => {
         </IonHeader>
 
         <IonContent>
-          <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresher
+            slot="fixed"
+            onIonRefresh={handleRefresh}
+            pullFactor={0.85}
+          >
             <IonRefresherContent
               pullingIcon="chevron-down-circle-outline"
               pullingText="下拉刷新"
@@ -233,23 +239,25 @@ const HomePage = () => {
               refreshingText="刷新中…"
             />
           </IonRefresher>
-          <div>
-            {(() => {
-              const activeTab = tabs.find((t) => t.key === activeKey);
-              if (!activeTab) return null;
-              const { topics, loading, error } = getTabData(activeTab.key);
-              return (
-                <TopicList
-                  topics={topics}
-                  loading={loading}
-                  error={error}
-                  isActive={true}
-                  onRetry={() => fetchForTab(activeTab)}
-                  emptyText={`暂无话题：${activeTab.label}`}
-                />
-              );
-            })()}
-          </div>
+          <IonSegmentView className="no-vertical-scroll">
+            {tabs.map((tab) => (
+              <IonSegmentContent key={tab.key} id={tab.key}>
+                {(() => {
+                  const { topics, loading, error } = getTabData(tab.key);
+                  return (
+                    <TopicList
+                      topics={topics}
+                      loading={loading}
+                      error={error}
+                      isActive={tab.key === activeKey}
+                      onRetry={() => fetchForTab(tab)}
+                      emptyText={`暂无话题：${tab.label}`}
+                    />
+                  );
+                })()}
+              </IonSegmentContent>
+            ))}
+          </IonSegmentView>
 
           <IonToast
             isOpen={toastOpen}
