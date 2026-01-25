@@ -20,9 +20,15 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonToast,
+  IonTextarea,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
 } from "@ionic/react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RouteComponentProps } from "react-router";
+import { useHistory } from "react-router-dom";
 import { useTopicStore } from "../../store/topicStore";
 import "./Topic.css";
 import { useLinkInterceptor } from "../../hooks/useLinkInterceptor";
@@ -33,6 +39,8 @@ import {
   getSystemPreferredMode,
 } from "../../theme/colorMode";
 import { usePageAnalytics } from "../../hooks/usePageAnalytics";
+import { useAuthStore } from "../../store/authStore";
+import { apiService } from "../../services/apiService";
 
 interface TopicPageProps extends RouteComponentProps<{
   id: string;
@@ -44,9 +52,20 @@ interface RefresherEventDetail {
 
 const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const id = match.params.id;
+  const history = useHistory();
   const [visibleCount, setVisibleCount] = useState(30);
   const [nowSeconds, setNowSeconds] = useState<number | null>(null);
   const logAnalytics = usePageAnalytics();
+
+  // 回复相关状态
+  const [replyContent, setReplyContent] = useState("");
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [replyOnceToken, setReplyOnceToken] = useState<string | null>(null);
+
+  // 认证状态
+  const { isAuthenticated } = useAuthStore(
+    useShallow((s) => ({ isAuthenticated: s.isAuthenticated })),
+  );
 
   const normalizeAvatarUrl = (url?: string | null): string | null => {
     if (!url) return null;
@@ -241,6 +260,114 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (event.target as any).complete();
   };
+
+  // 获取回复 once token
+  useEffect(() => {
+    if (!isAuthenticated || parsedTopicId == null) {
+      setReplyOnceToken(null);
+      return;
+    }
+
+    const fetchOnceToken = async () => {
+      const res = await apiService.getReplyOnceToken(parsedTopicId);
+      if (res.error === null && res.data) {
+        setReplyOnceToken(res.data);
+      }
+    };
+
+    void fetchOnceToken();
+  }, [isAuthenticated, parsedTopicId]);
+
+  // 显示登录提示
+  const showLoginPrompt = useCallback(async () => {
+    setToastMessage("发表回复需要先登录 V2EX 账号");
+    setToastOpen(true);
+    // 延迟跳转，让用户看到提示
+    setTimeout(() => {
+      history.push("/login");
+    }, 1500);
+  }, [history]);
+
+  // 提交回复
+  const handleSubmitReply = useCallback(async () => {
+    if (!isAuthenticated) {
+      await showLoginPrompt();
+      return;
+    }
+
+    if (parsedTopicId == null) {
+      setToastMessage("话题 ID 无效");
+      setToastOpen(true);
+      return;
+    }
+
+    const trimmedContent = replyContent.trim();
+    if (!trimmedContent) {
+      setToastMessage("请输入回复内容");
+      setToastOpen(true);
+      return;
+    }
+
+    if (!replyOnceToken) {
+      setToastMessage("获取回复令牌失败，请刷新页面重试");
+      setToastOpen(true);
+      return;
+    }
+
+    setIsSubmittingReply(true);
+
+    try {
+      const res = await apiService.postReply(
+        parsedTopicId,
+        trimmedContent,
+        replyOnceToken,
+      );
+
+      if (res.error !== null) {
+        setToastMessage(`回复失败：${res.error}`);
+        void logAnalytics("post_reply", {
+          topic_id: parsedTopicId,
+          success: false,
+          reason: res.error,
+        });
+      } else {
+        setToastMessage("回复成功！");
+        setReplyContent("");
+        void logAnalytics("post_reply", {
+          topic_id: parsedTopicId,
+          success: true,
+        });
+
+        // 刷新话题详情以显示新回复
+        await fetchTopicDetail(parsedTopicId, { force: true });
+
+        // 重新获取 once token（每次回复后都需要新的）
+        const onceRes = await apiService.getReplyOnceToken(parsedTopicId);
+        if (onceRes.error === null && onceRes.data) {
+          setReplyOnceToken(onceRes.data);
+        }
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "回复失败";
+      setToastMessage(`回复失败：${errorMsg}`);
+      void logAnalytics("post_reply", {
+        topic_id: parsedTopicId,
+        success: false,
+        reason: "exception",
+      });
+    } finally {
+      setIsSubmittingReply(false);
+      setToastOpen(true);
+    }
+  }, [
+    isAuthenticated,
+    parsedTopicId,
+    replyContent,
+    replyOnceToken,
+    showLoginPrompt,
+    fetchTopicDetail,
+    logAnalytics,
+  ]);
 
   return (
     <IonPage className="topicPage">

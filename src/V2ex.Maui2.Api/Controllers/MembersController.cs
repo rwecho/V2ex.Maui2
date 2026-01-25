@@ -1,46 +1,46 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using Refit;
-using V2ex.Maui2.Core.Models.Api;
-using V2ex.Maui2.Core.Services.Interfaces;
+using V2ex.Maui2.Core;
 
 namespace V2ex.Maui2.Api.Controllers;
 
+[ApiController]
 [Route("api/v2ex/members")]
-[EnableRateLimiting("per-ip")]
-public class MembersController : ApiControllerBase
+public class MembersController : ControllerBase
 {
-    private readonly IV2exJsonApi _v2ex;
     private readonly ILogger<MembersController> _logger;
+    private readonly ApiService _apiService;
 
-    public MembersController(IV2exJsonApi v2ex, ILogger<MembersController> logger)
+    public MembersController(ILogger<MembersController> logger, ApiService apiService)
     {
-        _v2ex = v2ex;
         _logger = logger;
+        _apiService = apiService;
     }
 
     [HttpGet("{username}")]
-    public async Task<ActionResult<V2exMember>> GetMember([FromRoute] string username)
+    public async Task<IActionResult> GetMember([FromRoute] string username)
     {
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid username");
-        }
+        var result = await _apiService.GetMemberInfo(username);
+        return Ok(result);
+    }
 
-        try
-        {
-            var member = await _v2ex.GetMemberInfoAsync(username);
-            return Ok(member);
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogError(ex, "V2EX API error while fetching member {Username}", username);
-            return UpstreamProblem(ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error while fetching member {Username}", username);
-            return Problem(statusCode: StatusCodes.Status502BadGateway, title: ex.Message);
-        }
+    [HttpGet("{username}/page")]
+    public async Task<IActionResult> GetMemberPage([FromRoute] string username)
+    {
+        var result = await _apiService.GetUserPageInfo(username);
+        return Ok(result);
+    }
+
+    [HttpPost("follow")]
+    public async Task<IActionResult> FollowUser([FromQuery] string url)
+    {
+        var result = await _apiService.FollowUser(url);
+        return Ok(result);
+    }
+
+    [HttpPost("block")]
+    public async Task<IActionResult> BlockUser([FromQuery] string url)
+    {
+        var result = await _apiService.BlockUser(url);
+        return Ok(result);
     }
 }

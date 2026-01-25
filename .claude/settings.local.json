@@ -28,7 +28,9 @@
       "Bash(pkill:*)",
       "Bash(timeout:*)",
       "Bash(pnpm exec tsc:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }

@@ -1,18 +1,7 @@
-import { callMauiBridge } from "../../services/mauiBridgeApi";
+import { apiService } from "../../services/apiService";
+import { LogFile, LogFileContent } from "../../services/IV2exApiService";
 
-export interface LogFile {
-  name: string;
-  path: string;
-  size: number;
-  lastModified: string;
-}
-
-export interface LogFileContent {
-  fileName: string;
-  content: string;
-  size: number;
-  lastModified: string;
-}
+export type { LogFile, LogFileContent };
 
 export interface GetLogsResponse {
   files: LogFile[];
@@ -27,20 +16,12 @@ export interface LogContentResponse extends LogFileContent {
  * 获取日志文件列表
  */
 export async function getLogFiles(): Promise<GetLogsResponse> {
-  try {
-    const result = await callMauiBridge("GetLogFilesAsync");
-
-    if (result.error !== null) {
+  const result = await apiService.getLogFiles();
+  if (result.error !== null) {
       console.error("Error fetching log files:", result.error);
       return { files: [], error: result.error };
-    }
-
-    const data = JSON.parse(result.data);
-    return data;
-  } catch (error) {
-    console.error("Failed to get log files:", error);
-    return { files: [], error: String(error) };
   }
+  return result.data;
 }
 
 /**
@@ -49,59 +30,28 @@ export async function getLogFiles(): Promise<GetLogsResponse> {
 export async function getLogFileContent(
   fileName: string,
 ): Promise<LogContentResponse | null> {
-  try {
-    const result = await callMauiBridge("GetLogFileContentAsync", [fileName]);
-
-    if (result.error !== null) {
+  const result = await apiService.getLogFileContent(fileName);
+  if (result.error !== null) {
       console.error("Error fetching log content:", result.error);
       return null;
-    }
-
-    return JSON.parse(result.data);
-  } catch (error) {
-    console.error("Failed to get log file content:", error);
-    return null;
   }
+  return result.data;
 }
 
 /**
  * 删除日志文件
  */
 export async function deleteLogFile(fileName: string): Promise<boolean> {
-  try {
-    const result = await callMauiBridge("DeleteLogFileAsync", [fileName]);
-
-    if (result.error !== null) {
-      console.error("Error deleting log file:", result.error);
-      return false;
-    }
-
-    const response = JSON.parse(result.data);
-    return response.success || false;
-  } catch (error) {
-    console.error("Failed to delete log file:", error);
-    return false;
-  }
+  const result = await apiService.deleteLogFile(fileName);
+  return result.data ?? false;
 }
 
 /**
  * 清空所有日志文件
  */
 export async function clearAllLogs(): Promise<boolean> {
-  try {
-    const result = await callMauiBridge("ClearAllLogsAsync");
-
-    if (result.error !== null) {
-      console.error("Error clearing logs:", result.error);
-      return false;
-    }
-
-    const response = JSON.parse(result.data);
-    return response.success || false;
-  } catch (error) {
-    console.error("Failed to clear logs:", error);
-    return false;
-  }
+  const result = await apiService.clearAllLogs();
+  return result.data ?? false;
 }
 
 /**

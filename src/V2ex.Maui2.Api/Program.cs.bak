@@ -1,0 +1,43 @@
+using System.Net;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using V2ex.Maui2.Api.Services;
+using V2ex.Maui2.Api.Controllers;
+using V2ex.Maui2.Core.Security;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+builder.Services.AddSession();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<ICookieStorage, SessionCookieStorage>();
+
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddHttpClient(); // 注册 HttpClient
+
+builder.Services.AddScoped<ApiService, V2ex.Maui2.Core.Services.ApiService>();
+builder.Services.AddSingleton<ILogger<TopicsController>, TopicsController>();
+builder.Services.AddSingleton<ILogger<NodesController>, NodesController>();
+builder.Services.AddSingleton<ILogger<TabsController>, TabsController>();
+builder.Services.AddSingleton<ILogger<MembersController>, MembersController>();
+
+var app = builder.Build();
+
+app.UseCors();
+
+app.MapControllers();
+
+app.Run();

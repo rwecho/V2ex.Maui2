@@ -1,14 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Refit;
 using Serilog;
-using System.Text.Json;
 using V2ex.Maui2.App.Services.Bridge;
-using V2ex.Maui2.Core.Services.Interfaces;
-using V2ex.Maui2.Core.Services.V2ex;
-using System.Net;
-using CommunityToolkit.Maui;
-using System.Reflection;
 using V2ex.Maui2.App.Services;
+using CommunityToolkit.Maui;
+using V2ex.Maui2.App.Utilities;
+using V2ex.Maui2.Core;
 
 namespace V2ex.Maui2.App;
 
@@ -47,49 +43,25 @@ public static class MauiProgram
 			loggingBuilder.AddSerilog(dispose: true);
 		});
 
-		// 注册 Refit HTTP 客户端 - V2EX JSON API
-		var v2exJsonOptions = new JsonSerializerOptions
+		// add http client and configure cookie handler
+		// enable CORS for api
+		builder.Services.AddHttpClient("api", client =>
 		{
-			PropertyNameCaseInsensitive = true,
-			PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-		};
-
-		builder.Services.AddRefitClient<IV2exJsonApi>(new RefitSettings
-		{
-			ContentSerializer = new SystemTextJsonContentSerializer(v2exJsonOptions)
+			client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentConstants.GetUserAgent());
 		})
-		.ConfigureHttpClient(client =>
-		{
-			client.BaseAddress = new Uri("https://www.v2ex.com");
-			// 设置 User-Agent 模拟浏览器
-			client.DefaultRequestHeaders.Add("User-Agent",
-				"Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1");
-		})
-		.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-		{
-			AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-		})
-		;
-
-		// 注册 V2EX HTML 解析器（用于 Tab 和 Node 话题）
-		builder.Services.AddSingleton<HttpClient>(serviceProvider =>
-		{
-			return new HttpClient(new HttpClientHandler
+			.ConfigurePrimaryHttpMessageHandler((sp) =>
 			{
-				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-			})
-			{
-				BaseAddress = new Uri("https://www.v2ex.com"),
-				Timeout = TimeSpan.FromSeconds(30)
-			};
-		});
-		builder.Services.AddSingleton<V2exHtmlParser>();
+				return sp.GetRequiredService<ApiHttpClientHandler>();
+			});
 
-		// 注册 V2EX 服务
-		builder.Services.AddSingleton<V2exJsonService>();
+		// 注册认证和回复服务
+		builder.Services.AddSingleton<ICookieContainerStorage, MauiCookieStorage>();
+
 
 		// 注册 Bridge 服务
 		builder.Services.AddSingleton<MauiBridge>();
+
+		builder.Services.AddSingleton<ApiService>();
 
 #if DEBUG
 		builder.Services.AddHybridWebViewDeveloperTools();

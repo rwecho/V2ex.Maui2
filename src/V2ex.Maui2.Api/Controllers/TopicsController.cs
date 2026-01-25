@@ -1,129 +1,150 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using Refit;
-using V2ex.Maui2.Core.Models.Api;
-using V2ex.Maui2.Core.Services.Interfaces;
+using V2ex.Maui2.Core;
 
 namespace V2ex.Maui2.Api.Controllers;
 
+[ApiController]
 [Route("api/v2ex/topics")]
-[EnableRateLimiting("per-ip")]
-public class TopicsController : ApiControllerBase
+public class TopicsController : ControllerBase
 {
-    private readonly IV2exJsonApi _v2ex;
     private readonly ILogger<TopicsController> _logger;
+    private readonly ApiService _apiService;
 
-    public TopicsController(IV2exJsonApi v2ex, ILogger<TopicsController> logger)
+    public TopicsController(ILogger<TopicsController> logger, ApiService apiService)
     {
-        _v2ex = v2ex;
         _logger = logger;
-    }
-
-    [HttpGet("latest")]
-    public async Task<ActionResult<List<V2exTopic>>> GetLatest([FromQuery] int? page)
-    {
-        try
-        {
-            var topics = await _v2ex.GetLatestTopicsAsync();
-            return Ok(topics);
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogError(ex, "V2EX API error while fetching latest topics");
-            return UpstreamProblem(ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error while fetching latest topics");
-            return Problem(statusCode: StatusCodes.Status502BadGateway, title: ex.Message);
-        }
+        _apiService = apiService;
     }
 
     [HttpGet("hot")]
-    public async Task<ActionResult<List<V2exTopic>>> GetHot()
+    public async Task<IActionResult> GetHot()
+    {
+        var result = await _apiService.GetDailyHot();
+        return Ok(result);
+    }
+
+    [HttpGet("recent")]
+    public async Task<IActionResult> GetRecent()
+    {
+        var result = await _apiService.GetRecentTopics();
+        return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTopic(string id, [FromQuery] int page = 1)
+    {
+        var result = await _apiService.GetTopicDetail(id, page);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateTopic([FromBody] CreateTopicRequest request)
     {
         try
         {
-            var topics = await _v2ex.GetHotTopicsAsync();
-            return Ok(topics);
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogError(ex, "V2EX API error while fetching hot topics");
-            return UpstreamProblem(ex);
+            var result = await _apiService.PostTopic(request.Title, request.Content, request.NodeId, request.Once);
+            return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while fetching hot topics");
-            return Problem(statusCode: StatusCodes.Status502BadGateway, title: ex.Message);
+            return BadRequest(ex.Message);
         }
     }
 
-    [HttpGet("{topicId:int}")]
-    public async Task<ActionResult<V2exTopicDetail>> GetTopic([FromRoute] int topicId)
+    [HttpPost("{id}/replies")]
+    public async Task<IActionResult> ReplyTopic(string id, [FromBody] ReplyTopicRequest request)
     {
-        if (topicId <= 0)
-        {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid topicId");
-        }
-
         try
         {
-            var topicTask = _v2ex.GetTopicDetailAsync(topicId);
-            var repliesTask = _v2ex.GetRepliesAsync(topicId);
-            await Task.WhenAll(topicTask, repliesTask);
-
-            var topics = await topicTask;
-            var topic = topics?.FirstOrDefault();
-            if (topic is null)
-            {
-                return NotFound();
-            }
-
-            var detail = new V2exTopicDetail
-            {
-                Topic = topic,
-                Replies = await repliesTask,
-                Page = 1,
-                TotalPages = 1,
-            };
-
-            return Ok(detail);
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogError(ex, "V2EX API error while fetching topic detail {TopicId}", topicId);
-            return UpstreamProblem(ex);
+            var result = await _apiService.ReplyTopic(id, request.Content, request.Once);
+            return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while fetching topic detail {TopicId}", topicId);
-            return Problem(statusCode: StatusCodes.Status502BadGateway, title: ex.Message);
+            return BadRequest(ex.Message);
         }
     }
 
-    [HttpGet("{topicId:int}/replies")]
-    public async Task<ActionResult<List<V2exReply>>> GetReplies([FromRoute] int topicId)
+    [HttpGet("{id}/append")]
+    public async Task<IActionResult> GetAppendParameter(string id)
     {
-        if (topicId <= 0)
-        {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid topicId");
-        }
-
-        try
-        {
-            var replies = await _v2ex.GetRepliesAsync(topicId);
-            return Ok(replies);
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogError(ex, "V2EX API error while fetching replies for topic {TopicId}", topicId);
-            return UpstreamProblem(ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error while fetching replies for topic {TopicId}", topicId);
-            return Problem(statusCode: StatusCodes.Status502BadGateway, title: ex.Message);
-        }
+        var result = await _apiService.GetAppendTopicParameter(id);
+        return Ok(result);
     }
+
+    [HttpPost("{id}/append")]
+    public async Task<IActionResult> AppendTopic(string id, [FromBody] AppendTopicRequest request)
+    {
+        var result = await _apiService.AppendTopic(id, request.Once, request.Content);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/thank")]
+    public async Task<IActionResult> ThankTopic(string id, [FromQuery] string once)
+    {
+        var result = await _apiService.ThankCreator(id, once);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/ignore")]
+    public async Task<IActionResult> IgnoreTopic(string id, [FromQuery] string once)
+    {
+        var result = await _apiService.IgnoreTopic(id, once);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/unignore")]
+    public async Task<IActionResult> UnignoreTopic(string id, [FromQuery] string once)
+    {
+        var result = await _apiService.UnignoreTopic(id, once);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/favorite")]
+    public async Task<IActionResult> FavoriteTopic(string id, [FromQuery] string once)
+    {
+        var result = await _apiService.FavoriteTopic(id, once);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/unfavorite")]
+    public async Task<IActionResult> UnfavoriteTopic(string id, [FromQuery] string once)
+    {
+        var result = await _apiService.UnfavoriteTopic(id, once);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/up")]
+    public async Task<IActionResult> UpTopic(string id, [FromQuery] string once)
+    {
+        var result = await _apiService.UpTopic(id, once);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/down")]
+    public async Task<IActionResult> DownTopic(string id, [FromQuery] string once)
+    {
+        var result = await _apiService.DownTopic(id, once);
+        return Ok(result);
+    }
+}
+
+public class CreateTopicRequest
+{
+    public string Title { get; set; } = "";
+    public string Content { get; set; } = "";
+    public string NodeId { get; set; } = "";
+    public string Once { get; set; } = "";
+}
+
+public class ReplyTopicRequest
+{
+    public string Content { get; set; } = "";
+    public string Once { get; set; } = "";
+}
+
+public class AppendTopicRequest
+{
+    public string Content { get; set; } = "";
+    public string Once { get; set; } = "";
 }

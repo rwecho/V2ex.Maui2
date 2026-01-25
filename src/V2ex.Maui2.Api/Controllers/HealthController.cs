@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace V2ex.Maui2.Api.Controllers;
 
 [Route("api/health")]
-[EnableRateLimiting("per-ip")]
+
 public class HealthController : ControllerBase
 {
     [HttpGet]

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { mauiBridgeApi } from "../services/mauiBridgeApi";
+import { apiService } from "../services/apiService";
 
 export const usePageAnalytics = () => {
   return useCallback(
@@ -7,7 +7,7 @@ export const usePageAnalytics = () => {
       eventName: string,
       parameters?: Record<string, string | number | boolean | null | undefined>,
     ) => {
-      const res = await mauiBridgeApi.trackAnalyticsEvent(
+      const res = await apiService.trackAnalyticsEvent(
         eventName,
         parameters,
       );

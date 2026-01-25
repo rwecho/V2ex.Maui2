@@ -37,6 +37,7 @@ import HomePage from "./pages/Home";
 import TopicPage from "./pages/Topic";
 import NotFoundPage from "./pages/NotFound";
 import LogsPage from "./pages/Logs";
+import LoginPage from "./pages/Login";
 import { initColorMode } from "./theme/colorMode";
 import TestPage from "./pages/Test";
 import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
@@ -124,6 +125,7 @@ const App: React.FC = () => {
               <Route exact path="/home" component={HomePage} />
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
+              <Route exact path="/login" component={LoginPage} />
               <Route exact path="/" render={() => <Redirect to="/home" />} />
               <Route component={NotFoundPage} />
             </Switch>
@@ -140,6 +142,7 @@ const App: React.FC = () => {
               <Route path="/logs" render={() => <LogsPage />} />
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
+              <Route exact path="/login" component={LoginPage} />
               <Route component={NotFoundPage} />
             </IonRouterOutlet>
           </IonReactRouter>
