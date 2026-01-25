@@ -242,9 +242,9 @@ export class MauiApiService implements IV2exApiService {
   }
 
   async getCaptchaImage(
-    once: string,
+    params: SignInFormInfo,
   ): Promise<Result<{ image: string; mimeType: string }>> {
-    const res = await this.callMauiBridge("GetCaptchaImageAsync", [once]);
+    const res = await this.callMauiBridge("GetCaptchaImageAsync", [params.once]);
     if (res.error !== null) return err(res.error);
 
     let data: unknown;

@@ -71,6 +71,26 @@ const LoginPage = () => {
     void loadFormInfo();
   }, [showToast]);
 
+  const handleRefreshCaptcha = async () => {
+    if (!formInfo?.once || isLoadingCaptcha) return;
+
+    setIsLoadingCaptcha(true);
+    // Use getCaptchaImage to refresh just the image
+    const res = await apiService.getCaptchaImage(formInfo);
+    setIsLoadingCaptcha(false);
+
+    if (res.error) {
+      showToast(`验证码刷新失败: ${res.error}`);
+      return;
+    }
+
+    setFormInfo({
+        ...formInfo,
+        captchaImage: res.data.image
+    });
+    setCaptchaCode("");
+  };
+
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
       showToast("请输入用户名和密码");
@@ -106,8 +126,8 @@ const LoginPage = () => {
           success: false,
           reason: "sign_in_failed",
         });
-        // 登录失败后重新加载验证码
-        setCaptchaCode("");
+        // 登录失败后刷新验证码
+        await handleRefreshCaptcha(); 
         return;
       }
 
@@ -160,7 +180,7 @@ const LoginPage = () => {
         reason: "exception",
       });
       // 登录失败后重新加载验证码
-      setCaptchaCode("");
+      await handleRefreshCaptcha();
     } finally {
       setIsLoading(false);
     }
@@ -168,7 +188,7 @@ const LoginPage = () => {
 
   return (
     <IonPage>
-      <IonHeader>
+      <IonHeader translucent>
         <IonToolbar>
           <IonButtons slot="start">
             <IonBackButton defaultHref="/" />
@@ -177,9 +197,19 @@ const LoginPage = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
-        <div>
-          <IonItem>
+      <IonContent fullscreen className="ion-padding">
+        <div style={{ maxWidth: "400px", margin: "0 auto", marginTop: "20px" }}>
+            <div style={{ textAlign: "center", marginBottom: "32px", marginTop: "16px" }}>
+                <IonImg 
+                    src="/assets/icon/icon.png" 
+                    style={{ width: "64px", height: "64px", margin: "0 auto", borderRadius: "12px" }}
+                    // Fallback to text if icon missing
+                    onError={(e) => { (e.target as any).style.display = 'none'; }}
+                />
+                <h2 style={{ marginTop: "16px", fontSize: "24px", fontWeight: "600" }}>欢迎回到 V2EX</h2>
+            </div>
+
+          <IonItem className="rounded-item" lines="full">
             <IonInput
               label="用户名"
               labelPlacement="floating"
@@ -189,10 +219,11 @@ const LoginPage = () => {
               onIonInput={(e) => setUsername(e.detail.value ?? "")}
               autocomplete="username"
               disabled={isLoading}
+              clearInput
             />
           </IonItem>
 
-          <IonItem>
+          <IonItem className="rounded-item" lines="full">
             <IonInput
               label="密码"
               labelPlacement="floating"
@@ -203,44 +234,50 @@ const LoginPage = () => {
               onIonInput={(e) => setPassword(e.detail.value ?? "")}
               autocomplete="current-password"
               disabled={isLoading}
+              clearInput
             />
           </IonItem>
 
-          {/* 验证码输入区域 */}
-          <IonItem>
-            <IonInput
-              label="验证码"
-              labelPlacement="floating"
-              // placeholder="请输入验证码"
-              placeholder={formInfo?.captchaFieldName}
-              value={captchaCode}
-              onIonInput={(e) => setCaptchaCode(e.detail.value ?? "")}
-              disabled={isLoading || isLoadingCaptcha}
-            />
-          </IonItem>
-
-          <IonCard style={{ margin: "16px" }}>
-            <IonCardContent className="ion-text-center">
-              {isLoadingCaptcha ? (
-                <IonSpinner name="crescent" />
-              ) : (
-                <IonImg
-                  src={
-                    formInfo?.captchaImage
-                      ? `data:image/png;base64,${formInfo.captchaImage}`
-                      : ""
-                  }
-                  style={{ maxWidth: "100%", cursor: "pointer" }}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "10px", marginTop: "8px" }}>
+              <IonItem className="rounded-item" lines="full" style={{ flex: 1 }}>
+                <IonInput
+                  label="验证码"
+                  labelPlacement="floating"
+                  placeholder={formInfo?.captchaFieldName}
+                  value={captchaCode}
+                  onIonInput={(e) => setCaptchaCode(e.detail.value ?? "")}
+                  disabled={isLoading || isLoadingCaptcha}
                 />
-              )}
-              <IonLabel
-                color="medium"
-                style={{ display: "block", marginTop: "8px" }}
+              </IonItem>
+              
+              <div 
+                onClick={handleRefreshCaptcha}
+                style={{ 
+                    width: "120px", 
+                    height: "50px", 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center",
+                    backgroundColor: "var(--ion-color-light)",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    overflow: "hidden"
+                }}
               >
-                双击图片刷新验证码
-              </IonLabel>
-            </IonCardContent>
-          </IonCard>
+                  {isLoadingCaptcha ? (
+                    <IonSpinner name="dots" color="medium" />
+                  ) : formInfo?.captchaImage ? (
+                    <img
+                      src={`data:image/png;base64,${formInfo.captchaImage}`}
+                      alt="captcha"
+                      style={{ height: "100%", width: "100%", objectFit: "contain" }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: "12px", color: "var(--ion-color-medium)" }}>验证码</span>
+                  )}
+              </div>
+          </div>
+
 
           <IonButton
             expand="block"
@@ -251,11 +288,13 @@ const LoginPage = () => {
               !password.trim() ||
               !captchaCode.trim()
             }
+            style={{ marginTop: "32px", "--border-radius": "8px" }}
+            shape="round"
           >
             {isLoading ? <IonSpinner name="crescent" /> : "登录"}
           </IonButton>
 
-          <IonText color="medium">
+          <IonText color="medium" className="ion-text-center" style={{ display: "block", marginTop: "24px", fontSize: "12px" }}>
             <p>
               登录即表示您同意 V2EX 的
               <IonText color="primary">
@@ -263,6 +302,7 @@ const LoginPage = () => {
                   href="https://www.v2ex.com/about"
                   target="_blank"
                   rel="noopener noreferrer"
+                  style={{ textDecoration: "none", margin: "0 4px" }}
                 >
                   服务条款
                 </a>
@@ -273,6 +313,7 @@ const LoginPage = () => {
                   href="https://www.v2ex.com/privacy"
                   target="_blank"
                   rel="noopener noreferrer"
+                  style={{ textDecoration: "none", margin: "0 4px" }}
                 >
                   隐私政策
                 </a>
@@ -289,6 +330,7 @@ const LoginPage = () => {
           onDidDismiss={() => setToastOpen(false)}
         />
       </IonContent>
+
     </IonPage>
   );
 };
