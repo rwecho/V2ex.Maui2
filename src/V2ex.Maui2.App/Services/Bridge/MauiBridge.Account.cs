@@ -111,43 +111,31 @@ public partial class MauiBridge
 
     public async Task<string> SignOutAsync()
     {
-        // ApiService doesn't have SignOut explicit method? It's likely cookie based.
-        // Assuming clearing cookies or just client side state.
-        // Since V2EX is session based, maybe we just clear cookies?
-        // ApiService constructor initializes HttpClient with cookie container?
-        // Let's assume we just return success for now or check ApiService.
-        // If ApiService handles cookies, we might need a ClearCookies method on it.
-        // But for now, returning success.
-
-        return JsonSerializer.Serialize(new
+        try
         {
-            success = true,
-            message = "退出成功"
-        }, _jsonOptions);
+            apiService.SignOut();
+            return JsonSerializer.Serialize(new
+            {
+                success = true,
+                message = "退出成功"
+            }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message });
+        }
     }
 
     public async Task<string> IsLoggedInAsync()
     {
-        // ApiService doesn't have IsLoggedIn? 
-        // Usually we check if we can get Daily info or similar, or check cookies.
-        // Let's try to get daily info status?
-        // Actually, let's look at `MauiBridge.cs` legacy `IsLoggedInAsync` implementation used `_authService`.
-        // `apiService` doesn't seem to expose simple IsLoggedIn.
-        // We might need to implement a check.
-        // For now, let's use GetDailyInfo as a proxy? No, that's heavy.
-        // Since I removed V2exAuthService, I might have lost this logic.
-        // I'll leave it as returning false or try a light request.
-        // Or check if GetCurrentUserAsync returns valid user.
-
-        var user = await GetCurrentUserAsync();
-        // user returns json string.
-        // This is tricky without parsing.
-
-        // Assuming checking a protected endpoint is the way.
         try
         {
             var daily = await apiService.GetDailyInfo();
-            return JsonSerializer.Serialize(new { success = true, isLoggedIn = true }, _jsonOptions);
+            return JsonSerializer.Serialize(new 
+            { 
+                success = true, 
+                isLoggedIn = daily?.CurrentUser != null 
+            }, _jsonOptions);
         }
         catch
         {
@@ -157,19 +145,19 @@ public partial class MauiBridge
 
     public async Task<string> GetCurrentUserAsync()
     {
-        // We don't have local storage of current user in ApiService.
-        // We need to fetch it. `ApiService.GetMemberInfo` needs username.
-        // How do we get current username?
-        // `MauiBridge` used `_authService.GetCurrentUserAsync()`.
-        // I might need to store it in Preferences after login.
-
-        var username = await GetStringValue("current_username");
-        if (string.IsNullOrEmpty(username))
+        try 
         {
-            return JsonSerializer.Serialize(new { success = false, error = "Not logged in" }, _jsonOptions);
+             var daily = await apiService.GetDailyInfo();
+             if (daily?.CurrentUser != null)
+             {
+                 return JsonSerializer.Serialize(new { success = true, user = daily.CurrentUser }, _jsonOptions);
+             }
+             return JsonSerializer.Serialize(new { success = false, error = "Not logged in" }, _jsonOptions);
         }
-
-        return await GetUserProfileAsync(username);
+        catch (Exception ex)
+        {
+             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+        }
     }
 
     public async Task<string> SignInTwoStepAsync(string code, string once)

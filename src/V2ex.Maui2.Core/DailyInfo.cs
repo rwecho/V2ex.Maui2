@@ -2,33 +2,30 @@
 
 namespace V2ex.Maui2.Core;
 
+[HasXPath]
 public class DailyInfo
 {
+    [XPath("//a[starts-with(@href, '/member')]", "href")]
     public string UserLink { get; init; } = null!;
+
+    [XPath("//img[contains(@src, 'avatar/')]", "src")]
     public string Avatar { get; init; } = null!;
+
+    [XPath("//h1")]
     public string Title { get; init; } = null!;
-    public string ContinuousLoginDay { get; init; } = null!;
-    public string CheckInUrl { get; init; } = null!;
+
+    [XPath("//div[contains(@class, 'cell') and contains(., '已连续')]")]
+    [SkipNodeNotFound]
+    public string? ContinuousLoginDay { get; init; }
+
+    [XPath("//div[contains(@class, 'cell')]//input[@type='button']", "onclick")]
+    [SkipNodeNotFound]
+    public string? CheckInUrl { get; init; }
+
     public string Url { get; internal set; } = null!;
 
-    internal static DailyInfo Parse(string html)
-    {
-        var document = new HtmlDocument();
-        document.LoadHtml(html);
-        var userLink = document.DocumentNode.SelectSingleNode("[href^=/member]").GetAttributeValue("href", null);
-        var avatar = document.DocumentNode.SelectSingleNode("img[src*=avatar/]").GetAttributeValue("src", null);
-        var title = document.DocumentNode.SelectSingleNode("h1").InnerText;
-        var continuousLoginDay = document.DocumentNode.SelectSingleNode("div.cell:contains(已连续)").InnerText;
-        var checkInUrl = document.DocumentNode.SelectSingleNode("div.cell input[type=button]").GetAttributeValue("onclick", null);
-
-        return new DailyInfo
-        {
-            UserLink = userLink,
-            Avatar = avatar,
-            Title = title,
-            ContinuousLoginDay = continuousLoginDay,
-            CheckInUrl = checkInUrl,
-        };
-    }
+    [XPath("//body", ReturnType.OuterHtml)]
+    [SkipNodeNotFound]
+    public UserInfo? CurrentUser { get; init; }
 }
 

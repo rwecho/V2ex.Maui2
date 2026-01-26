@@ -106,6 +106,24 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
     }
 
     const newsInfo = res.data;
+
+    // Sync current user info if available
+    const { useAuthStore } = await import("./authStore");
+    const authIsAuthenticated = useAuthStore.getState().isAuthenticated;
+
+    if (newsInfo.currentUser && newsInfo.currentUser.name) {
+        // We assume that if currentUser is returned, we have valid user info.
+        useAuthStore.getState().setAuthenticated({
+            username: newsInfo.currentUser.name,
+            ...newsInfo.currentUser
+        });
+    } else if (authIsAuthenticated) {
+        // We think we are logged in, but the server returned no user info.
+        // This means our session has expired or is invalid.
+        console.warn("Session expired or invalid, signing out.");
+        useAuthStore.getState().signOut();
+    }
+
     const topics: TopicType[] = newsInfo.items.map((item) => {
         // Parse ID from link, e.g. /t/123456...
         // Fallback to 0 if parsing fails

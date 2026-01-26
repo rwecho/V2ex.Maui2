@@ -222,11 +222,11 @@ export class HttpApiService implements IV2exApiService {
       method: "POST",
       body: JSON.stringify({
         parameters: {
-             nameParameter: formInfo.usernameFieldName,
-             passwordParameter: formInfo.passwordFieldName,
-             captchaParameter: formInfo.captchaFieldName,
-             once: formInfo.once,
-             captcha: formInfo.captchaImage // or null
+          nameParameter: formInfo.usernameFieldName,
+          passwordParameter: formInfo.passwordFieldName,
+          captchaParameter: formInfo.captchaFieldName,
+          once: formInfo.once,
+          captcha: formInfo.captchaImage, // or null
         },
         username,
         password,
@@ -236,27 +236,27 @@ export class HttpApiService implements IV2exApiService {
     if (res.error) return err(res.error);
     const data: any = res.data;
     if (data?.success) {
-        return ok({
-            username: data.username || username,
-            currentUser: data.currentUser
-        });
+      return ok({
+        username: data.username || username,
+        currentUser: data.currentUser,
+      });
     }
     return err(data?.error || "Login failed");
   }
 
   async signOut(): Promise<Result<void>> {
-    await this.fetchApi("/auth/signout", { method: "POST" });
+    await this.fetchApi("/account/logout", { method: "POST" });
     return ok(undefined);
   }
 
   async isLoggedIn(): Promise<Result<boolean>> {
-    const res = await this.fetchApi("/auth/logged-in");
+    const res = await this.fetchApi("/account/logged-in");
     if (res.error) return ok(false);
     return ok((res.data as any)?.isLoggedIn === true);
   }
 
   async getCurrentUser(): Promise<Result<MemberType>> {
-    const res = await this.fetchApi("/auth/current-user");
+    const res = await this.fetchApi("/account/current-user");
     if (res.error) return err(res.error);
     const data: any = res.data;
     if (data?.success && data.user) {

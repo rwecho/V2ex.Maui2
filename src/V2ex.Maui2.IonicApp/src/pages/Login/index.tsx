@@ -132,24 +132,24 @@ const LoginPage = () => {
       // Initial user setup with available data
       setAuthenticated({
         username: signInRes.data.username,
-        ...signInRes.data.currentUser
+        ...signInRes.data.currentUser,
       });
 
       // 步骤 2：获取用户信息
       const userRes = await apiService.getCurrentUser();
       if (userRes.error !== null) {
-          // 如果获取详细信息失败，我们仍然保持已登录状态（基于 signInRes）
-          // 只是记录错误并提示用户
-          showToast("登录成功，但获取详细信息失败");
-          void logAnalytics("login_attempt", {
-            success: true,
-            user_info_loaded: false,
-          });
+        // 如果获取详细信息失败，我们仍然保持已登录状态（基于 signInRes）
+        // 只是记录错误并提示用户
+        showToast("登录成功，但获取详细信息失败");
+        void logAnalytics("login_attempt", {
+          success: true,
+          user_info_loaded: false,
+        });
       } else {
         // Merge full profile (MemberType) into the user state
         setAuthenticated(userRes.data);
       }
-      
+
       // 登录成功
       showToast("登录成功");
       void logAnalytics("login_attempt", {
@@ -245,7 +245,11 @@ const LoginPage = () => {
             />
           </IonItem>
 
-          <IonItem className="rounded-item" lines="full" style={{ marginTop: "8px" }}>
+          <IonItem
+            className="rounded-item"
+            lines="full"
+            style={{ marginTop: "8px" }}
+          >
             <IonInput
               label="验证码"
               labelPlacement="floating"
@@ -255,34 +259,29 @@ const LoginPage = () => {
               disabled={isLoading || isLoadingCaptcha}
             />
           </IonItem>
-          
-          <div 
+
+          <div
             onClick={handleRefreshCaptcha}
-            style={{ 
-                marginTop: "12px",
-                width: "100%", 
-                height: "60px", 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                backgroundColor: "var(--ion-color-light)",
-                borderRadius: "8px",
-                cursor: "pointer",
-                overflow: "hidden",
-                border: "1px solid var(--ion-color-step-150, #eee)"
+            style={{
+              marginTop: "12px",
+              width: "100%",
             }}
           >
-              {isLoadingCaptcha ? (
-                <IonSpinner name="dots" color="medium" />
-              ) : formInfo?.captchaImage ? (
-                <img
-                  src={`data:image/png;base64,${formInfo.captchaImage}`}
-                  alt="captcha"
-                  style={{ height: "100%", objectFit: "contain" }}
-                />
-              ) : (
-                <span style={{ fontSize: "12px", color: "var(--ion-color-medium)" }}>点击加载验证码</span>
-              )}
+            {isLoadingCaptcha ? (
+              <IonSpinner name="dots" color="medium" />
+            ) : formInfo?.captchaImage ? (
+              <img
+                src={`data:image/png;base64,${formInfo.captchaImage}`}
+                alt="captcha"
+                style={{ width: "100%", objectFit: "contain" }}
+              />
+            ) : (
+              <span
+                style={{ fontSize: "12px", color: "var(--ion-color-medium)" }}
+              >
+                点击加载验证码
+              </span>
+            )}
           </div>
 
           <IonButton

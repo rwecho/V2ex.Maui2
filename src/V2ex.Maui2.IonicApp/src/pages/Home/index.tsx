@@ -22,6 +22,7 @@ import {
   IonImg,
   IonButton,
   IonThumbnail,
+  IonFooter,
 } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
@@ -231,14 +232,29 @@ const HomePage = () => {
           {/* 用户信息区域 */}
           {isAuthenticated && user ? (
             <div style={{ padding: "20px 16px 10px 16px" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px" }}>
-                 <IonAvatar style={{ width: "80px", height: "80px", marginBottom: "12px", border: "2px solid var(--ion-color-light)" }}>
-                  {normalizeAvatarUrl(user.avatar || user.avatarMini || user.avatarLarge) ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  marginBottom: "20px",
+                }}
+              >
+                <IonAvatar
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    marginBottom: "12px",
+                    border: "2px solid var(--ion-color-light)",
+                  }}
+                >
+                  {normalizeAvatarUrl(
+                    user.avatar || user.avatarMini || user.avatarLarge,
+                  ) ? (
                     <IonImg
                       src={
                         normalizeAvatarUrl(
-                            user.avatar ||
-                          user.avatarMini || user.avatarLarge,
+                          user.avatar || user.avatarMini || user.avatarLarge,
                         ) || undefined
                       }
                       alt={user.name || user.username}
@@ -259,44 +275,104 @@ const HomePage = () => {
                         borderRadius: "50%",
                       }}
                     >
-                      {(user.name || user.username)?.slice(0, 1).toUpperCase() || "?"}
+                      {(user.name || user.username)
+                        ?.slice(0, 1)
+                        .toUpperCase() || "?"}
                     </div>
                   )}
                 </IonAvatar>
-                
-                <h2 style={{ margin: "0", fontSize: "20px", fontWeight: "700", color: "var(--ion-text-color)" }}>
-                    {user.name || user.username}
+
+                <h2
+                  style={{
+                    margin: "0",
+                    fontSize: "20px",
+                    fontWeight: "700",
+                    color: "var(--ion-text-color)",
+                  }}
+                >
+                  {user.name || user.username}
                 </h2>
-                <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--ion-color-medium)" }}>
-                    {user.tagline || "V2EX 用户"}
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontSize: "13px",
+                    color: "var(--ion-color-medium)",
+                  }}
+                >
+                  {user.tagline || "V2EX 用户"}
                 </p>
 
                 {(user.moneyGold || user.moneySilver || user.moneyBronze) && (
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px', fontSize: '13px', alignItems: 'center', justifyContent: 'center' }}>
-                       {user.moneyGold && (
-                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--ion-color-warning-tint)', padding: '2px 8px', borderRadius: '12px', color: 'var(--ion-color-warning-shade)' }}>
-                                <span style={{ marginRight: '4px' }}>🪙</span> {user.moneyGold}
-                            </div>
-                       )}
-                       {user.moneySilver && (
-                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--ion-color-medium-tint)', padding: '2px 8px', borderRadius: '12px', color: 'var(--ion-color-medium-shade)' }}>
-                                <span style={{ marginRight: '4px' }}>🥈</span> {user.moneySilver}
-                            </div>
-                       )}
-                       {user.moneyBronze && (
-                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#efebe9', padding: '2px 8px', borderRadius: '12px', color: '#8d6e63' }}>
-                                <span style={{ marginRight: '4px' }}>🥉</span> {user.moneyBronze}
-                            </div>
-                       )}
-                    </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginTop: "12px",
+                      fontSize: "13px",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {user.moneyGold && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          backgroundColor: "var(--ion-color-warning-tint)",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          color: "var(--ion-color-warning-shade)",
+                        }}
+                      >
+                        <span style={{ marginRight: "4px" }}>🪙</span>{" "}
+                        {user.moneyGold}
+                      </div>
+                    )}
+                    {user.moneySilver && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          backgroundColor: "var(--ion-color-medium-tint)",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          color: "var(--ion-color-medium-shade)",
+                        }}
+                      >
+                        <span style={{ marginRight: "4px" }}>🥈</span>{" "}
+                        {user.moneySilver}
+                      </div>
+                    )}
+                    {user.moneyBronze && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          backgroundColor: "#efebe9",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          color: "#8d6e63",
+                        }}
+                      >
+                        <span style={{ marginRight: "4px" }}>🥉</span>{" "}
+                        {user.moneyBronze}
+                      </div>
+                    )}
+                  </div>
                 )}
-                
+
                 {user.notifications && user.notifications !== "0" && (
-                     <div style={{ marginTop: '16px', width: '100%' }}>
-                        <IonButton expand="block" size="small" color="danger" routerLink="/notifications" style={{ '--border-radius': '16px' }}>
-                            {user.notifications} 条未读提醒
-                        </IonButton>
-                     </div>
+                  <div style={{ marginTop: "16px", width: "100%" }}>
+                    <IonButton
+                      expand="block"
+                      size="small"
+                      color="danger"
+                      routerLink="/notifications"
+                      style={{ "--border-radius": "16px" }}
+                    >
+                      {user.notifications} 条未读提醒
+                    </IonButton>
+                  </div>
                 )}
               </div>
             </div>
@@ -334,16 +410,23 @@ const HomePage = () => {
                 </IonItem>
               </>
             )}
-
-            {isAuthenticated && (
-                <IonItem lines="none" onClick={handleSignOut} button detail={false}>
-                    <IonLabel color="danger">退出登录</IonLabel>
-                </IonItem>
-            )}
           </IonList>
         </IonContent>
-
-        <VersionFooter appVersion={appVersion} />
+        <IonFooter>
+          <IonToolbar>
+            {isAuthenticated && (
+              <IonItem
+                lines="none"
+                onClick={handleSignOut}
+                button
+                detail={false}
+              >
+                <IonLabel color="danger">退出登录</IonLabel>
+              </IonItem>
+            )}
+            <VersionFooter appVersion={appVersion} />
+          </IonToolbar>
+        </IonFooter>
       </IonMenu>
 
       <IonPage id="homePage">

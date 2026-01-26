@@ -13,8 +13,11 @@ namespace V2ex.Maui2.Core;
 
 public class ApiService
 {
-    public ApiService(IHttpClientFactory httpClientFactory, ILogger<ApiService> logger)
+    public ApiService(IHttpClientFactory httpClientFactory,
+    ICookieContainerStorage cookieContainerStorage,
+    ILogger<ApiService> logger)
     {
+        this._cookieContainerStorage = cookieContainerStorage;
         this.HttpClient = httpClientFactory.CreateClient("api");
 
         if (this.HttpClient.BaseAddress == null)
@@ -26,6 +29,7 @@ public class ApiService
 
     private HttpClient HttpClient { get; }
     public ILogger<ApiService> Logger { get; }
+    private readonly ICookieContainerStorage _cookieContainerStorage;
 
     public async Task<DailyHotInfo?> GetDailyHot()
     {
@@ -191,7 +195,16 @@ public class ApiService
         }
 
         var newsInfo = await response.GetEncapsulatedData<NewsInfo>(this.Logger);
+
+        // Save cookies after successful login
+        this._cookieContainerStorage.SaveCookies();
+
         return newsInfo;
+    }
+
+    public void SignOut()
+    {
+        this._cookieContainerStorage.ClearCookies();
     }
 
     public async Task<TopicInfo> GetTopicDetail(string topicId, int page = 1)

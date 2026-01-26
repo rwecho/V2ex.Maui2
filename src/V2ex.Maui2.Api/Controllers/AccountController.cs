@@ -43,6 +43,24 @@ public class AccountController : ControllerBase
         }
     }
 
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        try
+        {
+            _apiService.SignOut();
+            return Ok(new
+            {
+                success = true,
+                message = "退出成功"
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("2fa")]
     public async Task<IActionResult> TwoStep([FromBody] TwoStepRequest request)
     {
@@ -97,6 +115,26 @@ public class AccountController : ControllerBase
     {
         var result = await _apiService.GetCaptchaImage(once);
         return File(result, "image/png");
+    }
+    [HttpGet("logged-in")]
+    public async Task<IActionResult> LoggedIn()
+    {
+        var dailyInfo = await _apiService.GetDailyInfo();
+        return Ok(new
+        {
+            isLoggedIn = dailyInfo?.CurrentUser != null
+        });
+    }
+
+    [HttpGet("current-user")]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var dailyInfo = await _apiService.GetDailyInfo();
+        if (dailyInfo?.CurrentUser != null)
+        {
+            return Ok(dailyInfo.CurrentUser);
+        }
+        return Unauthorized(new { error = "User not logged in" });
     }
 }
 
