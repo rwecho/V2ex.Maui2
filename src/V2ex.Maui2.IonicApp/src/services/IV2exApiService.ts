@@ -15,6 +15,7 @@ import {
   TagInfoType,
   NewsInfoType,
   TopicInfoType,
+  CurrentUserType,
 } from "../schemas/topicSchema";
 import { Result } from "./result";
 import { SignInFormInfo } from "../store/authStore";
@@ -35,19 +36,22 @@ export interface IV2exApiService {
   getHotTopics(): Promise<Result<TopicType[]>>;
   getTabTopics(params: GetTabTopicsParams): Promise<Result<NewsInfoType>>;
   getNodeTopics(params: GetNodeTopicsParams): Promise<Result<TopicType[]>>;
-  getTopicDetail(
-    params: GetTopicParams
-  ): Promise<Result<TopicInfoType | null>>;
+  getTopicDetail(params: GetTopicParams): Promise<Result<TopicInfoType | null>>;
   getUserProfile(params: GetUserParams): Promise<Result<MemberType | null>>;
   getNodes(): Promise<Result<NodeInfoType[]>>;
   getNodeDetail(params: GetNodeParams): Promise<Result<NodeInfoType | null>>;
-  
+
   // New Methods
   getNodesNavInfo(): Promise<Result<NodesNavInfoType>>;
   getTagTopics(tagName: string): Promise<Result<TagInfoType>>;
 
   // Topic Interactions
-  createTopic(title: string, content: string, nodeId: string, once: string): Promise<Result<{ topicId?: number; url?: string }>>;
+  createTopic(
+    title: string,
+    content: string,
+    nodeId: string,
+    once: string,
+  ): Promise<Result<{ topicId?: number; url?: string }>>;
   thankTopic(topicId: string, once: string): Promise<Result<void>>;
   ignoreTopic(topicId: string, once: string): Promise<Result<void>>;
   unignoreTopic(topicId: string, once: string): Promise<Result<void>>;
@@ -55,11 +59,19 @@ export interface IV2exApiService {
   unfavoriteTopic(topicId: string, once: string): Promise<Result<void>>;
   upTopic(topicId: string, once: string): Promise<Result<void>>;
   downTopic(topicId: string, once: string): Promise<Result<void>>;
-  appendTopic(topicId: string, content: string, once: string): Promise<Result<void>>;
+  appendTopic(
+    topicId: string,
+    content: string,
+    once: string,
+  ): Promise<Result<void>>;
 
   // Reply Interactions - ADDED
   getReplyOnceToken(topicId: number): Promise<Result<string>>;
-  postReply(topicId: number, content: string, once: string): Promise<Result<{ replyId?: number }>>;
+  postReply(
+    topicId: number,
+    content: string,
+    once: string,
+  ): Promise<Result<{ replyId?: number }>>;
   requiresLogin(topicId: number): Promise<Result<boolean>>;
 
   // Node Interactions
@@ -73,8 +85,15 @@ export interface IV2exApiService {
 
   // Account
   getLoginParameters(): Promise<Result<SignInFormInfo>>;
-  getCaptchaImage(once: string): Promise<Result<{ image: string; mimeType: string }>>;
-  signIn(username: string, password: string, formInfo: SignInFormInfo, captchaCode: string): Promise<Result<{ username: string }>>;
+  getCaptchaImage(
+    once: string,
+  ): Promise<Result<{ image: string; mimeType: string }>>;
+  signIn(
+    username: string,
+    password: string,
+    formInfo: SignInFormInfo,
+    captchaCode: string,
+  ): Promise<Result<{ username: string; currentUser?: CurrentUserType }>>;
   signOut(): Promise<Result<void>>;
   isLoggedIn(): Promise<Result<boolean>>;
   getCurrentUser(): Promise<Result<MemberType>>;
@@ -88,7 +107,11 @@ export interface IV2exApiService {
   getFavoriteNodes(): Promise<Result<NodeInfoType[]>>;
 
   // Search
-  search(q: string, from?: number, sort?: string): Promise<Result<SearchResultType[]>>;
+  search(
+    q: string,
+    from?: number,
+    sort?: string,
+  ): Promise<Result<SearchResultType[]>>;
 
   // Native / UI / Storage - ADDED
   getSystemInfo(): Promise<Result<SystemInfo>>;
@@ -96,7 +119,10 @@ export interface IV2exApiService {
   showSnackbar(message: string): Promise<Result<void>>;
   getStringValue(key: string): Promise<Result<string | null>>;
   setStringValue(key: string, value: string): Promise<Result<void>>;
-  trackAnalyticsEvent(eventName: string, parameters?: AnalyticsParams): Promise<Result<void>>;
+  trackAnalyticsEvent(
+    eventName: string,
+    parameters?: AnalyticsParams,
+  ): Promise<Result<void>>;
 
   // Logs Management
   getLogFiles(): Promise<Result<{ files: LogFile[]; error?: string }>>;

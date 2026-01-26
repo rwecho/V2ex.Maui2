@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { MemberType } from "../schemas/topicSchema";
+import type { MemberType, CurrentUserType } from "../schemas/topicSchema";
 
 export interface SignInFormInfo {
   usernameFieldName: string;
@@ -10,14 +10,19 @@ export interface SignInFormInfo {
   captchaImage: string;
 }
 
+// Unified user type
+export type AuthUser = Partial<MemberType> & Partial<CurrentUserType> & { username: string };
+
 interface AuthState {
   isAuthenticated: boolean;
-  user: MemberType | null;
+  user: AuthUser | null;
   isLoading: boolean;
   error: string | null;
 
   // Actions
-  setAuthenticated: (user: MemberType) => void;
+  // Sets or updates the user. Merges with existing user if provided.
+  setAuthenticated: (user: Partial<AuthUser>) => void;
+  updateUser: (updates: Partial<AuthUser>) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -26,18 +31,30 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       isAuthenticated: false,
       user: null,
       isLoading: false,
       error: null,
 
-      setAuthenticated: (user) =>
+      setAuthenticated: (inputUser) => {
+         const currentUser = get().user;
+         // Merge existing user with new input
+         const newUser = currentUser ? { ...currentUser, ...inputUser } : (inputUser as AuthUser);
+         set({
+            isAuthenticated: true,
+            user: newUser,
+            error: null
+         });
+      },
+
+      updateUser: (updates) => {
+        const currentUser = get().user;
+        if (!currentUser) return; // Cannot update if not logged in? Or valid to set?
         set({
-          isAuthenticated: true,
-          user,
-          error: null,
-        }),
+            user: { ...currentUser, ...updates }
+        });
+      },
 
       setLoading: (loading) => set({ isLoading: loading }),
 

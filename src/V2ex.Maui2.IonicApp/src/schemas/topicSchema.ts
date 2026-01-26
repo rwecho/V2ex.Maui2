@@ -247,5 +247,17 @@ export const TagInfoSchema = z.object({
 }).passthrough();
 
 
+export const CurrentUserSchema = z.object({
+  name: z.string().optional().nullable(),
+  avatar: z.string().optional().nullable(),
+  notifications: z.string().optional().nullable(),
+  moneyGold: z.string().optional().nullable(),
+  moneySilver: z.string().optional().nullable(),
+  moneyBronze: z.string().optional().nullable(),
+  dailyMission: z.string().optional().nullable(),
+}).passthrough();
+
+export type CurrentUserType = z.infer<typeof CurrentUserSchema>;
+
 export type NodesNavInfoType = z.infer<typeof NodesNavInfoSchema>;
 export type TagInfoType = z.infer<typeof TagInfoSchema>;

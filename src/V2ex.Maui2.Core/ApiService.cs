@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -121,7 +122,7 @@ public class ApiService
         return tagInfo;
     }
 
-    public async Task<LoginParameters> GetLoginParameters()
+    public async Task<LoginParametersWithCaptcha> GetLoginParameters()
     {
         var url = "/signin?next=/";
         var response = await this.HttpClient.GetAsync(url);
@@ -133,13 +134,24 @@ public class ApiService
             }
         }, this.Logger);
 
-        return loginParameters;
+        // 获取验证码图片
+        var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        var captchaUrl = $"{loginParameters.Captcha}?once={loginParameters.Once}&now={now}";
+        var captchaResponse = await this.HttpClient.GetAsync(captchaUrl);
+        var captchaBytes = await captchaResponse.Content.ReadAsByteArrayAsync();
+        var captchaBase64 = Convert.ToBase64String(captchaBytes);
+
+        return new LoginParametersWithCaptcha
+        {
+            Parameters = loginParameters,
+            CaptchaImageBase64 = captchaBase64
+        };
     }
 
-    public async Task<byte[]> GetCaptchaImage(LoginParameters loginParameters)
+    public async Task<byte[]> GetCaptchaImage(string once)
     {
         var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        var url = $"{loginParameters.Captcha}?once={loginParameters.Once}&now={now}";
+        var url = $"_captcha?once={once}&now={now}";
         var response = await this.HttpClient.GetAsync(url);
         return await response.Content.ReadAsByteArrayAsync();
     }

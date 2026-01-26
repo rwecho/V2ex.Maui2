@@ -15,6 +15,7 @@ import {
   type SearchResultType,
   type TopicDetailType,
   type TopicType,
+  type CurrentUserType,
   type GetNodeParams,
   type GetNodeTopicsParams,
   type GetTabTopicsParams,
@@ -166,55 +167,49 @@ export class HttpApiService implements IV2exApiService {
     const res = await this.fetchApi("/account/login-parameters");
     if (res.error) return err(res.error);
     const data: any = res.data;
-    if (data?.success) {
+    // 兼容新版 C# LoginParametersWithCaptcha 结构
+    if (data && data.parameters && data.captchaImageBase64) {
       return ok({
-        usernameFieldName: data.usernameFieldName,
-        passwordFieldName: data.passwordFieldName,
-        captchaFieldName: data.captchaFieldName,
-        once: data.once,
-        captchaImage: data.captchaImage, // Assuming backend exposes this wrapper
+        usernameFieldName: data.parameters.nameParameter,
+        passwordFieldName: data.parameters.passwordParameter,
+        captchaFieldName: data.parameters.captchaParameter,
+        once: data.parameters.once,
+        captchaImage: data.captchaImageBase64,
       });
-    }
-    // Fallback if backend returns LoginParameters object directly (C#)
-    if (data && data.once) {
-         return ok({
-            usernameFieldName: data.nameParameter,
-            passwordFieldName: data.passwordParameter,
-            captchaFieldName: data.captchaParameter,
-            once: data.once,
-            captchaImage: "" // AccountController.GetLoginParameters returns params only
-         });
     }
     return err("Get signin info failed");
   }
 
   async getCaptchaImage(
-    params: SignInFormInfo,
+    once: string,
   ): Promise<Result<{ image: string; mimeType: string }>> {
-    const res = await this.fetchApi(
-      `/account/captcha`,
-        {
-            method: "POST",
-            body: JSON.stringify({
-                parameters: {
-                    nameParameter: params.usernameFieldName,
-                    passwordParameter: params.passwordFieldName,
-                    captchaParameter: params.captchaFieldName,
-                    once: params.once,
-                    captcha: params.captchaImage // Base URL part? Logic mismatch.
-                }
-            })
-        }
-    );
-    // Actually, C# GetCaptcha needs `LoginParameters` object.
-    // AND it returns FILE content (bytes), NOT JSON.
-    // fetchApi parses JSON by default. I need to handle binary/blob here.
-    // This `fetchApi` wraps `fetch`. It parses text/json.
-    // I should create a separate method or updated fetchApi for blob?
-    // Or just fail for now? User provided `signin-info`.
-    // Let's assume standard JSON flow for now or use a hack.
-    // If invalid, return err.
-    return err("[Http] Captcha image fetching via API requires Blob support in fetchApi");
+    // Custom fetch for binary data
+    const url = `${this.baseUrl}/account/captcha?once=${encodeURIComponent(once)}`;
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        return err(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          // Remove data:image/...;base64, prefix
+          const base64Items = result.split(",");
+          resolve(base64Items.length > 1 ? base64Items[1] : result);
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      return ok({ image: base64, mimeType: "image/png" });
+    } catch (e) {
+      return err(toErrorMessage(e, "Failed to fetch captcha"));
+    }
   }
 
   async signIn(
@@ -222,7 +217,7 @@ export class HttpApiService implements IV2exApiService {
     password: string,
     formInfo: SignInFormInfo,
     captchaCode: string,
-  ): Promise<Result<{ username: string }>> {
+  ): Promise<Result<{ username: string; currentUser?: CurrentUserType }>> {
     const res = await this.fetchApi("/account/login", {
       method: "POST",
       body: JSON.stringify({
@@ -240,7 +235,12 @@ export class HttpApiService implements IV2exApiService {
     });
     if (res.error) return err(res.error);
     const data: any = res.data;
-    if (data?.success) return ok({ username: data.username || username });
+    if (data?.success) {
+        return ok({
+            username: data.username || username,
+            currentUser: data.currentUser
+        });
+    }
     return err(data?.error || "Login failed");
   }
 

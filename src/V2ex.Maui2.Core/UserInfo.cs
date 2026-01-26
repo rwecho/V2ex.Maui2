@@ -30,7 +30,7 @@ public class UserInfo
     [SkipNodeNotFound]
     public string? MoneyBronze { get; set; }
 
-    [XPath("//div/a[@href='/mission/daily']")]
+    [XPath("//div/a[@href='/mission/daily']", "href")]
     [SkipNodeNotFound]
     public string? DailyMission { get; set; }
 }

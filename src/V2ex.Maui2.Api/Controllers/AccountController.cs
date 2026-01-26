@@ -29,7 +29,13 @@ public class AccountController : ControllerBase
         try
         {
             var result = await _apiService.Login(request.Parameters, request.Username, request.Password, request.Captcha);
-            return Ok(result);
+            return Ok(new
+            {
+                success = true,
+                username = request.Username,
+                message = "登录成功",
+                currentUser = result.CurrentUser
+            });
         }
         catch (Exception ex)
         {
@@ -40,8 +46,8 @@ public class AccountController : ControllerBase
     [HttpPost("2fa")]
     public async Task<IActionResult> TwoStep([FromBody] TwoStepRequest request)
     {
-         var result = await _apiService.SignInTwoStep(request.Code, request.Once);
-         return Ok(result);
+        var result = await _apiService.SignInTwoStep(request.Code, request.Once);
+        return Ok(result);
     }
 
     [HttpGet("daily")]
@@ -86,10 +92,10 @@ public class AccountController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("captcha")]
-    public async Task<IActionResult> GetCaptcha([FromBody] LoginParameters parameters)
+    [HttpGet("captcha")]
+    public async Task<IActionResult> GetCaptcha([FromQuery] string once)
     {
-        var result = await _apiService.GetCaptchaImage(parameters);
+        var result = await _apiService.GetCaptchaImage(once);
         return File(result, "image/png");
     }
 }

@@ -7,8 +7,7 @@ namespace V2ex.Maui2.Core;
 
 public class ApiHttpClientHandler : HttpClientHandler
 {
-    public ApiHttpClientHandler(
-        ICookieContainerStorage cookieContainerStorage)
+    public ApiHttpClientHandler(ICookieContainerStorage cookieContainerStorage)
     {
         this.CookieContainer = cookieContainerStorage.GetCookieContainer();
         this.UseCookies = true;

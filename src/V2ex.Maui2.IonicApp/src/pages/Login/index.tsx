@@ -14,8 +14,6 @@ import {
   IonImg,
   IonButton,
   IonText,
-  IonCard,
-  IonCardContent,
 } from "@ionic/react";
 import { useCallback, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
@@ -76,7 +74,7 @@ const LoginPage = () => {
 
     setIsLoadingCaptcha(true);
     // Use getCaptchaImage to refresh just the image
-    const res = await apiService.getCaptchaImage(formInfo);
+    const res = await apiService.getCaptchaImage(formInfo.once);
     setIsLoadingCaptcha(false);
 
     if (res.error) {
@@ -85,8 +83,8 @@ const LoginPage = () => {
     }
 
     setFormInfo({
-        ...formInfo,
-        captchaImage: res.data.image
+      ...formInfo,
+      captchaImage: res.data!.image,
     });
     setCaptchaCode("");
   };
@@ -127,44 +125,36 @@ const LoginPage = () => {
           reason: "sign_in_failed",
         });
         // 登录失败后刷新验证码
-        await handleRefreshCaptcha(); 
+        await handleRefreshCaptcha();
         return;
       }
+
+      // Initial user setup with available data
+      setAuthenticated({
+        username: signInRes.data.username,
+        ...signInRes.data.currentUser
+      });
 
       // 步骤 2：获取用户信息
       const userRes = await apiService.getCurrentUser();
       if (userRes.error !== null) {
-        showToast("登录成功，但获取用户信息失败");
-        setError(userRes.error);
-        void logAnalytics("login_attempt", {
-          success: true,
-          user_info_loaded: false,
-        });
-        // 即使获取用户信息失败，也认为登录成功
-        setAuthenticated({
-          id: 0,
-          username: signInRes.data.username,
-          tagline: "",
-          avatarLarge: "",
-          avatarMini: "",
-          status: "",
-          bio: null,
-          website: null,
-          github: null,
-          created: 0,
-          numTopics: 0,
-          numPosts: 0,
-          followers: 0,
-        });
-        return;
+          // 如果获取详细信息失败，我们仍然保持已登录状态（基于 signInRes）
+          // 只是记录错误并提示用户
+          showToast("登录成功，但获取详细信息失败");
+          void logAnalytics("login_attempt", {
+            success: true,
+            user_info_loaded: false,
+          });
+      } else {
+        // Merge full profile (MemberType) into the user state
+        setAuthenticated(userRes.data);
       }
-
+      
       // 登录成功
-      setAuthenticated(userRes.data);
       showToast("登录成功");
       void logAnalytics("login_attempt", {
         success: true,
-        user_info_loaded: true,
+        user_info_loaded: userRes.error === null,
       });
 
       // 延迟跳转，让用户看到成功提示
@@ -199,15 +189,32 @@ const LoginPage = () => {
 
       <IonContent fullscreen className="ion-padding">
         <div style={{ maxWidth: "400px", margin: "0 auto", marginTop: "20px" }}>
-            <div style={{ textAlign: "center", marginBottom: "32px", marginTop: "16px" }}>
-                <IonImg 
-                    src="/assets/icon/icon.png" 
-                    style={{ width: "64px", height: "64px", margin: "0 auto", borderRadius: "12px" }}
-                    // Fallback to text if icon missing
-                    onError={(e) => { (e.target as any).style.display = 'none'; }}
-                />
-                <h2 style={{ marginTop: "16px", fontSize: "24px", fontWeight: "600" }}>欢迎回到 V2EX</h2>
-            </div>
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "32px",
+              marginTop: "16px",
+            }}
+          >
+            <IonImg
+              src="/logo.svg"
+              style={{
+                width: "64px",
+                height: "64px",
+                margin: "0 auto",
+                borderRadius: "12px",
+              }}
+              // Fallback to text if icon missing
+              onError={(e) => {
+                (e.target as any).style.display = "none";
+              }}
+            />
+            <h2
+              style={{ marginTop: "16px", fontSize: "24px", fontWeight: "600" }}
+            >
+              欢迎回到 V2EX
+            </h2>
+          </div>
 
           <IonItem className="rounded-item" lines="full">
             <IonInput
@@ -238,46 +245,45 @@ const LoginPage = () => {
             />
           </IonItem>
 
-          <div style={{ display: "flex", alignItems: "flex-end", gap: "10px", marginTop: "8px" }}>
-              <IonItem className="rounded-item" lines="full" style={{ flex: 1 }}>
-                <IonInput
-                  label="验证码"
-                  labelPlacement="floating"
-                  placeholder={formInfo?.captchaFieldName}
-                  value={captchaCode}
-                  onIonInput={(e) => setCaptchaCode(e.detail.value ?? "")}
-                  disabled={isLoading || isLoadingCaptcha}
+          <IonItem className="rounded-item" lines="full" style={{ marginTop: "8px" }}>
+            <IonInput
+              label="验证码"
+              labelPlacement="floating"
+              placeholder={formInfo?.captchaFieldName}
+              value={captchaCode}
+              onIonInput={(e) => setCaptchaCode(e.detail.value ?? "")}
+              disabled={isLoading || isLoadingCaptcha}
+            />
+          </IonItem>
+          
+          <div 
+            onClick={handleRefreshCaptcha}
+            style={{ 
+                marginTop: "12px",
+                width: "100%", 
+                height: "60px", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                backgroundColor: "var(--ion-color-light)",
+                borderRadius: "8px",
+                cursor: "pointer",
+                overflow: "hidden",
+                border: "1px solid var(--ion-color-step-150, #eee)"
+            }}
+          >
+              {isLoadingCaptcha ? (
+                <IonSpinner name="dots" color="medium" />
+              ) : formInfo?.captchaImage ? (
+                <img
+                  src={`data:image/png;base64,${formInfo.captchaImage}`}
+                  alt="captcha"
+                  style={{ height: "100%", objectFit: "contain" }}
                 />
-              </IonItem>
-              
-              <div 
-                onClick={handleRefreshCaptcha}
-                style={{ 
-                    width: "120px", 
-                    height: "50px", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center",
-                    backgroundColor: "var(--ion-color-light)",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    overflow: "hidden"
-                }}
-              >
-                  {isLoadingCaptcha ? (
-                    <IonSpinner name="dots" color="medium" />
-                  ) : formInfo?.captchaImage ? (
-                    <img
-                      src={`data:image/png;base64,${formInfo.captchaImage}`}
-                      alt="captcha"
-                      style={{ height: "100%", width: "100%", objectFit: "contain" }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: "12px", color: "var(--ion-color-medium)" }}>验证码</span>
-                  )}
-              </div>
+              ) : (
+                <span style={{ fontSize: "12px", color: "var(--ion-color-medium)" }}>点击加载验证码</span>
+              )}
           </div>
-
 
           <IonButton
             expand="block"
@@ -294,7 +300,11 @@ const LoginPage = () => {
             {isLoading ? <IonSpinner name="crescent" /> : "登录"}
           </IonButton>
 
-          <IonText color="medium" className="ion-text-center" style={{ display: "block", marginTop: "24px", fontSize: "12px" }}>
+          <IonText
+            color="medium"
+            className="ion-text-center"
+            style={{ display: "block", marginTop: "24px", fontSize: "12px" }}
+          >
             <p>
               登录即表示您同意 V2EX 的
               <IonText color="primary">
@@ -330,7 +340,6 @@ const LoginPage = () => {
           onDidDismiss={() => setToastOpen(false)}
         />
       </IonContent>
-
     </IonPage>
   );
 };

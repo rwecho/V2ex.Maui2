@@ -13,6 +13,7 @@ import type {
   SearchResultType,
   NodesNavInfoType,
   TagInfoType,
+  CurrentUserType,
 } from "../schemas/topicSchema";
 import type { SignInFormInfo } from "../store/authStore";
 import {
@@ -109,7 +110,9 @@ export class MauiApiService implements IV2exApiService {
     return this.parseJsonOrError("TopicList", TopicListSchema, res.data);
   }
 
-  async getTabTopics(params: GetTabTopicsParams): Promise<Result<NewsInfoType>> {
+  async getTabTopics(
+    params: GetTabTopicsParams,
+  ): Promise<Result<NewsInfoType>> {
     const res = await this.callMauiBridge("GetTabTopicsAsync", [params.tab]);
     if (res.error !== null) return err(res.error);
     return this.parseJsonOrError("TabTopics", NewsInfoSchema, res.data);
@@ -242,9 +245,9 @@ export class MauiApiService implements IV2exApiService {
   }
 
   async getCaptchaImage(
-    params: SignInFormInfo,
+    once: string,
   ): Promise<Result<{ image: string; mimeType: string }>> {
-    const res = await this.callMauiBridge("GetCaptchaImageAsync", [params.once]);
+    const res = await this.callMauiBridge("GetCaptchaImageAsync", [once]);
     if (res.error !== null) return err(res.error);
 
     let data: unknown;
