@@ -43,11 +43,13 @@ public static class MauiProgram
 			loggingBuilder.AddSerilog(dispose: true);
 		});
 
+		builder.Services.AddSingleton<ApiHttpClientHandler>();
+
 		// add http client and configure cookie handler
 		// enable CORS for api
 		builder.Services.AddHttpClient("api", client =>
 		{
-			client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentConstants.GetUserAgent());
+			client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentConstants.UserAgent);
 		})
 			.ConfigurePrimaryHttpMessageHandler((sp) =>
 			{
