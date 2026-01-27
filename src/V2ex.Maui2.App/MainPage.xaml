@@ -11,11 +11,61 @@
                                    StatusBarStyle="{Binding NativeStatusBarStyle}"/>
     </ContentPage.Behaviors>
 
-    <Grid>
-        <HybridWebView x:Name="hybridWebView"
-                       HybridRoot="wwwroot"
-                       DefaultFile="index.html"
-                       RawMessageReceived="OnHybridWebViewRawMessageReceived"/>
+    <Grid RowDefinitions="*, Auto">
+        <!-- WebView Layer -->
+        <Grid Grid.Row="0">
+            <HybridWebView x:Name="hybridWebView"
+                           HybridRoot="wwwroot"
+                           DefaultFile="index.html"
+                           RawMessageReceived="OnHybridWebViewRawMessageReceived"/>
+        </Grid>
+
+        <!-- Splash Screen Overlay -->
+        <Grid x:Name="splashScreen"
+              Grid.RowSpan="2"
+              BackgroundColor="#121212"
+              ZIndex="1000">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="100"/>
+            </Grid.RowDefinitions>
+
+            <!-- Logo / Icon -->
+            <VerticalStackLayout Grid.Row="1"
+                                 Spacing="20"
+                                 Padding="20"
+                                 HorizontalOptions="Center">
+                <!-- V2EX Logo Placeholder -->
+                <Border
+                    BackgroundColor="#27272a"
+                    Padding="20">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="40"/>
+                    </Border.StrokeShape>
+                    <Label Text="V2EX"
+                           FontSize="48"
+                           FontAttributes="Bold"
+                           TextColor="#f4f4f5"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                </Border>
+
+                <!-- Loading Spinner -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="#f4f4f5"
+                                   HorizontalOptions="Center"
+                                   WidthRequest="40"
+                                   HeightRequest="40"/>
+
+                <!-- Loading Text -->
+                <Label Text="{Binding LoadingText}"
+                       FontSize="14"
+                       TextColor="#92949c"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+            </VerticalStackLayout>
+        </Grid>
     </Grid>
 
 </ContentPage>

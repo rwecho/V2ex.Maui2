@@ -24,9 +24,9 @@ import {
   IonFooter,
   IonIcon,
 } from "@ionic/react";
-import { trash, download, eye, sendOutline } from "ionicons/icons";
+import { sendOutline, imageOutline, atOutline, happyOutline } from "ionicons/icons";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { useHistory } from "react-router-dom";
 import { useTopicStore } from "../../store/topicStore";
@@ -60,6 +60,18 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   // 回复相关状态
   const [replyContent, setReplyContent] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [isReplyExpanded, setIsReplyExpanded] = useState(false);
+  const textareaRef = useRef<HTMLIonTextareaElement>(null);
+
+  // 展开时自动聚焦到输入框
+  useEffect(() => {
+    if (isReplyExpanded && textareaRef.current) {
+      // 延迟一下确保 DOM 已渲染
+      setTimeout(() => {
+        textareaRef.current?.setFocus();
+      }, 100);
+    }
+  }, [isReplyExpanded]);
 
   // 认证状态
   const { isAuthenticated } = useAuthStore(
@@ -519,39 +531,81 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           onDidDismiss={() => setToastOpen(false)}
         />
 
-        {/* 回复输入框 */}
+        {/* 抖音风格回复输入框 */}
         {isAuthenticated && (
-          <IonFooter className="topicReplyFooter">
-            <IonToolbar>
-              <div className="replyInputContainer">
-                <IonTextarea
-                  placeholder="写回复..."
-                  value={replyContent}
-                  onIonInput={(e) => setReplyContent(e.detail.value ?? "")}
-                  rows={1}
-                  autoGrow={true}
-                  disabled={isSubmittingReply || !topicInfo?.once}
-                  counter={true}
-                  maxlength={20000}
-                />
-                <IonButton
-                  onClick={handleSubmitReply}
-                  className="replySubmitButton"
-                  disabled={
-                    !replyContent.trim() ||
-                    isSubmittingReply ||
-                    !topicInfo?.once
-                  }
+          <>
+            {/* 展开时的背景遮罩 */}
+            {isReplyExpanded && (
+              <div
+                className="douyin-backdrop"
+                onClick={() => setIsReplyExpanded(false)}
+              />
+            )}
+            <div className={`douyin-reply-footer ${isReplyExpanded ? 'expanded' : 'collapsed'}`}>
+              {/* 收起状态: 一行式输入框 */}
+              {!isReplyExpanded ? (
+                <div
+                  className="douyin-collapsed-bar"
+                  onClick={() => setIsReplyExpanded(true)}
                 >
-                  {isSubmittingReply ? (
-                    <IonSpinner name="crescent" />
-                  ) : (
-                    <IonIcon slot="icon-only" icon={sendOutline} />
-                  )}
-                </IonButton>
-              </div>
-            </IonToolbar>
-          </IonFooter>
+                  <div className="douyin-collapsed-input">
+                    <span className="douyin-placeholder">有什么想法，展开说说</span>
+                  </div>
+                  <div className="douyin-collapsed-icons">
+                    <IonIcon icon={imageOutline} />
+                    <IonIcon icon={atOutline} />
+                    <IonIcon icon={happyOutline} />
+                  </div>
+                </div>
+              ) : (
+                /* 展开状态: 完整编辑器 */
+                <div className="douyin-reply-container">
+                  <div className="douyin-textarea-wrapper">
+                    <IonTextarea
+                      ref={textareaRef}
+                      className="douyin-textarea"
+                      placeholder="有什么想法，展开说说"
+                      value={replyContent}
+                      onIonInput={(e) => setReplyContent(e.detail.value ?? "")}
+                      rows={3}
+                      autoGrow={true}
+                      disabled={isSubmittingReply || !topicInfo?.once}
+                      maxlength={20000}
+                    />
+                  </div>
+                  <div className="douyin-bottom-bar">
+                    <div className="douyin-action-icons">
+                      <button className="douyin-icon-btn" type="button" disabled>
+                        <IonIcon icon={imageOutline} />
+                      </button>
+                      <button className="douyin-icon-btn" type="button" disabled>
+                        <IonIcon icon={atOutline} />
+                      </button>
+                      <button className="douyin-icon-btn" type="button" disabled>
+                        <IonIcon icon={happyOutline} />
+                      </button>
+                    </div>
+                    <button
+                      className={`douyin-send-btn ${replyContent.trim() ? 'active' : ''}`}
+                      type="button"
+                      onClick={handleSubmitReply}
+                      disabled={
+                        !replyContent.trim() ||
+                        isSubmittingReply ||
+                        !topicInfo?.once
+                      }
+                    >
+                      {isSubmittingReply ? (
+                        <IonSpinner name="crescent" />
+                      ) : (
+                        '发送'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </IonContent>
     </IonPage>
