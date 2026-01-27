@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { MemberType, CurrentUserType } from "../schemas/topicSchema";
+import { apiService } from "../services/apiService";
 
 // Unified user type
 export type AuthUser = Partial<MemberType> &
@@ -19,7 +20,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -57,12 +58,18 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => set({ error: null }),
 
-      signOut: () =>
+      signOut: async () => {
+        try {
+          await apiService.signOut();
+        } catch (e) {
+          console.error("Sign out error", e);
+        }
         set({
           isAuthenticated: false,
           user: null,
           error: null,
-        }),
+        });
+      },
     }),
     {
       name: "auth-store",

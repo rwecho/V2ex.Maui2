@@ -48,7 +48,7 @@ public class MauiCookieStorage : ICookieContainerStorage
     {
         foreach (Cookie cookie in this._cookieContainer.GetAllCookies())
         {
-            cookie.Expires = DateTime.Now.AddDays(-1);
+            cookie.Expires = DateTime.UtcNow.AddYears(-1);
         }
         Preferences.Set(CookiesKey, JsonSerializer.Serialize(Array.Empty<Cookie>()));
     }
