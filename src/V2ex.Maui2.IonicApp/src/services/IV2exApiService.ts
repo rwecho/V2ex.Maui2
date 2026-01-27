@@ -128,6 +128,9 @@ export interface IV2exApiService {
   getLogFileContent(fileName: string): Promise<Result<LogFileContent | null>>;
   deleteLogFile(fileName: string): Promise<Result<boolean>>;
   clearAllLogs(): Promise<Result<boolean>>;
+
+  // Image Picker
+  pickImage(): Promise<Result<PickImageResult>>;
 }
 
 export interface LogFile {
@@ -142,4 +145,15 @@ export interface LogFileContent {
   content: string;
   size: number;
   lastModified: string;
+}
+
+export interface PickImageResult {
+  success?: boolean;
+  cancelled?: boolean;
+  base64?: string;
+  contentType?: string;
+  fileName?: string;
+  size?: number;
+  error?: string;
+  message?: string;
 }

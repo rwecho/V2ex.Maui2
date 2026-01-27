@@ -24,7 +24,12 @@ import {
   IonFooter,
   IonIcon,
 } from "@ionic/react";
-import { sendOutline, imageOutline, atOutline, happyOutline } from "ionicons/icons";
+import {
+  sendOutline,
+  imageOutline,
+  atOutline,
+  happyOutline,
+} from "ionicons/icons";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RouteComponentProps } from "react-router";
@@ -41,6 +46,11 @@ import {
 import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 import { useAuthStore } from "../../store/authStore";
 import { apiService } from "../../services/apiService";
+import {
+  uploadImageToImgur,
+  toMarkdownImage,
+} from "../../services/ImgurService";
+import EmojiPicker from "../../components/EmojiPicker";
 
 interface TopicPageProps extends RouteComponentProps<{
   id: string;
@@ -61,6 +71,8 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const [replyContent, setReplyContent] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
 
   // 展开时自动聚焦到输入框
@@ -72,6 +84,63 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       }, 100);
     }
   }, [isReplyExpanded]);
+
+  // 图片上传处理
+  const handleImageUpload = async () => {
+    if (isUploadingImage) return;
+
+    try {
+      setIsUploadingImage(true);
+
+      // 1. 调用原生图片选择器
+      const pickResult = await apiService.pickImage();
+      if (pickResult.error) {
+        apiService.showToast(`选择图片失败: ${pickResult.error}`);
+        return;
+      }
+
+      if (pickResult.data?.cancelled) {
+        // 用户取消选择
+        return;
+      }
+
+      const base64 = pickResult.data?.base64;
+      if (!base64) {
+        apiService.showToast("无法读取图片数据");
+        return;
+      }
+
+      apiService.showToast("正在上传图片...");
+
+      // 2. 上传到 Imgur
+      const uploadResult = await uploadImageToImgur(base64);
+
+      if (!uploadResult.success || !uploadResult.url) {
+        apiService.showToast(`上传失败: ${uploadResult.error || "未知错误"}`);
+        return;
+      }
+
+      // 3. 插入 Markdown 图片链接到输入框
+      const markdownImage = toMarkdownImage(uploadResult.url);
+      setReplyContent((prev) => {
+        const newContent = prev ? `${prev}\n${markdownImage}` : markdownImage;
+        return newContent;
+      });
+
+      apiService.showToast("图片上传成功");
+    } catch (error) {
+      console.error("Image upload error:", error);
+      apiService.showToast("图片上传出错");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Emoji 选择处理
+  const handleEmojiSelect = (emoji: string) => {
+    setReplyContent((prev) => prev + emoji);
+    // 不关闭 picker，方便用户连续选择
+  };
 
   // 认证状态
   const { isAuthenticated } = useAuthStore(
@@ -541,7 +610,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                 onClick={() => setIsReplyExpanded(false)}
               />
             )}
-            <div className={`douyin-reply-footer ${isReplyExpanded ? 'expanded' : 'collapsed'}`}>
+            <div
+              className={`douyin-reply-footer ${isReplyExpanded ? "expanded" : "collapsed"}`}
+            >
               {/* 收起状态: 一行式输入框 */}
               {!isReplyExpanded ? (
                 <div
@@ -549,12 +620,28 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                   onClick={() => setIsReplyExpanded(true)}
                 >
                   <div className="douyin-collapsed-input">
-                    <span className="douyin-placeholder">有什么想法，展开说说</span>
+                    <span className="douyin-placeholder">
+                      有什么想法，展开说说
+                    </span>
                   </div>
                   <div className="douyin-collapsed-icons">
-                    <IonIcon icon={imageOutline} />
-                    <IonIcon icon={atOutline} />
-                    <IonIcon icon={happyOutline} />
+                    <IonIcon
+                      icon={imageOutline}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsReplyExpanded(true);
+                        handleImageUpload();
+                      }}
+                    />
+                    {/* <IonIcon icon={atOutline} /> */}
+                    <IonIcon
+                      icon={happyOutline}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsReplyExpanded(true);
+                        setShowEmojiPicker(true);
+                      }}
+                    />
                   </div>
                 </div>
               ) : (
@@ -575,18 +662,35 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                   </div>
                   <div className="douyin-bottom-bar">
                     <div className="douyin-action-icons">
-                      <button className="douyin-icon-btn" type="button" disabled>
-                        <IonIcon icon={imageOutline} />
+                      <button
+                        className="douyin-icon-btn"
+                        type="button"
+                        onClick={handleImageUpload}
+                        disabled={isUploadingImage || isSubmittingReply}
+                      >
+                        {isUploadingImage ? (
+                          <IonSpinner name="crescent" />
+                        ) : (
+                          <IonIcon icon={imageOutline} />
+                        )}
                       </button>
-                      <button className="douyin-icon-btn" type="button" disabled>
+                      {/* <button
+                        className="douyin-icon-btn"
+                        type="button"
+                        disabled
+                      >
                         <IonIcon icon={atOutline} />
-                      </button>
-                      <button className="douyin-icon-btn" type="button" disabled>
+                      </button> */}
+                      <button
+                        className={`douyin-icon-btn ${showEmojiPicker ? "active" : ""}`}
+                        type="button"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      >
                         <IonIcon icon={happyOutline} />
                       </button>
                     </div>
                     <button
-                      className={`douyin-send-btn ${replyContent.trim() ? 'active' : ''}`}
+                      className={`douyin-send-btn ${replyContent.trim() ? "active" : ""}`}
                       type="button"
                       onClick={handleSubmitReply}
                       disabled={
@@ -598,10 +702,18 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                       {isSubmittingReply ? (
                         <IonSpinner name="crescent" />
                       ) : (
-                        '发送'
+                        "发送"
                       )}
                     </button>
                   </div>
+
+                  {/* Emoji Picker - 放在 bottom-bar 下方 */}
+                  {showEmojiPicker && (
+                    <EmojiPicker
+                      onSelect={handleEmojiSelect}
+                      onClose={() => setShowEmojiPicker(false)}
+                    />
+                  )}
                 </div>
               )}
             </div>

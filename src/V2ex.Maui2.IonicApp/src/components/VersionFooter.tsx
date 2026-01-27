@@ -8,7 +8,7 @@ interface VersionFooterProps {
 }
 
 const VersionFooter: React.FC<VersionFooterProps> = ({ appVersion }) => {
-  const unlockDevMode = useDevModeStore((state) => state.unlockDevMode);
+  const toggleDevMode = useDevModeStore((state) => state.toggleDevMode);
   const versionTapCountRef = useRef<number>(0);
   const versionTapTimerRef = useRef<number | null>(null);
 
@@ -26,7 +26,7 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ appVersion }) => {
 
     if (versionTapCountRef.current >= 7) {
       versionTapCountRef.current = 0;
-      unlockDevMode();
+      toggleDevMode?.();
     }
   };
 

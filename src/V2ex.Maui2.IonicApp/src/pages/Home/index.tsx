@@ -367,10 +367,10 @@ const HomePage = () => {
                       expand="block"
                       size="small"
                       color="danger"
-                      routerLink="/notifications"
+                      // routerLink="/notifications"
                       style={{ "--border-radius": "16px" }}
                     >
-                      {user.notifications} 条未读提醒
+                      {user.notifications}
                     </IonButton>
                   </div>
                 )}

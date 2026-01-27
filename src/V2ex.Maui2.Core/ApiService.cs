@@ -340,7 +340,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<TopicInfo> AppendTopic(string topicId,
+    public async Task<TopicInfo> AppendTopic(int topicId,
         string once,
         string content)
     {
@@ -367,7 +367,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<ThanksResult?> ThankCreator(string topicId, string once)
+    public async Task<ThanksResult?> ThankCreator(int topicId, string once)
     {
         var url = $"/thank/topic/{topicId}?once={once}";
         var response = await this.HttpClient.PostAsync(url, null);
@@ -385,7 +385,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<TopicInfo> IgnoreTopic(string topicId, string once)
+    public async Task<TopicInfo> IgnoreTopic(int topicId, string once)
     {
         var url = $"/ignore/topic/{topicId}?once={once}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -408,7 +408,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<TopicInfo> UnignoreTopic(string topicId, string once)
+    public async Task<TopicInfo> UnignoreTopic(int topicId, string once)
     {
         var url = $"/unignore/topic/{topicId}?once={once}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -454,7 +454,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<TopicInfo> UnfavoriteTopic(string topicId, string once)
+    public async Task<TopicInfo> UnfavoriteTopic(int topicId, string once)
     {
         var url = $"/unfavorite/topic/{topicId}?once={once}";
 
@@ -478,7 +478,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<TopicInfo> FavoriteTopic(string topicId, string once)
+    public async Task<TopicInfo> FavoriteTopic(int topicId, string once)
     {
         var url = $"/favorite/topic/{topicId}?once={once}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -502,7 +502,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<UnitInfo> UpTopic(string topicId, string once)
+    public async Task<UnitInfo> UpTopic(int topicId, string once)
     {
         var url = $"/up/topic/{topicId}?once={once}";
         var response = await this.HttpClient.GetAsync(url);
@@ -510,7 +510,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<UnitInfo> DownTopic(string topicId, string once)
+    public async Task<UnitInfo> DownTopic(int topicId, string once)
     {
         var url = $"/down/topic/{topicId}?once={once}";
         var response = await this.HttpClient.GetAsync(url);
@@ -518,7 +518,7 @@ public class ApiService
         return result;
     }
 
-    public async Task<TopicInfo> ReplyTopic(string topicId, string content, string once)
+    public async Task<TopicInfo> ReplyTopic(int topicId, string content, string once)
     {
         var url = $"/t/{topicId}";
         var request = new HttpRequestMessage(HttpMethod.Post, url)

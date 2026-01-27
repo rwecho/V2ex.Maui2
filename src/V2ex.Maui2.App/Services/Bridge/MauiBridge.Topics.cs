@@ -109,7 +109,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> AppendTopicAsync(string topicId, string once, string content)
+    public async Task<string> AppendTopicAsync(int topicId, string once, string content)
     {
         try
         {
@@ -123,7 +123,7 @@ public partial class MauiBridge
     }
 
     // Interactions
-    public async Task<string> ThankTopicAsync(string topicId, string once)
+    public async Task<string> ThankTopicAsync(int topicId, string once)
     {
         try
         {
@@ -136,7 +136,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> IgnoreTopicAsync(string topicId, string once)
+    public async Task<string> IgnoreTopicAsync(int topicId, string once)
     {
         try
         {
@@ -149,7 +149,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> UnignoreTopicAsync(string topicId, string once)
+    public async Task<string> UnignoreTopicAsync(int topicId, string once)
     {
         try
         {
@@ -162,7 +162,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> FavoriteTopicAsync(string topicId, string once)
+    public async Task<string> FavoriteTopicAsync(int topicId, string once)
     {
         try
         {
@@ -175,7 +175,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> UnfavoriteTopicAsync(string topicId, string once)
+    public async Task<string> UnfavoriteTopicAsync(int topicId, string once)
     {
         try
         {
@@ -188,7 +188,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> UpTopicAsync(string topicId, string once)
+    public async Task<string> UpTopicAsync(int topicId, string once)
     {
         try
         {
@@ -201,7 +201,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> DownTopicAsync(string topicId, string once)
+    public async Task<string> DownTopicAsync(int topicId, string once)
     {
         try
         {
@@ -214,7 +214,7 @@ public partial class MauiBridge
         }
     }
 
-    public async Task<string> ReplyTopicAsync(string topicId, string content, string once)
+    public async Task<string> ReplyTopicAsync(int topicId, string content, string once)
     {
         try
         {
@@ -230,7 +230,9 @@ public partial class MauiBridge
     // Legacy mapping
     public Task<string> PostReplyAsync(int topicId, string content, string once)
     {
-        return ReplyTopicAsync(topicId.ToString(), content, once);
+        // 解码 URL 编码的内容（用于处理 emoji 等 Unicode 字符）
+        var decodedContent = Uri.UnescapeDataString(content);
+        return ReplyTopicAsync(topicId, decodedContent, once);
     }
 
     public async Task<string> GetReplyOnceTokenAsync(int topicId)

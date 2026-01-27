@@ -299,4 +299,71 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
             return Task.FromException(ex);
         }
     }
+
+    /// <summary>
+    /// 从相册选择图片并返回 Base64 编码数据
+    /// </summary>
+    /// <returns>JSON 格式结果，包含 base64 数据或错误信息</returns>
+    public async Task<string> PickImageAsync()
+    {
+        try
+        {
+            logger.LogInformation("Bridge: 开始选择图片");
+
+            var result = await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                try
+                {
+                    var photo = await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions
+                    {
+                        Title = "选择图片"
+                    });
+
+                    if (photo == null)
+                    {
+                        return JsonSerializer.Serialize(new { cancelled = true });
+                    }
+
+                    // 读取图片并转换为 Base64
+                    using var stream = await photo.OpenReadAsync();
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var bytes = memoryStream.ToArray();
+                    var base64 = Convert.ToBase64String(bytes);
+
+                    // 获取 MIME 类型
+                    var contentType = photo.ContentType ?? "image/jpeg";
+
+                    logger.LogInformation("Bridge: 图片选择成功, 大小: {Size} bytes, 类型: {ContentType}", 
+                        bytes.Length, contentType);
+
+                    return JsonSerializer.Serialize(new
+                    {
+                        success = true,
+                        base64 = base64,
+                        contentType = contentType,
+                        fileName = photo.FileName,
+                        size = bytes.Length
+                    }, _jsonOptions);
+                }
+                catch (PermissionException)
+                {
+                    logger.LogWarning("Bridge: 相册访问权限被拒绝");
+                    return JsonSerializer.Serialize(new { error = "permission_denied", message = "需要相册访问权限" });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Bridge: 图片选择时发生错误");
+                    return JsonSerializer.Serialize(new { error = "pick_failed", message = ex.Message });
+                }
+            });
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Bridge: PickImageAsync 失败");
+            return JsonSerializer.Serialize(new { error = "system_error", message = ex.Message });
+        }
+    }
 }

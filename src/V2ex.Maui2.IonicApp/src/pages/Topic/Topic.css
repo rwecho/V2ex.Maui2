@@ -507,6 +507,17 @@
   height: 16px;
 }
 
+/* Emoji Picker 容器 */
+.douyin-reply-container .emoji-picker-container {
+  border-top: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.08));
+  margin-top: 8px;
+}
+
+/* Collapsed bar icons active state */
+.douyin-icon-btn.active {
+  color: var(--ion-color-primary, #3b82f6);
+}
+
 /* ==========================================
    Dark Mode Support
    ========================================== */

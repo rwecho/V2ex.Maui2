@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 interface DevModeState {
   devMode: boolean;
   setDevMode: (enabled: boolean) => void;
-  unlockDevMode: () => void;
+  toggleDevMode?: () => void;
 }
 
 export const useDevModeStore = create<DevModeState>()(
@@ -12,7 +12,7 @@ export const useDevModeStore = create<DevModeState>()(
     (set) => ({
       devMode: false,
       setDevMode: (enabled: boolean) => set({ devMode: enabled }),
-      unlockDevMode: () => set({ devMode: true }),
+      toggleDevMode: () => set((state) => ({ devMode: !state.devMode })),
     }),
     {
       name: "v2ex.devMode",

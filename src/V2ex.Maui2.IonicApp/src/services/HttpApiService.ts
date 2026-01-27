@@ -551,4 +551,9 @@ export class HttpApiService implements IV2exApiService {
   async clearAllLogs(): Promise<Result<boolean>> {
     return ok(true);
   }
+
+  // --- Image Picker ---
+  async pickImage(): Promise<Result<{ cancelled?: boolean }>> {
+    return err("[Http] Image picker is only available in the native app");
+  }
 }

@@ -502,9 +502,11 @@ export class MauiApiService implements IV2exApiService {
     content: string,
     once: string,
   ): Promise<Result<TopicInfoType | null>> {
+    // 对内容进行 URL 编码，防止 emoji 等 Unicode 字符在桥接传输时损坏
+    const encodedContent = encodeURIComponent(content);
     const res = await this.callMauiBridge("PostReplyAsync", [
       topicId,
-      content,
+      encodedContent,
       once,
     ]);
     if (res.error !== null) return err(res.error);
@@ -629,4 +631,39 @@ export class MauiApiService implements IV2exApiService {
       return ok(false);
     }
   }
+
+  /**
+   * 从相册选择图片
+   * @returns 包含 Base64 编码图片数据的结果
+   */
+  async pickImage(): Promise<Result<PickImageResult>> {
+    const res = await this.callMauiBridge("PickImageAsync");
+    if (res.error !== null) return err(res.error);
+    try {
+      const data = JSON.parse(res.data) as PickImageResult;
+      if (data.cancelled) {
+        return ok({ cancelled: true });
+      }
+      if (data.error) {
+        return err(data.message || data.error);
+      }
+      return ok(data);
+    } catch (e) {
+      return err(`Image picker parse error: ${toErrorMessage(e)}`);
+    }
+  }
+}
+
+/**
+ * 图片选择结果类型
+ */
+export interface PickImageResult {
+  success?: boolean;
+  cancelled?: boolean;
+  base64?: string;
+  contentType?: string;
+  fileName?: string;
+  size?: number;
+  error?: string;
+  message?: string;
 }
