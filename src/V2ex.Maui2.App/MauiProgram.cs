@@ -50,13 +50,9 @@ public static class MauiProgram
 		// enable CORS for api
 		builder.Services.AddHttpClient("api", client =>
 		{
-			client.BaseAddress = new Uri("https://www.v2ex.com");
 			client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentConstants.UserAgent);
 		})
-			.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-			{
-				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-			})
+			.ConfigurePrimaryHttpMessageHandler((sp) => sp.GetRequiredService<ApiHttpClientHandler>())
 		;
 
 		// 注册认证和回复服务

@@ -51,21 +51,16 @@ public partial class MauiBridge
 
     public async Task<string> SignInAsync(string username, string password, string usernameFieldName, string passwordFieldName, string captchaFieldName, string once, string captchaCode)
     {
-        return await LoginAsync(username, password, captchaCode, once, usernameFieldName, passwordFieldName, captchaFieldName);
-    }
-
-    public async Task<string> LoginAsync(string username, string password, string captcha, string once, string usernameParam, string passwordParam, string captchaParam)
-    {
         try
         {
             var parameters = new LoginParameters
             {
-                UsernameFieldName = usernameParam,
-                PasswordFieldName = passwordParam,
-                CaptchaFieldName = captchaParam,
+                UsernameFieldName = usernameFieldName,
+                PasswordFieldName = passwordFieldName,
+                CaptchaFieldName = captchaFieldName,
                 Once = once
             };
-            var result = await apiService.Login(parameters, username, password, captcha);
+            var result = await apiService.Login(parameters, username, password, captchaCode);
             return JsonSerializer.Serialize(new
             {
                 success = true,
