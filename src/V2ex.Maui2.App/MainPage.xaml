@@ -23,7 +23,7 @@
         <!-- Splash Screen Overlay - 简洁现代设计 -->
         <Grid x:Name="splashScreen"
               Grid.RowSpan="2"
-              BackgroundColor="#121212"
+              BackgroundColor="{AppThemeBinding Light=#ffffff, Dark=#0b0b0d}"
               ZIndex="1000">
             
             <!-- 使用应用 Logo -->

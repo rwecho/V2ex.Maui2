@@ -75,6 +75,29 @@ public partial class MainPage : ContentPage
         _bridge = bridge;
         _logger = logger;
 
+        // 设置初始状态栏颜色以匹配主题
+        if (Application.Current?.RequestedTheme == AppTheme.Light)
+        {
+            NativeStatusBarColor = Color.FromArgb("#f3f4f6");
+            NativeStatusBarStyle = StatusBarStyle.DarkContent;
+            BackgroundColor = Color.FromArgb("#ffffff");
+        }
+        else
+        {
+            NativeStatusBarColor = Color.FromArgb("#0b0b0d");
+            NativeStatusBarStyle = StatusBarStyle.LightContent;
+            BackgroundColor = Color.FromArgb("#0b0b0d");
+        }
+
+        // 监听主题变化
+        if (Application.Current != null)
+        {
+            Application.Current.RequestedThemeChanged += (s, e) =>
+            {
+                ApplyNativeTheme(e.RequestedTheme == AppTheme.Dark ? "dark" : "light");
+            };
+        }
+
         // Allow XAML behaviors to bind to these properties
         BindingContext = this;
 

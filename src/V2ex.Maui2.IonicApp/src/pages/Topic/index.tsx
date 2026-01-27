@@ -51,6 +51,7 @@ import {
   toMarkdownImage,
 } from "../../services/ImgurService";
 import EmojiPicker from "../../components/EmojiPicker";
+import MentionPicker, { ReplyItem } from "../../components/MentionPicker";
 
 interface TopicPageProps extends RouteComponentProps<{
   id: string;
@@ -73,6 +74,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMentionPicker, setShowMentionPicker] = useState(false);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
 
   // 展开时自动聚焦到输入框
@@ -142,6 +144,21 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     // 不关闭 picker，方便用户连续选择
   };
 
+  // @Mention 选择处理
+  const handleMentionSelect = (username: string, floor: number) => {
+    setReplyContent((prev) => {
+      const mentionText = ` @${username} #${floor} `;
+      return prev + mentionText;
+    });
+    setShowMentionPicker(false);
+    // 聚焦输入框
+    setTimeout(() => {
+      textareaRef.current?.setFocus();
+    }, 100);
+  };
+
+
+
   // 认证状态
   const { isAuthenticated } = useAuthStore(
     useShallow((s) => ({ isAuthenticated: s.isAuthenticated })),
@@ -191,6 +208,18 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     if (parsedTopicId == null) return null;
     return topicInfoById[String(parsedTopicId)] ?? null;
   }, [parsedTopicId, topicInfoById]);
+
+  // 准备回复列表数据
+  const replyItems: ReplyItem[] = useMemo(() => {
+    if (!topicInfoById[id]?.replies) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return topicInfoById[id].replies.map((r: any) => ({
+      floor: r.floor,
+      username: r.member.username,
+      avatar: r.member.avatar_large || r.member.avatar_normal || r.member.avatar_mini,
+      contentPreview: r.content_rendered.replace(/<[^>]+>/g, '').slice(0, 50) // 简单去除HTML标签作为预览
+    }));
+  }, [topicInfoById, id]);
 
   const loading = useMemo(() => {
     if (parsedTopicId == null) return false;
@@ -674,13 +703,16 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                           <IonIcon icon={imageOutline} />
                         )}
                       </button>
-                      {/* <button
-                        className="douyin-icon-btn"
+                      <button
+                        className={`douyin-icon-btn ${showMentionPicker ? "active" : ""}`}
                         type="button"
-                        disabled
+                        onClick={() => {
+                          setShowMentionPicker(!showMentionPicker);
+                          setShowEmojiPicker(false); // 互斥
+                        }}
                       >
                         <IonIcon icon={atOutline} />
-                      </button> */}
+                      </button>
                       <button
                         className={`douyin-icon-btn ${showEmojiPicker ? "active" : ""}`}
                         type="button"
@@ -712,6 +744,15 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                     <EmojiPicker
                       onSelect={handleEmojiSelect}
                       onClose={() => setShowEmojiPicker(false)}
+                    />
+                  )}
+
+                  {/* Mention Picker */}
+                  {showMentionPicker && (
+                    <MentionPicker
+                      replies={replyItems}
+                      onSelect={handleMentionSelect}
+                      onClose={() => setShowMentionPicker(false)}
                     />
                   )}
                 </div>
