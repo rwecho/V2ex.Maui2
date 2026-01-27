@@ -17,9 +17,10 @@ import {
 } from "@ionic/react";
 import { useCallback, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { useAuthStore, type SignInFormInfo } from "../../store/authStore";
+import { useAuthStore } from "../../store/authStore";
 import { apiService } from "../../services/apiService";
 import { usePageAnalytics } from "../../hooks/usePageAnalytics";
+import { SignInFormInfoType } from "../../schemas/accountSchema";
 
 const LoginPage = () => {
   const history = useHistory();
@@ -35,7 +36,7 @@ const LoginPage = () => {
   const [isLoadingCaptcha, setIsLoadingCaptcha] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [formInfo, setFormInfo] = useState<SignInFormInfo | null>(null);
+  const [formInfo, setFormInfo] = useState<SignInFormInfoType | null>(null);
 
   useEffect(() => {
     void logAnalytics("page_view", { page: "login" });
@@ -61,9 +62,7 @@ const LoginPage = () => {
         showToast(`获取登录信息失败：${formInfoRes.error}`);
         return;
       }
-
-      const info: SignInFormInfo = formInfoRes.data;
-      setFormInfo(info);
+      setFormInfo(formInfoRes.data);
     };
 
     void loadFormInfo();

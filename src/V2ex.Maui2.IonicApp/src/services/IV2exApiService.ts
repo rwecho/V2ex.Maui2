@@ -18,9 +18,9 @@ import {
   CurrentUserType,
 } from "../schemas/topicSchema";
 import { Result } from "./result";
-import { SignInFormInfo } from "../store/authStore";
 
 import { AnalyticsParams } from "./firebase";
+import { SignInFormInfoType } from "../schemas/accountSchema";
 
 export interface SystemInfo {
   platform: string;
@@ -84,14 +84,14 @@ export interface IV2exApiService {
   blockUser(url: string): Promise<Result<void>>;
 
   // Account
-  getLoginParameters(): Promise<Result<SignInFormInfo>>;
+  getLoginParameters(): Promise<Result<SignInFormInfoType>>;
   getCaptchaImage(
     once: string,
   ): Promise<Result<{ image: string; mimeType: string }>>;
   signIn(
     username: string,
     password: string,
-    formInfo: SignInFormInfo,
+    formInfo: SignInFormInfoType,
     captchaCode: string,
   ): Promise<Result<{ username: string; currentUser?: CurrentUserType }>>;
   signOut(): Promise<Result<void>>;

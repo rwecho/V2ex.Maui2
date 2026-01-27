@@ -15,7 +15,6 @@ import type {
   TagInfoType,
   CurrentUserType,
 } from "../schemas/topicSchema";
-import type { SignInFormInfo } from "../store/authStore";
 import {
   TopicListSchema,
   NodeInfoListSchema,
@@ -36,6 +35,10 @@ import { z } from "zod";
 import { err, ok, toErrorMessage, type Result } from "./result";
 import { createFirebaseAnalytics, type AnalyticsParams } from "./firebase";
 import { IV2exApiService, SystemInfo } from "./IV2exApiService";
+import {
+  SignInFormInfoSchema,
+  SignInFormInfoType,
+} from "../schemas/accountSchema";
 
 export class MauiApiService implements IV2exApiService {
   private async callMauiBridge(
@@ -134,6 +137,7 @@ export class MauiApiService implements IV2exApiService {
   ): Promise<Result<TopicInfoType | null>> {
     const res = await this.callMauiBridge("GetTopicDetailAsync", [
       params.topicId,
+      params.page ?? 1,
     ]);
     if (res.error !== null) return err(res.error);
 
@@ -200,48 +204,20 @@ export class MauiApiService implements IV2exApiService {
     ]);
     if (res.error !== null) return err(res.error);
 
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（NodeInfo）：${toErrorMessage(e)}`);
-    }
-    if (data === null) return ok(null);
-    try {
-      return ok(NodeInfoSchema.parse(data));
-    } catch (e) {
-      return err(`数据解析失败（NodeInfo）：${toErrorMessage(e)}`);
-    }
+    return this.parseJsonOrError("NodeInfo", NodeInfoSchema, res.data);
   }
 
   // --- Auth Methods ---
 
-  async getLoginParameters(): Promise<Result<SignInFormInfo>> {
+  async getLoginParameters(): Promise<Result<SignInFormInfoType>> {
     const res = await this.callMauiBridge("GetLoginParametersAsync");
     if (res.error !== null) return err(res.error);
 
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（LoginParams）：${toErrorMessage(e)}`);
-    }
-
-    if (data && typeof data === "object") {
-      const d = data as any;
-      return ok({
-        usernameFieldName: d.nameParameter || d.usernameFieldName,
-        passwordFieldName: d.passwordParameter || d.passwordFieldName,
-        captchaFieldName: d.captchaParameter || d.captchaFieldName,
-        once: d.once,
-        captchaImage: "",
-      });
-    }
-    return err("解析登录参数失败");
-  }
-
-  async getSignInPageInfo(): Promise<Result<SignInFormInfo>> {
-    return this.getLoginParameters(); // Delegate or remove if unused, but implementing interface
+    return this.parseJsonOrError(
+      "SignInFormInfo",
+      SignInFormInfoSchema,
+      res.data,
+    );
   }
 
   async getCaptchaImage(
@@ -276,7 +252,7 @@ export class MauiApiService implements IV2exApiService {
   async signIn(
     username: string,
     password: string,
-    formInfo: SignInFormInfo,
+    formInfo: SignInFormInfoType,
     captchaCode: string,
   ): Promise<Result<{ username: string }>> {
     const res = await this.callMauiBridge("SignInAsync", [
@@ -291,26 +267,13 @@ export class MauiApiService implements IV2exApiService {
 
     if (res.error !== null) return err(res.error);
 
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（SignInResult）：${toErrorMessage(e)}`);
-    }
-
-    if (
-      data &&
-      typeof data === "object" &&
-      "success" in data &&
-      (data as any).success === true
-    ) {
-      return ok({ username: (data as any).username });
-    }
-
-    if (data && typeof data === "object" && "error" in data) {
-      return err((data as any).error);
-    }
-    return err("登录失败");
+    return this.parseJsonOrError(
+      "SignInResult",
+      z.object({
+        username: z.string(),
+      }),
+      res.data,
+    );
   }
 
   async signOut(): Promise<Result<void>> {
@@ -346,27 +309,7 @@ export class MauiApiService implements IV2exApiService {
     const res = await this.callMauiBridge("GetCurrentUserAsync");
     if (res.error !== null) return err(res.error);
 
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（CurrentUser）：${toErrorMessage(e)}`);
-    }
-
-    if (
-      data &&
-      typeof data === "object" &&
-      "success" in data &&
-      (data as any).success === true &&
-      "user" in data
-    ) {
-      try {
-        return ok(MemberSchema.parse((data as any).user) as MemberType);
-      } catch (e) {
-        return err(`用户数据解析失败：${toErrorMessage(e)}`);
-      }
-    }
-    return err("获取用户信息失败");
+    return this.parseJsonOrError("Member", MemberSchema, res.data);
   }
 
   async signInTwoStep(code: string, once: string): Promise<Result<void>> {
@@ -553,23 +496,7 @@ export class MauiApiService implements IV2exApiService {
     const res = await this.callMauiBridge("GetReplyOnceTokenAsync", [topicId]);
     if (res.error !== null) return err(res.error);
 
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（ReplyOnceToken）：${toErrorMessage(e)}`);
-    }
-
-    if (
-      data &&
-      typeof data === "object" &&
-      "success" in data &&
-      (data as any).success === true &&
-      "once" in data
-    ) {
-      return ok((data as any).once);
-    }
-    return err("获取回复 token 失败");
+    return this.parseJsonOrError("ReplyOnceToken", z.string(), res.data);
   }
 
   async postReply(
@@ -584,42 +511,18 @@ export class MauiApiService implements IV2exApiService {
     ]);
     if (res.error !== null) return err(res.error);
 
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（PostReplyResult）：${toErrorMessage(e)}`);
-    }
-
-    if (data && typeof data === "object" && "success" in data) {
-      if ((data as any).success === true) {
-        return ok({
-          replyId: (data as any).replyId,
-        });
-      } else {
-        return err((data as any).message || "回复失败");
-      }
-    }
-    return err("发表回复失败");
+    return this.parseJsonOrError(
+      "PostReplyResult",
+      z.object({ replyId: z.number().optional() }).passthrough(),
+      res.data,
+    );
   }
 
   async requiresLogin(topicId: number): Promise<Result<boolean>> {
     const res = await this.callMauiBridge("RequiresLoginAsync", [topicId]);
     if (res.error !== null) return err(res.error);
 
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(
-        `返回内容解析失败（RequiresLoginResult）：${toErrorMessage(e)}`,
-      );
-    }
-
-    if (data && typeof data === "object" && "requiresLogin" in data) {
-      return ok((data as any).requiresLogin === true);
-    }
-    return ok(true);
+    return this.parseJsonOrError("RequiresLoginResult", z.boolean(), res.data);
   }
 
   async getUserPage(username: string): Promise<Result<MemberType>> {

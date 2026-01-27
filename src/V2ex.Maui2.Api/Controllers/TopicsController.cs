@@ -31,7 +31,7 @@ public class TopicsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetTopic(string id, [FromQuery] int page = 1)
+    public async Task<IActionResult> GetTopic(int id, [FromQuery] int page = 1)
     {
         var result = await _apiService.GetTopicDetail(id, page);
         return Ok(result);

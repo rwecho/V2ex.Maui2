@@ -19,31 +19,6 @@ public partial class MauiBridge
         }
     }
 
-    // Legacy support
-    public async Task<string> GetSignInPageInfoAsync()
-    {
-        try
-        {
-            logger.LogInformation("Bridge: 获取登录页面信息");
-            var formInfo = await apiService.GetLoginParameters();
-            var imageData = await apiService.GetCaptchaImage(formInfo.Parameters.Once);
-            var base64Image = Convert.ToBase64String(imageData);
-            return JsonSerializer.Serialize(new
-            {
-                success = true,
-                usernameFieldName = formInfo.Parameters.NameParameter,
-                passwordFieldName = formInfo.Parameters.PasswordParameter,
-                captchaFieldName = formInfo.Parameters.CaptchaParameter,
-                once = formInfo.Parameters.Once,
-                captchaImage = base64Image,
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 获取登录页面信息失败");
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message });
-        }
-    }
 
     public async Task<string> GetCaptchaImageAsync(string once)
     {
@@ -52,13 +27,13 @@ public partial class MauiBridge
             // We need full parameters to get image URL, but legacy only passed 'once'.
             // We try to re-fetch parameters to get the URL. This is overhead but safe.
             var formInfo = await apiService.GetLoginParameters();
-            if (formInfo.Parameters.Once != once)
+            if (formInfo.Once != once)
             {
                 // potential mismatch if once changed, but we use the new one or just proceed
                 // ideally we'd just use formInfo.Parameters.Captcha url
             }
 
-            var imageData = await apiService.GetCaptchaImage(formInfo.Parameters.Once);
+            var imageData = await apiService.GetCaptchaImage(formInfo.Once);
             var base64Image = Convert.ToBase64String(imageData);
 
             return JsonSerializer.Serialize(new
@@ -85,9 +60,9 @@ public partial class MauiBridge
         {
             var parameters = new LoginParameters
             {
-                NameParameter = usernameParam,
-                PasswordParameter = passwordParam,
-                CaptchaParameter = captchaParam,
+                UsernameFieldName = usernameParam,
+                PasswordFieldName = passwordParam,
+                CaptchaFieldName = captchaParam,
                 Once = once
             };
             var result = await apiService.Login(parameters, username, password, captcha);
@@ -131,10 +106,10 @@ public partial class MauiBridge
         try
         {
             var daily = await apiService.GetDailyInfo();
-            return JsonSerializer.Serialize(new 
-            { 
-                success = true, 
-                isLoggedIn = daily?.CurrentUser != null 
+            return JsonSerializer.Serialize(new
+            {
+                success = true,
+                isLoggedIn = daily?.CurrentUser != null
             }, _jsonOptions);
         }
         catch
@@ -145,18 +120,18 @@ public partial class MauiBridge
 
     public async Task<string> GetCurrentUserAsync()
     {
-        try 
+        try
         {
-             var daily = await apiService.GetDailyInfo();
-             if (daily?.CurrentUser != null)
-             {
-                 return JsonSerializer.Serialize(new { success = true, user = daily.CurrentUser }, _jsonOptions);
-             }
-             return JsonSerializer.Serialize(new { success = false, error = "Not logged in" }, _jsonOptions);
+            var daily = await apiService.GetDailyInfo();
+            if (daily?.CurrentUser != null)
+            {
+                return JsonSerializer.Serialize(new { success = true, user = daily.CurrentUser }, _jsonOptions);
+            }
+            return JsonSerializer.Serialize(new { success = false, error = "Not logged in" }, _jsonOptions);
         }
         catch (Exception ex)
         {
-             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }
 

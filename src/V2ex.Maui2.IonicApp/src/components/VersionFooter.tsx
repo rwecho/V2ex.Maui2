@@ -1,4 +1,4 @@
-import { IonTitle } from "@ionic/react";
+import { IonItem, IonLabel, IonTitle } from "@ionic/react";
 import { useRef } from "react";
 import packageJson from "../../package.json";
 import { useDevModeStore } from "../store/devModeStore";
@@ -31,14 +31,9 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ appVersion }) => {
   };
 
   return (
-    <IonTitle
-      size="small"
-      onClick={handleVersionTap}
-      style={{ cursor: "pointer", userSelect: "none" }}
-      className="py-4"
-    >
-      版本 {appVersion || packageJson.version}
-    </IonTitle>
+    <IonItem lines="none" onClick={handleVersionTap} button detail={false}>
+      <IonLabel>版本 {appVersion || packageJson.version}</IonLabel>
+    </IonItem>
   );
 };
 

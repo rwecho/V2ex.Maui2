@@ -230,7 +230,7 @@ const HomePage = () => {
         </IonHeader>
         <IonContent>
           {/* 用户信息区域 */}
-          {isAuthenticated && user ? (
+          {isAuthenticated && user && (
             <div style={{ padding: "20px 16px 10px 16px" }}>
               <div
                 style={{
@@ -376,16 +376,6 @@ const HomePage = () => {
                 )}
               </div>
             </div>
-          ) : (
-            <div style={{ padding: "16px" }}>
-              <IonButton
-                expand="block"
-                onClick={() => history.push("/login")}
-                style={{ marginBottom: "16px" }}
-              >
-                登录
-              </IonButton>
-            </div>
           )}
 
           <IonList inset>
@@ -414,6 +404,16 @@ const HomePage = () => {
         </IonContent>
         <IonFooter>
           <IonToolbar>
+            {!isAuthenticated && (
+              <IonItem
+                lines="none"
+                onClick={() => history.push("/login")}
+                button
+                detail={false}
+              >
+                <IonLabel>登录</IonLabel>
+              </IonItem>
+            )}
             {isAuthenticated && (
               <IonItem
                 lines="none"

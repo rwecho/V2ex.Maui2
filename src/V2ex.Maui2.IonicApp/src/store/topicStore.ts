@@ -112,70 +112,70 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
     const authIsAuthenticated = useAuthStore.getState().isAuthenticated;
 
     if (newsInfo.currentUser && newsInfo.currentUser.name) {
-        // We assume that if currentUser is returned, we have valid user info.
-        useAuthStore.getState().setAuthenticated({
-            username: newsInfo.currentUser.name,
-            ...newsInfo.currentUser
-        });
+      // We assume that if currentUser is returned, we have valid user info.
+      useAuthStore.getState().setAuthenticated({
+        username: newsInfo.currentUser.name,
+        ...newsInfo.currentUser,
+      });
     } else if (authIsAuthenticated) {
-        // We think we are logged in, but the server returned no user info.
-        // This means our session has expired or is invalid.
-        console.warn("Session expired or invalid, signing out.");
-        useAuthStore.getState().signOut();
+      // We think we are logged in, but the server returned no user info.
+      // This means our session has expired or is invalid.
+      console.warn("Session expired or invalid, signing out.");
+      useAuthStore.getState().signOut();
     }
 
     const topics: TopicType[] = newsInfo.items.map((item) => {
-        // Parse ID from link, e.g. /t/123456...
-        // Fallback to 0 if parsing fails
-        let id = 0;
-        if(item.id) {
-           const parsed = parseInt(item.id);
-           if(!isNaN(parsed)) id = parsed;
-        } else if (item.link) {
-           const match = item.link.match(/\/t\/(\d+)/);
-           if (match) id = parseInt(match[1]);
-        }
+      // Parse ID from link, e.g. /t/123456...
+      // Fallback to 0 if parsing fails
+      let id = 0;
+      if (item.id) {
+        const parsed = parseInt(item.id);
+        if (!isNaN(parsed)) id = parsed;
+      } else if (item.link) {
+        const match = item.link.match(/\/t\/(\d+)/);
+        if (match) id = parseInt(match[1]);
+      }
 
-        return {
-            id: id,
-            title: item.title,
-            content: null,
-            contentRendered: null,
-            url: item.link || null,
-            replies: item.replies,
-            created: undefined, // NewsItem doesn't strictly have created timestamp
-            lastModified: undefined,
-            lastTouched: undefined,
-            member: {
-                id: 0, // Unknown
-                username: item.userName || "Unknown",
-                avatarMini: item.avatar,
-                avatarLarge: item.avatar, // Use same URL
-                tagline: null,
-                bio: null,
-                website: null,
-                github: null,
-                status: null,
-                created: undefined,
-                numTopics: undefined,
-                numPosts: undefined,
-                followers: undefined
-            },
-            node: {
-                id: 0, // Unknown
-                name: item.nodeName,
-                title: item.nodeName, // Use name as title fallback
-                titleAlternative: null,
-                header: null,
-                footer: null,
-                icon: null,
-                parentNodeName: null,
-                topics: undefined,
-                created: undefined,
-                lastModified: undefined
-            },
-            deleted: false
-        };
+      return {
+        id: id,
+        title: item.title,
+        content: null,
+        contentRendered: null,
+        url: item.link || null,
+        replies: item.replies,
+        created: undefined, // NewsItem doesn't strictly have created timestamp
+        lastModified: undefined,
+        lastTouched: undefined,
+        member: {
+          id: 0, // Unknown
+          username: item.userName || "Unknown",
+          avatarMini: item.avatar,
+          avatarLarge: item.avatar, // Use same URL
+          tagline: null,
+          bio: null,
+          website: null,
+          github: null,
+          status: null,
+          created: undefined,
+          numTopics: undefined,
+          numPosts: undefined,
+          followers: undefined,
+        },
+        node: {
+          id: 0, // Unknown
+          name: item.nodeName,
+          title: item.nodeName, // Use name as title fallback
+          titleAlternative: null,
+          header: null,
+          footer: null,
+          icon: null,
+          parentNodeName: null,
+          topics: undefined,
+          created: undefined,
+          lastModified: undefined,
+        },
+        deleted: false,
+      };
     });
 
     set({
@@ -204,7 +204,7 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
       },
     });
 
-    const res = await apiService.getTopicDetail({ topicId });
+    const res = await apiService.getTopicDetail({ topicId, page: 1 });
 
     if (res.error !== null) {
       console.error(
@@ -226,69 +226,77 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
 
     const topicInfo = res.data;
     if (!topicInfo) {
-         set({
-            topicDetailLoadingById: { ...get().topicDetailLoadingById, [idKey]: false },
-            topicDetailErrorById: { ...get().topicDetailErrorById, [idKey]: "Topic not found" },
-         });
-         return;
+      set({
+        topicDetailLoadingById: {
+          ...get().topicDetailLoadingById,
+          [idKey]: false,
+        },
+        topicDetailErrorById: {
+          ...get().topicDetailErrorById,
+          [idKey]: "Topic not found",
+        },
+      });
+      return;
     }
 
     const topicDetail: TopicDetailType = {
-        page: topicInfo.currentPage || 1,
-        totalPages: topicInfo.maximumPage || 1,
-        topic: {
-            id: topicId,
-            title: topicInfo.title,
-            content: topicInfo.content,
-            contentRendered: topicInfo.content,
-            url: null,
-            replies: topicInfo.replies ? topicInfo.replies.length : 0,
-            created: undefined, 
-            lastModified: undefined,
-            lastTouched: undefined,
-            member: {
-                id: 0,
-                username: topicInfo.userName,
-                avatarMini: topicInfo.avatar,
-                avatarLarge: topicInfo.avatar,
-                tagline: null,
-                bio: null,
-                website: null,
-                github: null,
-                status: null,
-            },
-            node: {
-                id: 0,
-                name: topicInfo.nodeName,
-                title: topicInfo.nodeName,
-                titleAlternative: null,
-                header: null,
-                footer: null,
-                icon: null,
-                parentNodeName: null,
-            },
-            deleted: false
+      page: topicInfo.currentPage || 1,
+      totalPages: topicInfo.maximumPage || 1,
+      topic: {
+        id: topicId,
+        title: topicInfo.title,
+        content: topicInfo.content,
+        contentRendered: topicInfo.content,
+        url: null,
+        replies: topicInfo.replies ? topicInfo.replies.length : 0,
+        created: undefined,
+        lastModified: undefined,
+        lastTouched: undefined,
+        member: {
+          id: 0,
+          username: topicInfo.userName,
+          avatarMini: topicInfo.avatar,
+          avatarLarge: topicInfo.avatar,
+          tagline: null,
+          bio: null,
+          website: null,
+          github: null,
+          status: null,
         },
-        replies: topicInfo.replies ? topicInfo.replies.map(r => ({
+        node: {
+          id: 0,
+          name: topicInfo.nodeName,
+          title: topicInfo.nodeName,
+          titleAlternative: null,
+          header: null,
+          footer: null,
+          icon: null,
+          parentNodeName: null,
+        },
+        deleted: false,
+      },
+      replies: topicInfo.replies
+        ? topicInfo.replies.map((r) => ({
             id: parseInt(r.id) || 0,
             content: r.content,
             contentRendered: r.content,
-            created: undefined, 
+            created: undefined,
             member: {
-                id: 0,
-                username: r.userName,
-                avatarMini: r.avatar,
-                avatarLarge: r.avatar,
-                tagline: null,
-                bio: null,
-                website: null,
-                github: null,
-                status: null,
+              id: 0,
+              username: r.userName,
+              avatarMini: r.avatar,
+              avatarLarge: r.avatar,
+              tagline: null,
+              bio: null,
+              website: null,
+              github: null,
+              status: null,
             },
             isOp: r.userName === topicInfo.userName,
             mentioned: null,
-            floor: r.floor
-        })) : []
+            floor: r.floor,
+          }))
+        : [],
     };
 
     set({

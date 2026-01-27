@@ -30,7 +30,7 @@ import {
 } from "../schemas/topicSchema";
 import { IV2exApiService } from "./IV2exApiService";
 import { err, ok, toErrorMessage, type Result } from "./result";
-import type { SignInFormInfo } from "../store/authStore";
+import { SignInFormInfoType } from "../schemas/accountSchema";
 
 /**
  * Implementation that runs in the Browser (for development/debugging).
@@ -126,7 +126,9 @@ export class HttpApiService implements IV2exApiService {
   async getTopicDetail(
     params: GetTopicParams,
   ): Promise<Result<TopicInfoType | null>> {
-    const res = await this.fetchApi(`/topics/${params.topicId}`);
+    const res = await this.fetchApi(
+      `/topics/${params.topicId}?page=${params.page || 1}`,
+    );
     if (res.error) return err(res.error);
     return this.parseOrError("TopicDetail", TopicInfoSchema, res.data);
   }
@@ -163,19 +165,12 @@ export class HttpApiService implements IV2exApiService {
 
   // --- Auth Methods (Real implementations for Web Dev) ---
 
-  async getLoginParameters(): Promise<Result<SignInFormInfo>> {
+  async getLoginParameters(): Promise<Result<SignInFormInfoType>> {
     const res = await this.fetchApi("/account/login-parameters");
     if (res.error) return err(res.error);
     const data: any = res.data;
-    // 兼容新版 C# LoginParametersWithCaptcha 结构
-    if (data && data.parameters && data.captchaImageBase64) {
-      return ok({
-        usernameFieldName: data.parameters.nameParameter,
-        passwordFieldName: data.parameters.passwordParameter,
-        captchaFieldName: data.parameters.captchaParameter,
-        once: data.parameters.once,
-        captchaImage: data.captchaImageBase64,
-      });
+    if (data && data.captchaImage) {
+      return ok(data as SignInFormInfoType);
     }
     return err("Get signin info failed");
   }
@@ -215,7 +210,7 @@ export class HttpApiService implements IV2exApiService {
   async signIn(
     username: string,
     password: string,
-    formInfo: SignInFormInfo,
+    formInfo: SignInFormInfoType,
     captchaCode: string,
   ): Promise<Result<{ username: string; currentUser?: CurrentUserType }>> {
     const res = await this.fetchApi("/account/login", {

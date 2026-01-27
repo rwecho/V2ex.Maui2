@@ -126,7 +126,7 @@ public class ApiService
         return tagInfo;
     }
 
-    public async Task<LoginParametersWithCaptcha> GetLoginParameters()
+    public async Task<LoginParameters> GetLoginParameters()
     {
         var url = "/signin?next=/";
         var response = await this.HttpClient.GetAsync(url);
@@ -145,10 +145,14 @@ public class ApiService
         var captchaBytes = await captchaResponse.Content.ReadAsByteArrayAsync();
         var captchaBase64 = Convert.ToBase64String(captchaBytes);
 
-        return new LoginParametersWithCaptcha
+        return new LoginParameters
         {
-            Parameters = loginParameters,
-            CaptchaImageBase64 = captchaBase64
+            UsernameFieldName = loginParameters.UsernameFieldName,
+            PasswordFieldName = loginParameters.PasswordFieldName,
+            Once = loginParameters.Once,
+            CaptchaFieldName = loginParameters.CaptchaFieldName,
+            Captcha = loginParameters.Captcha,
+            CaptchaImage = captchaBase64
         };
     }
 
@@ -171,9 +175,9 @@ public class ApiService
         {
             Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                { loginParameters.NameParameter, username },
-                { loginParameters.PasswordParameter, password },
-                { loginParameters.CaptchaParameter, captcha},
+                { loginParameters.UsernameFieldName, username },
+                { loginParameters.PasswordFieldName, password },
+                { loginParameters.CaptchaFieldName, captcha},
                 { "once", loginParameters.Once },
                 { "next", "/" },
             })
@@ -207,7 +211,7 @@ public class ApiService
         this._cookieContainerStorage.ClearCookies();
     }
 
-    public async Task<TopicInfo> GetTopicDetail(string topicId, int page = 1)
+    public async Task<TopicInfo> GetTopicDetail(int topicId, int page = 1)
     {
         var url = $"/t/{topicId}?p={page}";
         var response = await this.HttpClient.GetAsync(url);

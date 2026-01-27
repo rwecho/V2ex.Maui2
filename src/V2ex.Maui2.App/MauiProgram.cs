@@ -5,6 +5,7 @@ using V2ex.Maui2.App.Services;
 using CommunityToolkit.Maui;
 using V2ex.Maui2.App.Utilities;
 using V2ex.Maui2.Core;
+using System.Net;
 
 namespace V2ex.Maui2.App;
 
@@ -49,12 +50,14 @@ public static class MauiProgram
 		// enable CORS for api
 		builder.Services.AddHttpClient("api", client =>
 		{
+			client.BaseAddress = new Uri("https://www.v2ex.com");
 			client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentConstants.UserAgent);
 		})
-			.ConfigurePrimaryHttpMessageHandler((sp) =>
+			.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 			{
-				return sp.GetRequiredService<ApiHttpClientHandler>();
-			});
+				AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+			})
+		;
 
 		// 注册认证和回复服务
 		builder.Services.AddSingleton<ICookieContainerStorage, MauiCookieStorage>();

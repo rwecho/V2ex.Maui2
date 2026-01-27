@@ -5,9 +5,9 @@ import { defineConfig } from "vite";
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react(), legacy()],
-    // build: {
-    //   sourcemap: true,
-    // },
+    build: {
+        sourcemap: true,
+    },
     test: {
         globals: true,
         environment: "jsdom",

@@ -3,6 +3,7 @@ using CommunityToolkit.Maui.Core;
 using Microsoft.Maui.Dispatching;
 using System.Text.Json;
 using V2ex.Maui2.App.Services.Bridge;
+using HtmlAgilityPack;
 
 namespace V2ex.Maui2.App;
 
@@ -63,9 +64,10 @@ public partial class MainPage : ContentPage
     {
         base.OnDisappearing();
         App.AppResumed -= OnAppResumed;
+
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
         // Ensure we are subscribed if the page re-appears.
@@ -206,5 +208,7 @@ public partial class MainPage : ContentPage
             }
         });
     }
+
+
 }
 

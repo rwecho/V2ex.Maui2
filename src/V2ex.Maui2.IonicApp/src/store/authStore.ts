@@ -2,16 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { MemberType, CurrentUserType } from "../schemas/topicSchema";
 
-export interface SignInFormInfo {
-  usernameFieldName: string;
-  passwordFieldName: string;
-  captchaFieldName: string;
-  once: string;
-  captchaImage: string;
-}
-
 // Unified user type
-export type AuthUser = Partial<MemberType> & Partial<CurrentUserType> & { username: string };
+export type AuthUser = Partial<MemberType> &
+  Partial<CurrentUserType> & { username: string };
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -38,21 +31,23 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       setAuthenticated: (inputUser) => {
-         const currentUser = get().user;
-         // Merge existing user with new input
-         const newUser = currentUser ? { ...currentUser, ...inputUser } : (inputUser as AuthUser);
-         set({
-            isAuthenticated: true,
-            user: newUser,
-            error: null
-         });
+        const currentUser = get().user;
+        // Merge existing user with new input
+        const newUser = currentUser
+          ? { ...currentUser, ...inputUser }
+          : (inputUser as AuthUser);
+        set({
+          isAuthenticated: true,
+          user: newUser,
+          error: null,
+        });
       },
 
       updateUser: (updates) => {
         const currentUser = get().user;
         if (!currentUser) return; // Cannot update if not logged in? Or valid to set?
         set({
-            user: { ...currentUser, ...updates }
+          user: { ...currentUser, ...updates },
         });
       },
 

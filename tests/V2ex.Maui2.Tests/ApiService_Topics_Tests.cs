@@ -12,12 +12,16 @@ public class ApiService_Topics_Tests
 {
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
     private readonly Mock<ILogger<ApiService>> _mockLogger;
+    private readonly Mock<ICookieContainerStorage> _mockCookieContainerStorage;
     private readonly ApiService _apiService;
 
     public ApiService_Topics_Tests()
     {
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockLogger = new Mock<ILogger<ApiService>>();
+        _mockCookieContainerStorage = new Mock<ICookieContainerStorage>();
+
+
 
         var httpClient = new HttpClient
         {
@@ -27,7 +31,9 @@ public class ApiService_Topics_Tests
 
         _mockHttpClientFactory.Setup(x => x.CreateClient("api")).Returns(httpClient);
 
-        _apiService = new ApiService(_mockHttpClientFactory.Object, _mockLogger.Object);
+        _apiService = new ApiService(_mockHttpClientFactory.Object,
+            _mockCookieContainerStorage.Object,
+            _mockLogger.Object);
     }
 
     [Fact]
@@ -38,7 +44,7 @@ public class ApiService_Topics_Tests
 
         result.Should().NotBeNull();
         result.Should().NotBeEmpty();
-        
+
         var firstItem = result![0];
         firstItem.Id.Should().BeGreaterThan(0);
         firstItem.Title.Should().NotBeNullOrWhiteSpace();
@@ -56,7 +62,7 @@ public class ApiService_Topics_Tests
         result.Should().NotBeNull();
         result.Items.Should().NotBeNull();
         result.Items.Should().NotBeEmpty();
-        
+
         var firstItem = result.Items[0];
         firstItem.Title.Should().NotBeNullOrWhiteSpace();
         firstItem.UserName.Should().NotBeNullOrWhiteSpace();
@@ -72,7 +78,7 @@ public class ApiService_Topics_Tests
         result.Should().NotBeNull();
         result.Items.Should().NotBeNull();
         result.Items.Should().NotBeEmpty();
-        
+
         var firstItem = result.Items[0];
         firstItem.Title.Should().NotBeNullOrWhiteSpace();
         firstItem.UserName.Should().NotBeNullOrWhiteSpace();
@@ -82,12 +88,12 @@ public class ApiService_Topics_Tests
     [Trait("Category", "Integration")]
     public async Task GetTopicDetail_ReturnsValidData_WhenTopicExists()
     {
-        var topicId = "1"; 
+        var topicId = 1;
         var result = await _apiService.GetTopicDetail(topicId);
 
         result.Should().NotBeNull();
         result.Title.Should().NotBeNullOrWhiteSpace();
-        result.Content.Should().NotBeNull(); 
+        result.Content.Should().NotBeNull();
         result.CreatedText.Should().NotBeNullOrWhiteSpace();
         result.UserName.Should().NotBeNullOrWhiteSpace();
     }
