@@ -53,14 +53,8 @@ public partial class MauiBridge
     {
         try
         {
-            var parameters = new LoginParameters
-            {
-                UsernameFieldName = usernameFieldName,
-                PasswordFieldName = passwordFieldName,
-                CaptchaFieldName = captchaFieldName,
-                Once = once
-            };
-            var result = await apiService.Login(parameters, username, password, captchaCode);
+            var result = await apiService.Login(
+                 usernameFieldName, passwordFieldName, captchaFieldName, once, username, password, captchaCode);
             return JsonSerializer.Serialize(new
             {
                 success = true,

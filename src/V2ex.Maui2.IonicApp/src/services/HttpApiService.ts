@@ -6,14 +6,12 @@ import {
   NodeInfoSchema,
   NotificationSchema,
   SearchResultSchema,
-  TopicDetailSchema,
   TopicListSchema,
   type DailyInfoType,
   type MemberType,
   type NodeInfoType,
   type NotificationType,
   type SearchResultType,
-  type TopicDetailType,
   type TopicType,
   type CurrentUserType,
   type GetNodeParams,
@@ -216,13 +214,10 @@ export class HttpApiService implements IV2exApiService {
     const res = await this.fetchApi("/account/login", {
       method: "POST",
       body: JSON.stringify({
-        parameters: {
-          nameParameter: formInfo.usernameFieldName,
-          passwordParameter: formInfo.passwordFieldName,
-          captchaParameter: formInfo.captchaFieldName,
-          once: formInfo.once,
-          captcha: formInfo.captchaImage, // or null
-        },
+        usernameFieldName: formInfo.usernameFieldName,
+        passwordFieldName: formInfo.passwordFieldName,
+        captchaFieldName: formInfo.captchaFieldName,
+        once: formInfo.once,
         username,
         password,
         captcha: captchaCode,
@@ -468,20 +463,24 @@ export class HttpApiService implements IV2exApiService {
 
   // --- Reply Methods ---
   async getReplyOnceToken(topicId: number): Promise<Result<string>> {
-    // Web fallback logic: Need to scrape HTML or use API if available?
-    // The V2EX API 2.0 doesn't strictly have "get reply once token" endpoint easily without html scraping sometimes.
-    // But assuming we might mock it or try an endpoint if it existed.
-    return err(
-      "[Http] Post reply not fully supported in Web Dev mode without HTML scraping logic",
-    );
+    const res = await this.fetchApi(`/topics/${topicId}/replies/once`);
+    if (res.error) return err(res.error);
+
+    throw new Error("Not implemented");
   }
 
   async postReply(
     topicId: number,
     content: string,
     once: string,
-  ): Promise<Result<{ replyId?: number }>> {
-    return err("[Http] Post reply not supported");
+  ): Promise<Result<TopicInfoType | null>> {
+    const res = await this.fetchApi(`/topics/${topicId}/replies`, {
+      method: "POST",
+      body: JSON.stringify({ content, once }),
+    });
+    if (res.error) return err(res.error);
+
+    return this.parseOrError("TopicDetail", TopicInfoSchema, res.data);
   }
 
   async requiresLogin(topicId: number): Promise<Result<boolean>> {

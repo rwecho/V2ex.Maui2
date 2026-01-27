@@ -28,7 +28,7 @@ public class AccountController : ControllerBase
     {
         try
         {
-            var result = await _apiService.Login(request.Parameters, request.Username, request.Password, request.Captcha);
+            var result = await _apiService.Login(request.UsernameFieldName, request.PasswordFieldName, request.CaptchaFieldName, request.Once, request.Username, request.Password, request.Captcha);
             return Ok(new
             {
                 success = true,
@@ -140,10 +140,17 @@ public class AccountController : ControllerBase
 
 public class LoginRequest
 {
-    public LoginParameters Parameters { get; set; } = new();
     public string Username { get; set; } = "";
     public string Password { get; set; } = "";
     public string Captcha { get; set; } = "";
+
+    public string UsernameFieldName { get; set; } = "";
+
+    public string PasswordFieldName { get; set; } = "";
+
+    public string CaptchaFieldName { get; set; } = "";
+
+    public string Once { get; set; } = "";
 }
 
 public class TwoStepRequest

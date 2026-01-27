@@ -277,12 +277,82 @@
 }
 
 @keyframes usernamePulse {
-  0%, 100% {
+  0%,
+  100% {
     color: var(--ion-color-dark);
     transform: scale(1);
   }
   50% {
     color: #7cabff;
     transform: scale(1.1);
+  }
+}
+
+/* Reply Input Footer Styles */
+.topicReplyFooter {
+  border-top: 1px solid var(--ion-color-light-shade);
+  background: var(--ion-background-color);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.replyInputContainer {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+
+.replyTextarea {
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --background: var(--ion-color-light-tint);
+  --border-radius: 20px;
+  --color: var(--ion-color-dark);
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.5;
+  max-height: 120px;
+  overflow-y: auto;
+  transition: all 0.2s ease;
+}
+
+@keyframes flyAway {
+  0% {
+    transform: rotate(-45deg) scale(1);
+  }
+  50% {
+    transform: rotate(-45deg) scale(1.3) translateX(8px) translateY(-8px);
+  }
+  100% {
+    transform: rotate(-45deg) scale(1) translateX(0) translateY(0);
+  }
+}
+
+.replySendButton ion-spinner {
+  --color: white;
+  width: 22px;
+  height: 22px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .topicReplyFooter {
+    border-top-color: var(--ion-color-dark-shade);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .replyTextarea {
+    --background: var(--ion-color-dark-shade);
+    --color: var(--ion-color-light);
+  }
+
+  .replyTextarea:focus {
+    --background: var(--ion-color-dark-tint);
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--ion-color-primary-rgb, 99, 102, 241), 0.2);
   }
 }

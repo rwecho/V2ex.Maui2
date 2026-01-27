@@ -21,11 +21,11 @@ import {
   IonInfiniteScrollContent,
   IonToast,
   IonTextarea,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
+  IonFooter,
+  IonIcon,
 } from "@ionic/react";
+import { trash, download, eye, sendOutline } from "ionicons/icons";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { useHistory } from "react-router-dom";
@@ -60,7 +60,6 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   // 回复相关状态
   const [replyContent, setReplyContent] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
-  const [replyOnceToken, setReplyOnceToken] = useState<string | null>(null);
 
   // 认证状态
   const { isAuthenticated } = useAuthStore(
@@ -80,29 +79,14 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     return trimmed;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getMemberAvatarUrl = (member: any): string | null => {
-    if (!member) return null;
-    const raw =
-      member.avatarMini ??
-      member.avatar_mini ??
-      member.avatarMini ??
-      member.avatar_normal ??
-      member.avatarNormal ??
-      member.avatarLarge ??
-      member.avatar_large ??
-      member.avatarLarge ??
-      null;
-    return normalizeAvatarUrl(raw);
-  };
-
-  const fetchTopicDetail = useTopicStore(useShallow((s) => s.fetchTopicDetail));
-  const topicDetailById = useTopicStore(useShallow((s) => s.topicDetailById));
-  const topicDetailLoadingById = useTopicStore(
-    useShallow((s) => s.topicDetailLoadingById),
+  const fetchTopicInfo = useTopicStore(useShallow((s) => s.fetchTopicInfo));
+  const updateTopicInfo = useTopicStore(useShallow((s) => s.updateTopicInfo));
+  const topicInfoById = useTopicStore(useShallow((s) => s.topicInfoById));
+  const topicInfoLoadingById = useTopicStore(
+    useShallow((s) => s.topicInfoLoadingById),
   );
-  const topicDetailErrorById = useTopicStore(
-    useShallow((s) => s.topicDetailErrorById),
+  const topicInfoErrorById = useTopicStore(
+    useShallow((s) => s.topicInfoErrorById),
   );
 
   // 从路由状态 / URL query 获取初始 title，用于在加载前显示。
@@ -122,20 +106,20 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     return Number.isNaN(n) ? null : n;
   }, [id]);
 
-  const topicDetail = useMemo(() => {
+  const topicInfo = useMemo(() => {
     if (parsedTopicId == null) return null;
-    return topicDetailById[String(parsedTopicId)] ?? null;
-  }, [parsedTopicId, topicDetailById]);
+    return topicInfoById[String(parsedTopicId)] ?? null;
+  }, [parsedTopicId, topicInfoById]);
 
   const loading = useMemo(() => {
     if (parsedTopicId == null) return false;
-    return Boolean(topicDetailLoadingById[String(parsedTopicId)]);
-  }, [parsedTopicId, topicDetailLoadingById]);
+    return Boolean(topicInfoLoadingById[String(parsedTopicId)]);
+  }, [parsedTopicId, topicInfoLoadingById]);
 
   const error = useMemo(() => {
     if (parsedTopicId == null) return null;
-    return topicDetailErrorById[String(parsedTopicId)] ?? null;
-  }, [parsedTopicId, topicDetailErrorById]);
+    return topicInfoErrorById[String(parsedTopicId)] ?? null;
+  }, [parsedTopicId, topicInfoErrorById]);
 
   // Keep relative times stable & lint-friendly (no Date.now() during render).
   useEffect(() => {
@@ -151,14 +135,14 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     // Avoid auto-retry loops (e.g. 429). Retry should be user-triggered.
     if (error) return;
     if (loading) return;
-    if (topicDetail) return;
+    if (topicInfo) return;
 
-    fetchTopicDetail(parsedTopicId);
-  }, [parsedTopicId, error, loading, topicDetail, fetchTopicDetail]);
+    fetchTopicInfo(parsedTopicId);
+  }, [parsedTopicId, error, loading, topicInfo, fetchTopicInfo]);
 
   const headerTitle = useMemo(() => {
-    return topicDetail?.topic?.title ?? initialTitle ?? `加载中…`;
-  }, [topicDetail?.topic?.title, initialTitle, id]);
+    return topicInfo?.title ?? initialTitle ?? `加载中…`;
+  }, [topicInfo?.title, initialTitle, id]);
   const [colorMode] = useState<ColorMode>(
     () => getStoredMode() ?? getSystemPreferredMode(),
   );
@@ -174,10 +158,10 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
       if (usernameMatch) {
         const username = usernameMatch[1];
-        const replies = topicDetail?.replies ?? [];
+        const replies = topicInfo?.replies ?? [];
 
         const userReplies = replies.filter(
-          (reply) => reply.member?.username === username,
+          (reply) => reply.userName === username,
         );
 
         if (userReplies.length > 0) {
@@ -230,13 +214,13 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     if (parsedTopicId != null) {
-      await fetchTopicDetail(parsedTopicId, { force: true });
+      await fetchTopicInfo(parsedTopicId, { force: true });
     }
     event.detail.complete();
     const latestError =
       parsedTopicId == null
         ? error
-        : useTopicStore.getState().topicDetailErrorById[String(parsedTopicId)];
+        : useTopicStore.getState().topicInfoErrorById[String(parsedTopicId)];
     const toastMessage = latestError ? `刷新失败：${latestError}` : "刷新成功";
     void logAnalytics("refresh_topic", {
       topic_id: parsedTopicId ?? undefined,
@@ -246,8 +230,8 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     setToastOpen(true);
   };
 
-  const replyCount = topicDetail?.replies?.length ?? 0;
-  const visibleReplies = (topicDetail?.replies ?? []).slice(0, visibleCount);
+  const replyCount = topicInfo?.replies?.length ?? 0;
+  const visibleReplies = (topicInfo?.replies ?? []).slice(0, visibleCount);
 
   const handleInfinite = async (event: CustomEvent<void>) => {
     const nextCount = Math.min(visibleCount + 30, replyCount);
@@ -260,23 +244,6 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (event.target as any).complete();
   };
-
-  // 获取回复 once token
-  useEffect(() => {
-    if (!isAuthenticated || parsedTopicId == null) {
-      setReplyOnceToken(null);
-      return;
-    }
-
-    const fetchOnceToken = async () => {
-      const res = await apiService.getReplyOnceToken(parsedTopicId);
-      if (res.error === null && res.data) {
-        setReplyOnceToken(res.data);
-      }
-    };
-
-    void fetchOnceToken();
-  }, [isAuthenticated, parsedTopicId]);
 
   // 显示登录提示
   const showLoginPrompt = useCallback(async () => {
@@ -307,9 +274,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       setToastOpen(true);
       return;
     }
-
-    if (!replyOnceToken) {
-      setToastMessage("获取回复令牌失败，请刷新页面重试");
+    const replyOnce = topicInfo?.once;
+    if (!replyOnce) {
+      setToastMessage("无法获取回复权限，请稍后重试");
       setToastOpen(true);
       return;
     }
@@ -320,7 +287,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       const res = await apiService.postReply(
         parsedTopicId,
         trimmedContent,
-        replyOnceToken,
+        replyOnce,
       );
 
       if (res.error !== null) {
@@ -338,13 +305,11 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           success: true,
         });
 
-        // 刷新话题详情以显示新回复
-        await fetchTopicDetail(parsedTopicId, { force: true });
-
-        // 重新获取 once token（每次回复后都需要新的）
-        const onceRes = await apiService.getReplyOnceToken(parsedTopicId);
-        if (onceRes.error === null && onceRes.data) {
-          setReplyOnceToken(onceRes.data);
+        // 从返回的数据中更新 topic info
+        const topicInfo = res.data;
+        if (topicInfo) {
+          // 更新 store 中的 topic info（包含最新的回复列表和 once token）
+          updateTopicInfo(parsedTopicId, topicInfo);
         }
       }
     } catch (error) {
@@ -363,9 +328,8 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     isAuthenticated,
     parsedTopicId,
     replyContent,
-    replyOnceToken,
     showLoginPrompt,
-    fetchTopicDetail,
+    updateTopicInfo,
     logAnalytics,
   ]);
 
@@ -397,7 +361,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                 <p>Invalid topic id</p>
               </IonText>
             </div>
-          ) : loading || (!error && !topicDetail) ? (
+          ) : loading || (!error && !topicInfo) ? (
             <div className="topicPageLoading">
               <IonSpinner name="crescent" />
               <IonText color="medium">加载中…</IonText>
@@ -410,15 +374,13 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               <div className="topicPageActions">
                 <IonButton
                   expand="block"
-                  onClick={() =>
-                    fetchTopicDetail(parsedTopicId, { force: true })
-                  }
+                  onClick={() => fetchTopicInfo(parsedTopicId, { force: true })}
                 >
                   Retry
                 </IonButton>
               </div>
             </div>
-          ) : !topicDetail?.topic ? (
+          ) : !topicInfo ? (
             <div className="topicPageSection">
               <IonText>
                 <p>Topic not found</p>
@@ -427,39 +389,27 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           ) : (
             <>
               <div className="topicHeader">
-                <h1 className="topicTitle">{topicDetail.topic.title}</h1>
+                <h1 className="topicTitle">{topicInfo.title}</h1>
 
                 <div className="topicMeta">
-                  {topicDetail.topic.member?.username ? (
-                    <IonText color="medium">
-                      @{topicDetail.topic.member.username}
-                    </IonText>
+                  {topicInfo.userName ? (
+                    <IonText color="medium">@{topicInfo.userName}</IonText>
                   ) : null}
-                  {topicDetail.topic.node?.title ||
-                  topicDetail.topic.node?.name ? (
-                    <IonBadge color="light">
-                      {topicDetail.topic.node?.title ??
-                        topicDetail.topic.node?.name}
-                    </IonBadge>
+                  {topicInfo.nodeName ? (
+                    <IonBadge color="light">{topicInfo.nodeName}</IonBadge>
                   ) : null}
-                  {topicDetail.topic.created ? (
-                    <IonText color="medium">
-                      {formatTime(topicDetail.topic.created)}
-                    </IonText>
+                  {topicInfo.createdText ? (
+                    <IonText color="medium">{topicInfo.createdText}</IonText>
                   ) : null}
                 </div>
 
-                {topicDetail.topic.contentRendered ? (
+                {topicInfo.content ? (
                   <div
                     className="topicContent prose"
                     dangerouslySetInnerHTML={{
-                      __html: topicDetail.topic.contentRendered ?? "",
+                      __html: topicInfo.content ?? "",
                     }}
                   />
-                ) : topicDetail.topic.content ? (
-                  <IonText>
-                    <p className="topicPlain">{topicDetail.topic.content}</p>
-                  </IonText>
                 ) : null}
               </div>
 
@@ -484,11 +434,10 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                         <IonLabel className="ion-text-wrap">
                           <div className="replyMeta">
                             {(() => {
-                              const username =
-                                reply.member?.username || "unknown";
-                              const avatarUrl = getMemberAvatarUrl(
-                                reply.member,
-                              );
+                              const username = reply.userName || "unknown";
+                              const avatarUrl = reply.avatar
+                                ? normalizeAvatarUrl(reply.avatar)
+                                : null;
                               const initial = username
                                 .trim()
                                 .slice(0, 1)
@@ -515,34 +464,29 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                               );
                             })()}
                             <span className="replyUser">
-                              @{reply.member?.username || "unknown"}
+                              @{reply.userName || "unknown"}
                             </span>
 
-                            {reply.member?.username ===
-                            topicDetail?.topic?.member?.username ? (
+                            {reply.userName === topicInfo?.userName ? (
                               <IonBadge color="medium" className="opBadge">
                                 OP
                               </IonBadge>
                             ) : null}
                             <span className="replyRight">
-                              #{index + 1}
-                              {reply.created
-                                ? ` · ${formatTime(reply.created)}`
+                              #{reply.floor}
+                              {reply.replyTimeText
+                                ? ` · ${reply.replyTimeText}`
                                 : ""}
                             </span>
                           </div>
 
-                          {reply.contentRendered ? (
+                          {reply.content ? (
                             <div
                               className="topicContent prose"
                               dangerouslySetInnerHTML={{
-                                __html: reply.contentRendered ?? "",
+                                __html: reply.content,
                               }}
                             />
-                          ) : reply.content ? (
-                            <IonText>
-                              <p className="topicPlain">{reply.content}</p>
-                            </IonText>
                           ) : null}
                         </IonLabel>
                       </IonItem>
@@ -574,6 +518,41 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           position="top"
           onDidDismiss={() => setToastOpen(false)}
         />
+
+        {/* 回复输入框 */}
+        {isAuthenticated && (
+          <IonFooter className="topicReplyFooter">
+            <IonToolbar>
+              <div className="replyInputContainer">
+                <IonTextarea
+                  placeholder="写回复..."
+                  value={replyContent}
+                  onIonInput={(e) => setReplyContent(e.detail.value ?? "")}
+                  rows={1}
+                  autoGrow={true}
+                  disabled={isSubmittingReply || !topicInfo?.once}
+                  counter={true}
+                  maxlength={20000}
+                />
+                <IonButton
+                  onClick={handleSubmitReply}
+                  className="replySubmitButton"
+                  disabled={
+                    !replyContent.trim() ||
+                    isSubmittingReply ||
+                    !topicInfo?.once
+                  }
+                >
+                  {isSubmittingReply ? (
+                    <IonSpinner name="crescent" />
+                  ) : (
+                    <IonIcon slot="icon-only" icon={sendOutline} />
+                  )}
+                </IonButton>
+              </div>
+            </IonToolbar>
+          </IonFooter>
+        )}
       </IonContent>
     </IonPage>
   );

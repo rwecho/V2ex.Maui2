@@ -165,7 +165,10 @@ public class ApiService
     }
 
     public async Task<NewsInfo> Login(
-        LoginParameters loginParameters,
+        string usernameFieldName,
+        string passwordFieldName,
+        string captchaFieldName,
+        string once,
         string username,
         string password,
         string captcha)
@@ -175,10 +178,10 @@ public class ApiService
         {
             Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                { loginParameters.UsernameFieldName, username },
-                { loginParameters.PasswordFieldName, password },
-                { loginParameters.CaptchaFieldName, captcha},
-                { "once", loginParameters.Once },
+                { usernameFieldName, username },
+                { passwordFieldName, password },
+                { captchaFieldName, captcha},
+                { "once", once },
                 { "next", "/" },
             })
         };

@@ -238,31 +238,32 @@ public partial class MauiBridge
         try
         {
             logger.LogInformation("Bridge: 获取回复 once token, TopicId={TopicId}", topicId);
-            // ApiService doesn't have a direct method for just the token?
-            // It has GetTopicDetail which might return it?
-            // Actually, we usually parse it from the page.
-            // Let's assume GetTopicDetail returns TopicInfo which has Once?
-            // If not, we might be stuck.
-            // Checking ApiService.GetTopicDetail... it returns TopicInfo.
-            // Does TopicInfo have Once?
-            // Let's check TopicInfo.cs.
-            // If strictly needed, we can implemented it in ApiService or here.
 
-            // For now, let's try to get it from Topic Detail.
-            var topic = await apiService.GetTopicDetail(topicId);
-            // Assuming TopicInfo has a 'Once' property or similar.
-            // If not, we might fail.
-            // But let's check TopicInfo structure if we can. 
-            // I'll assume we can't easily get it without checking, so I will return a placeholder or try best effort.
+            // 从话题详情中提取 once token
+            var topicInfo = await apiService.GetTopicDetail(topicId);
 
+            // TopicInfo 是一个对象，包含 Once 属性
+            if (topicInfo != null && !string.IsNullOrEmpty(topicInfo.Once))
+            {
+                logger.LogInformation("Bridge: 成功获取 once token, length={Length}", topicInfo.Once.Length);
+
+                return JsonSerializer.Serialize(new
+                {
+                    success = true,
+                    once = topicInfo.Once
+                }, _jsonOptions);
+            }
+
+            logger.LogWarning("Bridge: TopicInfo.Once 为空或 null");
             return JsonSerializer.Serialize(new
             {
-                success = true,
-                once = "not_implemented_yet_use_topic_detail"
+                success = false,
+                error = "无法获取 once token：TopicInfo.Once 为空或 null"
             }, _jsonOptions);
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Bridge: 获取回复 once token 失败");
             return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
         }
     }

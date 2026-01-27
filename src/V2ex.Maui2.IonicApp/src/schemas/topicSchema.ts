@@ -59,37 +59,12 @@ export const TopicSchema = z
   })
   .passthrough();
 
-export const ReplySchema = z
-  .object({
-    id: z.number(),
-    content: NullishString,
-    contentRendered: NullishString,
-    created: z.number().optional(),
-    member: MemberSchema.optional(),
-    isOp: z.boolean().optional(),
-    // 后端这里会返回 null（而不是缺省），需要兼容
-    mentioned: z.array(z.string()).nullable().optional(),
-    floor: z.number().optional(),
-  })
-  .passthrough();
-
-export const TopicDetailSchema = z
-  .object({
-    topic: TopicSchema.optional(),
-    replies: z.array(ReplySchema).optional(),
-    page: z.number().optional(),
-    totalPages: z.number().optional(),
-  })
-  .passthrough();
-
 export const TopicListSchema = z.array(TopicSchema);
 export const NodeInfoListSchema = z.array(NodeInfoSchema);
 
 export type MemberType = z.infer<typeof MemberSchema>;
 export type NodeInfoType = z.infer<typeof NodeInfoSchema>;
 export type TopicType = z.infer<typeof TopicSchema>;
-export type ReplyType = z.infer<typeof ReplySchema>;
-export type TopicDetailType = z.infer<typeof TopicDetailSchema>;
 
 export interface GetNodeTopicsParams {
   nodeName: string;

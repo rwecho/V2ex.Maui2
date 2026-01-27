@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { TopicDetailType, TopicType } from "../schemas/topicSchema";
+import { TopicType, TopicInfoType } from "../schemas/topicSchema";
 import { apiService } from "../services/apiService";
 
 interface TopicState {
@@ -7,9 +7,9 @@ interface TopicState {
   loadingByKey: Record<string, boolean>;
   errorByKey: Record<string, string | null>;
 
-  topicDetailById: Record<string, TopicDetailType | null>;
-  topicDetailLoadingById: Record<string, boolean>;
-  topicDetailErrorById: Record<string, string | null>;
+  topicInfoById: Record<string, TopicInfoType | null>;
+  topicInfoLoadingById: Record<string, boolean>;
+  topicInfoErrorById: Record<string, string | null>;
 }
 
 interface TopicActions {
@@ -17,11 +17,12 @@ interface TopicActions {
   fetchHotTopics: (key: string) => Promise<void>;
   fetchTabTopics: (key: string, tab?: string) => Promise<void>;
 
-  fetchTopicDetail: (
+  fetchTopicInfo: (
     topicId: number,
     options?: { force?: boolean },
   ) => Promise<void>;
-  clearTopicDetail: (topicId: number) => void;
+  clearTopicInfo: (topicId: number) => void;
+  updateTopicInfo: (topicId: number, topicInfo: TopicInfoType) => void;
 }
 
 export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
@@ -29,9 +30,9 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
   loadingByKey: {},
   errorByKey: {},
 
-  topicDetailById: {},
-  topicDetailLoadingById: {},
-  topicDetailErrorById: {},
+  topicInfoById: {},
+  topicInfoLoadingById: {},
+  topicInfoErrorById: {},
 
   fetchLatestTopics: async (key: string) => {
     if (get().loadingByKey[key]) return;
@@ -184,22 +185,22 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
     });
   },
 
-  fetchTopicDetail: async (topicId: number, options?: { force?: boolean }) => {
+  fetchTopicInfo: async (topicId: number, options?: { force?: boolean }) => {
     const idKey = String(topicId);
     const force = options?.force === true;
 
-    if (get().topicDetailLoadingById[idKey]) return;
+    if (get().topicInfoLoadingById[idKey]) return;
 
     // If we already have data and this isn't an explicit refresh, don't refetch.
-    if (!force && get().topicDetailById[idKey]) return;
+    if (!force && get().topicInfoById[idKey]) return;
 
     set({
-      topicDetailLoadingById: {
-        ...get().topicDetailLoadingById,
+      topicInfoLoadingById: {
+        ...get().topicInfoLoadingById,
         [idKey]: true,
       },
-      topicDetailErrorById: {
-        ...get().topicDetailErrorById,
+      topicInfoErrorById: {
+        ...get().topicInfoErrorById,
         [idKey]: null,
       },
     });
@@ -212,12 +213,12 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
         res.error,
       );
       set({
-        topicDetailLoadingById: {
-          ...get().topicDetailLoadingById,
+        topicInfoLoadingById: {
+          ...get().topicInfoLoadingById,
           [idKey]: false,
         },
-        topicDetailErrorById: {
-          ...get().topicDetailErrorById,
+        topicInfoErrorById: {
+          ...get().topicInfoErrorById,
           [idKey]: res.error,
         },
       });
@@ -227,96 +228,46 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
     const topicInfo = res.data;
     if (!topicInfo) {
       set({
-        topicDetailLoadingById: {
-          ...get().topicDetailLoadingById,
+        topicInfoLoadingById: {
+          ...get().topicInfoLoadingById,
           [idKey]: false,
         },
-        topicDetailErrorById: {
-          ...get().topicDetailErrorById,
+        topicInfoErrorById: {
+          ...get().topicInfoErrorById,
           [idKey]: "Topic not found",
         },
       });
       return;
     }
 
-    const topicDetail: TopicDetailType = {
-      page: topicInfo.currentPage || 1,
-      totalPages: topicInfo.maximumPage || 1,
-      topic: {
-        id: topicId,
-        title: topicInfo.title,
-        content: topicInfo.content,
-        contentRendered: topicInfo.content,
-        url: null,
-        replies: topicInfo.replies ? topicInfo.replies.length : 0,
-        created: undefined,
-        lastModified: undefined,
-        lastTouched: undefined,
-        member: {
-          id: 0,
-          username: topicInfo.userName,
-          avatarMini: topicInfo.avatar,
-          avatarLarge: topicInfo.avatar,
-          tagline: null,
-          bio: null,
-          website: null,
-          github: null,
-          status: null,
-        },
-        node: {
-          id: 0,
-          name: topicInfo.nodeName,
-          title: topicInfo.nodeName,
-          titleAlternative: null,
-          header: null,
-          footer: null,
-          icon: null,
-          parentNodeName: null,
-        },
-        deleted: false,
-      },
-      replies: topicInfo.replies
-        ? topicInfo.replies.map((r) => ({
-            id: parseInt(r.id) || 0,
-            content: r.content,
-            contentRendered: r.content,
-            created: undefined,
-            member: {
-              id: 0,
-              username: r.userName,
-              avatarMini: r.avatar,
-              avatarLarge: r.avatar,
-              tagline: null,
-              bio: null,
-              website: null,
-              github: null,
-              status: null,
-            },
-            isOp: r.userName === topicInfo.userName,
-            mentioned: null,
-            floor: r.floor,
-          }))
-        : [],
-    };
-
     set({
-      topicDetailById: { ...get().topicDetailById, [idKey]: topicDetail },
-      topicDetailLoadingById: {
-        ...get().topicDetailLoadingById,
+      topicInfoById: { ...get().topicInfoById, [idKey]: topicInfo },
+      topicInfoLoadingById: {
+        ...get().topicInfoLoadingById,
         [idKey]: false,
       },
     });
   },
 
-  clearTopicDetail: (topicId: number) => {
+  clearTopicInfo: (topicId: number) => {
     const idKey = String(topicId);
-    const { [idKey]: _, ...restDetail } = get().topicDetailById;
-    const { [idKey]: __, ...restLoading } = get().topicDetailLoadingById;
-    const { [idKey]: ___, ...restError } = get().topicDetailErrorById;
+    const { [idKey]: _, ...restDetail } = get().topicInfoById;
+    const { [idKey]: __, ...restLoading } = get().topicInfoLoadingById;
+    const { [idKey]: ___, ...restError } = get().topicInfoErrorById;
     set({
-      topicDetailById: restDetail,
-      topicDetailLoadingById: restLoading,
-      topicDetailErrorById: restError,
+      topicInfoById: restDetail,
+      topicInfoLoadingById: restLoading,
+      topicInfoErrorById: restError,
+    });
+  },
+
+  updateTopicInfo: (topicId: number, topicInfo: TopicInfoType) => {
+    const idKey = String(topicId);
+    set({
+      topicInfoById: {
+        ...get().topicInfoById,
+        [idKey]: topicInfo,
+      },
     });
   },
 }));

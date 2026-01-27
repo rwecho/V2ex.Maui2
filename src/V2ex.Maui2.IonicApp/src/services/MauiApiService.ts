@@ -6,7 +6,6 @@ import type {
   GetUserParams,
   MemberType,
   NodeInfoType,
-  TopicDetailType,
   TopicType,
   NotificationType,
   DailyInfoType,
@@ -19,7 +18,6 @@ import {
   TopicListSchema,
   NodeInfoListSchema,
   NodeInfoSchema,
-  TopicDetailSchema,
   MemberSchema,
   NotificationSchema,
   DailyInfoSchema,
@@ -503,7 +501,7 @@ export class MauiApiService implements IV2exApiService {
     topicId: number,
     content: string,
     once: string,
-  ): Promise<Result<{ replyId?: number }>> {
+  ): Promise<Result<TopicInfoType | null>> {
     const res = await this.callMauiBridge("PostReplyAsync", [
       topicId,
       content,
@@ -513,7 +511,7 @@ export class MauiApiService implements IV2exApiService {
 
     return this.parseJsonOrError(
       "PostReplyResult",
-      z.object({ replyId: z.number().optional() }).passthrough(),
+      TopicInfoSchema.nullable(),
       res.data,
     );
   }

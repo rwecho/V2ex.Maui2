@@ -51,6 +51,24 @@ public class TopicsController : ControllerBase
         }
     }
 
+    [HttpGet("{id}/replies/once")]
+    public async Task<IActionResult> GetReplyOnceToken(int id)
+    {
+        try
+        {
+            var topicInfo = await _apiService.GetTopicDetail(id);
+            if (topicInfo != null && !string.IsNullOrEmpty(topicInfo.Once))
+            {
+                return Ok(new { once = topicInfo.Once });
+            }
+            return BadRequest(new { error = "无法获取 once token" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpPost("{id}/replies")]
     public async Task<IActionResult> ReplyTopic(string id, [FromBody] ReplyTopicRequest request)
     {
@@ -61,7 +79,7 @@ public class TopicsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { error = ex.Message });
         }
     }
 

@@ -4,7 +4,6 @@ import {
   NodeInfoType,
   NotificationType,
   SearchResultType,
-  TopicDetailType,
   TopicType,
   GetNodeParams,
   GetNodeTopicsParams,
@@ -71,7 +70,7 @@ export interface IV2exApiService {
     topicId: number,
     content: string,
     once: string,
-  ): Promise<Result<{ replyId?: number }>>;
+  ): Promise<Result<TopicInfoType | null>>;
   requiresLogin(topicId: number): Promise<Result<boolean>>;
 
   // Node Interactions

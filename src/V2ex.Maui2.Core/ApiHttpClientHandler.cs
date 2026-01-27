@@ -36,13 +36,14 @@ public class ApiHttpClientHandler : HttpClientHandler
             _logger.LogDebug("Request Cookie: {Name}={Value}", cookie.Name, cookie.Value);
         }
 
-
         var response = await base.SendAsync(request, cancellationToken);
 
-        var responseCookies = response.Headers.GetValues("Set-Cookie");
-        foreach (var cookie in responseCookies)
+        if (response.Headers.TryGetValues("Set-Cookie", out var responseCookies))
         {
-            _logger.LogDebug("Response Set-Cookie: {Cookie}", cookie);
+            foreach (var cookie in responseCookies)
+            {
+                _logger.LogDebug("Response Set-Cookie: {Cookie}", cookie);
+            }
         }
 
         _logger.LogInformation("Response: {StatusCode} {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
