@@ -45,7 +45,13 @@ import ErrorDebugScreen, {
   CapturedError,
 } from "./components/ErrorDebug/ErrorDebugScreen";
 
-setupIonicReact();
+// 配置 Ionic 确保跨平台一致性
+setupIonicReact({
+  rippleEffect: true, // 禁用波纹效果，提升性能
+  swipeBackEnabled: true, // 启用 iOS 风格的滑动返回
+  hardwareBackButton: true, // 启用 Android 硬件返回键
+  animated: true, // 启用动画过渡
+});
 
 // Use hash history so the document URL remains at '/', which keeps WKWebView's
 // Referer header to the origin (fragments are not included in Referer).
@@ -62,6 +68,25 @@ const App: React.FC = () => {
 
   useEffect(() => {
     initColorMode();
+  }, []);
+
+  // 为原生 Android 返回键提供路由状态检查
+  useEffect(() => {
+    // 将路由状态暴露给原生代码调用
+    (window as any).canGoBack = () => {
+      const currentPath = window.location.pathname;
+      // 首页路径列表
+      const homePaths = ["/", "/#/home", "/home", "/tabs/home"];
+      // 检查当前是否在首页
+      const isHome = homePaths.some(
+        (path) => currentPath === path || currentPath.endsWith(path),
+      );
+      return !isHome && history.length > 1;
+    };
+
+    return () => {
+      delete (window as any).canGoBack;
+    };
   }, []);
 
   useEffect(() => {

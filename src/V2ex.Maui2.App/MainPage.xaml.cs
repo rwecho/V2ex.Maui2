@@ -209,6 +209,48 @@ public partial class MainPage : ContentPage
         });
     }
 
+#if ANDROID
+    protected override bool OnBackButtonPressed()
+    {
+        // 拦截 Android 返回键，优先让 Ionic Router 处理
+        try
+        {
+            // 调用 JavaScript 检查并执行返回
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                try
+                {
+                    // 1. 仅在 Android 平台下执行此逻辑
+#if ANDROID
+                    // 2. 获取 HybridWebView 的 Handler，并尝试转换为 Android 原生的 WebView
+                    // 注意：这里的 HybridWebViewControl 是你 xaml 中控件的 x:Name
+                    var androidWebView = hybridWebView.Handler?.PlatformView as Android.Webkit.WebView;
+
+                    // 3. 检查原生 WebView 是否可以回退
+                    if (androidWebView != null && androidWebView.CanGoBack())
+                    {
+                        androidWebView.GoBack();
+                    }
+#endif
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to handle back button in WebView");
+                    // 发生错误时，允许默认行为（退出应用）
+                    base.OnBackButtonPressed();
+                }
+            });
+
+            // 返回 true 表示我们已经处理了返回键
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in OnBackButtonPressed");
+            return base.OnBackButtonPressed();
+        }
+    }
+#endif
 
 }
 
