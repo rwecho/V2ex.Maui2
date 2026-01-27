@@ -29,7 +29,21 @@ public class ApiHttpClientHandler : HttpClientHandler
             _logger.LogDebug("Request Header: {Key}: {Value}", header.Key, string.Join(", ", header.Value));
         }
 
+        var cookies = this.CookieContainer.GetCookies(new Uri(request.RequestUri.GetLeftPart(UriPartial.Authority)));
+
+        foreach (Cookie cookie in cookies)
+        {
+            _logger.LogDebug("Request Cookie: {Name}={Value}", cookie.Name, cookie.Value);
+        }
+
+
         var response = await base.SendAsync(request, cancellationToken);
+
+        var responseCookies = response.Headers.GetValues("Set-Cookie");
+        foreach (var cookie in responseCookies)
+        {
+            _logger.LogDebug("Response Set-Cookie: {Cookie}", cookie);
+        }
 
         _logger.LogInformation("Response: {StatusCode} {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
 
