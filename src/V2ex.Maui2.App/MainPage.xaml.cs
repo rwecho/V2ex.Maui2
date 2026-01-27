@@ -11,6 +11,9 @@ public partial class MainPage : ContentPage
 {
     private readonly MauiBridge _bridge;
     private readonly ILogger<MainPage> _logger;
+    
+    // Splash Screen 超时定时器
+    private CancellationTokenSource? _splashTimeoutCts;
 
     // Bindable props for StatusBarBehavior
     public static readonly BindableProperty NativeStatusBarColorProperty =
@@ -18,7 +21,7 @@ public partial class MainPage : ContentPage
             nameof(NativeStatusBarColor),
             typeof(Color),
             typeof(MainPage),
-            defaultValue: Color.FromArgb("#f3f4f6"));
+            defaultValue: Color.FromArgb("#121212")); // 默认深色背景匹配 Splash Screen
 
     public Color NativeStatusBarColor
     {
@@ -31,7 +34,7 @@ public partial class MainPage : ContentPage
             nameof(NativeStatusBarStyle),
             typeof(StatusBarStyle),
             typeof(MainPage),
-            defaultValue: StatusBarStyle.DarkContent);
+            defaultValue: StatusBarStyle.LightContent); // 默认浅色文字匹配 Splash Screen
 
     public StatusBarStyle NativeStatusBarStyle
     {
@@ -77,29 +80,48 @@ public partial class MainPage : ContentPage
 
         hybridWebView.SetInvokeJavaScriptTarget(_bridge);
 
-        // 监听 WebView 导航完成事件，用于隐藏 Splash Screen
-        hybridWebView.Navigated += OnWebViewNavigated;
-
-        // When the WebView process is killed while the app is in background (common
-        // on iOS/Android under memory pressure), resuming can show a blank WebView.
-        // Reloading on resume recovers reliably.
+        // App 恢复时检查 WebView 状态
         App.AppResumed += OnAppResumed;
 
-        // 显示初始 Splash Screen
-        ShowSplashScreen("正在加载...");
+        // 显示初始 Splash Screen 并启动超时定时器
+        ShowSplashScreenWithTimeout("正在加载...", TimeSpan.FromSeconds(5));
     }
 
-    private void OnWebViewNavigated(object sender, WebNavigatedEventArgs e)
+    /// <summary>
+    /// 显示 Splash Screen 并启动超时定时器
+    /// 如果在指定时间内没有收到 appReady 消息，将强制隐藏 Splash Screen
+    /// </summary>
+    private void ShowSplashScreenWithTimeout(string message, TimeSpan timeout)
     {
-        // WebView 导航完成，延迟一点再隐藏 Splash Screen
-        _logger.LogInformation("WebView navigated to: {Url}", e.Url);
-
-        MainThread.BeginInvokeOnMainThread(async () =>
+        ShowSplashScreen(message);
+        
+        // 取消之前的超时定时器
+        _splashTimeoutCts?.Cancel();
+        _splashTimeoutCts = new CancellationTokenSource();
+        var token = _splashTimeoutCts.Token;
+        
+        // 启动超时定时器
+        Task.Run(async () =>
         {
-            // 等待 JavaScript 执行和渲染完成
-            await Task.Delay(800);
-            HideSplashScreen();
-        });
+            try
+            {
+                await Task.Delay(timeout, token);
+                
+                // 超时了，强制隐藏 Splash Screen
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    if (IsLoading)
+                    {
+                        _logger.LogWarning("Splash screen timeout, forcing hide.");
+                        HideSplashScreen();
+                    }
+                });
+            }
+            catch (TaskCanceledException)
+            {
+                // 定时器被取消，说明 appReady 已收到
+            }
+        }, token);
     }
 
     private void ShowSplashScreen(string message = "正在加载...")
@@ -160,22 +182,7 @@ public partial class MainPage : ContentPage
             {
                 try
                 {
-                    // 检查 WebView 是否可用
-                    var platformView = hybridWebView?.Handler?.PlatformView;
-                    if (platformView == null)
-                    {
-                        _logger.LogWarning("HybridWebView platform view not ready on resume.");
-                        return;
-                    }
-
-#if ANDROID
-                    // Android 特殊处理：休眠后 WebView 可能处于损坏状态
-                    // 需要检测并恢复 WebView
-                    if (platformView is Android.Webkit.WebView awv)
-                    {
-                        await HandleAndroidResumeAsync(awv);
-                    }
-#endif
+                    await HandleResumeAsync();
                 }
                 catch (Exception ex)
                 {
@@ -189,25 +196,32 @@ public partial class MainPage : ContentPage
         }
     }
 
-#if ANDROID
     /// <summary>
-    /// Android 休眠恢复处理：
-    /// 1. 先检测 WebView 是否处于正常状态
+    /// 统一的 App 恢复处理逻辑（Android/iOS 通用）
+    /// 1. 检测 WebView 是否处于正常状态
     /// 2. 如果 WebView 无响应或页面空白，则执行恢复
     /// </summary>
-    private async Task HandleAndroidResumeAsync(Android.Webkit.WebView awv)
+    private async Task HandleResumeAsync()
     {
         try
         {
-            // 检查 WebView 是否仍然有效
-            if (awv.Handler == null || !awv.IsAttachedToWindow)
+            // 检查 WebView 是否可用
+            var platformView = hybridWebView?.Handler?.PlatformView;
+            if (platformView == null)
             {
-                _logger.LogWarning("WebView not attached to window on resume.");
+                _logger.LogWarning("HybridWebView platform view not ready on resume.");
                 return;
             }
 
-            // 检测 WebView 是否处于正常状态
-            var isHealthy = await CheckWebViewHealthAsync(awv);
+            // 平台特定的有效性检查
+            if (!IsWebViewAttached(platformView))
+            {
+                _logger.LogWarning("WebView not attached on resume.");
+                return;
+            }
+
+            // 通过 JavaScript 检测 WebView 是否健康
+            var isHealthy = await CheckWebViewHealthAsync();
             
             if (isHealthy)
             {
@@ -218,56 +232,57 @@ public partial class MainPage : ContentPage
             // WebView 需要恢复
             _logger.LogInformation("WebView needs recovery, starting reload...");
             
-            // 显示恢复中的 Splash Screen
-            ShowSplashScreen("正在恢复...");
+            // 显示恢复中的 Splash Screen 并启动超时定时器
+            ShowSplashScreenWithTimeout("正在恢复...", TimeSpan.FromSeconds(5));
 
-            // 执行恢复
-            await RecoverAndroidWebViewAsync(awv);
-
-            // 等待加载完成后隐藏 Splash Screen
-            await Task.Delay(500);
-            HideSplashScreen();
+            // 执行恢复（会触发 appReady 消息来隐藏 Splash Screen）
+            await RecoverWebViewAsync();
             
-            _logger.LogInformation("WebView recovered successfully.");
+            _logger.LogInformation("WebView recovery initiated.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to handle Android resume.");
+            _logger.LogError(ex, "Failed to handle resume.");
             HideSplashScreen();
         }
     }
 
     /// <summary>
-    /// 检测 WebView 是否处于健康状态
+    /// 检查 WebView 是否已附加到窗口（平台特定）
     /// </summary>
-    private async Task<bool> CheckWebViewHealthAsync(Android.Webkit.WebView awv)
+    private bool IsWebViewAttached(object platformView)
+    {
+#if ANDROID
+        if (platformView is Android.Webkit.WebView awv)
+        {
+            return awv.Handler != null && awv.IsAttachedToWindow;
+        }
+#endif
+#if IOS || MACCATALYST
+        if (platformView is WebKit.WKWebView wk)
+        {
+            return wk.Window != null;
+        }
+#endif
+        return true; // 默认假设已附加
+    }
+
+    /// <summary>
+    /// 通过 JavaScript 检测 WebView 是否处于健康状态（跨平台）
+    /// </summary>
+    private async Task<bool> CheckWebViewHealthAsync()
     {
         try
         {
-            // 检查是否有有效的 URL
-            var currentUrl = awv.Url;
-            if (string.IsNullOrEmpty(currentUrl))
-            {
-                _logger.LogWarning("WebView URL is empty.");
-                return false;
-            }
-
-            // 通过 JavaScript 验证页面是否可响应
             var healthCheckScript = @"
                 (function() {
                     try {
-                        // 检查 document 是否存在且可访问
                         if (!document || !document.body) return 'NO_BODY';
-                        
-                        // 检查页面是否有内容
                         if (document.body.innerHTML.length < 100) return 'EMPTY_PAGE';
-                        
-                        // 检查 React/Ionic app 是否已挂载
                         var appRoot = document.getElementById('root') || document.getElementById('app');
                         if (appRoot && appRoot.children.length > 0) {
                             return 'HEALTHY';
                         }
-                        
                         return 'UNKNOWN';
                     } catch (e) {
                         return 'ERROR:' + e.message;
@@ -288,15 +303,16 @@ public partial class MainPage : ContentPage
     }
 
     /// <summary>
-    /// 恢复 Android WebView
+    /// 恢复 WebView（跨平台统一实现）
     /// </summary>
-    private async Task RecoverAndroidWebViewAsync(Android.Webkit.WebView awv)
+    private async Task RecoverWebViewAsync()
     {
-        // 方案 1: 尝试通过 JavaScript 刷新页面
+        var platformView = hybridWebView?.Handler?.PlatformView;
+        
+        // 方案 1: 尝试通过 JavaScript 刷新页面（跨平台）
         try
         {
-            var reloadScript = "window.location.reload(false);";
-            await hybridWebView.EvaluateJavaScriptAsync(reloadScript);
+            await hybridWebView.EvaluateJavaScriptAsync("window.location.reload(false);");
             _logger.LogInformation("WebView reloaded via JavaScript.");
             return;
         }
@@ -305,86 +321,60 @@ public partial class MainPage : ContentPage
             _logger.LogWarning(jsEx, "JavaScript reload failed, trying native reload.");
         }
 
-        // 方案 2: 使用原生 Reload
-        try
+        // 方案 2: 平台特定的原生 Reload
+#if ANDROID
+        if (platformView is Android.Webkit.WebView awv)
         {
-            awv.StopLoading();
-            await Task.Delay(50);
-            awv.Reload();
-            _logger.LogInformation("WebView reloaded via native Reload().");
-            return;
-        }
-        catch (Exception reloadEx)
-        {
-            _logger.LogWarning(reloadEx, "Native Reload() failed, trying LoadUrl.");
-        }
-
-        // 方案 3: 重新加载当前 URL
-        try
-        {
-            var currentUrl = awv.Url;
-            if (!string.IsNullOrEmpty(currentUrl))
+            try
             {
-                awv.LoadUrl(currentUrl);
-                _logger.LogInformation("WebView reloaded via LoadUrl().");
-            }
-        }
-        catch (Exception urlEx)
-        {
-            _logger.LogError(urlEx, "All WebView recovery methods failed.");
-        }
-    }
-#endif
-
-    private void ReloadHybridWebView()
-    {
-        try
-        {
-            var platformView = hybridWebView?.Handler?.PlatformView;
-            if (platformView is null)
-            {
-                _logger.LogDebug("HybridWebView platform view not ready; skip reload.");
+                awv.StopLoading();
+                await Task.Delay(50);
+                awv.Reload();
+                _logger.LogInformation("WebView reloaded via Android native Reload().");
                 return;
             }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Android native Reload() failed.");
+            }
+        }
+#endif
 
 #if IOS || MACCATALYST
-            if (platformView is WebKit.WKWebView wk)
+        if (platformView is WebKit.WKWebView wk)
+        {
+            try
             {
                 wk.Reload();
+                _logger.LogInformation("WebView reloaded via iOS native Reload().");
                 return;
             }
-#endif
-
-#if ANDROID
-            // Android 的处理已经移到 ReloadAndroidWebViewAsync
-            if (platformView is Android.Webkit.WebView)
+            catch (Exception ex)
             {
-                return;
+                _logger.LogWarning(ex, "iOS native Reload() failed.");
             }
+        }
 #endif
 
-            // Best-effort fallback: try a reflection-based Reload() if the platform view
-            // is wrapped by another type.
-            var mi = platformView.GetType().GetMethod("Reload", Type.EmptyTypes);
-            if (mi is not null)
+        // 方案 3: 反射方式尝试调用 Reload
+        try
+        {
+            var mi = platformView?.GetType().GetMethod("Reload", Type.EmptyTypes);
+            if (mi != null)
             {
                 mi.Invoke(platformView, null);
+                _logger.LogInformation("WebView reloaded via reflection.");
                 return;
             }
-
-            _logger.LogDebug(
-                "HybridWebView platform view type {Type} does not support Reload()",
-                platformView.GetType().FullName);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to reload underlying platform WebView.");
+            _logger.LogError(ex, "All WebView recovery methods failed.");
         }
     }
 
     private void OnHybridWebViewRawMessageReceived(object? sender, HybridWebViewRawMessageReceivedEventArgs e)
     {
-        // Optional: useful for debugging if JS calls window.HybridWebView.SendRawMessage(...)
         _logger.LogInformation("HybridWebView raw message: {Message}", e.Message);
 
         if (string.IsNullOrWhiteSpace(e.Message))
@@ -392,28 +382,55 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        // Expect JSON like: {"type":"theme","mode":"dark"|"light"}
         try
         {
             using var doc = JsonDocument.Parse(e.Message);
             var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeProp) || typeProp.GetString() != "theme")
+            
+            if (!root.TryGetProperty("type", out var typeProp))
             {
                 return;
             }
-
-            var mode = root.TryGetProperty("mode", out var modeProp) ? modeProp.GetString() : null;
-            if (mode is not ("dark" or "light"))
+            
+            var messageType = typeProp.GetString();
+            
+            switch (messageType)
             {
-                return;
+                case "appReady":
+                    HandleAppReady();
+                    break;
+                    
+                case "theme":
+                    var mode = root.TryGetProperty("mode", out var modeProp) ? modeProp.GetString() : null;
+                    if (mode is "dark" or "light")
+                    {
+                        ApplyNativeTheme(mode);
+                    }
+                    break;
             }
-
-            ApplyNativeTheme(mode);
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to parse HybridWebView raw message as theme payload.");
+            _logger.LogDebug(ex, "Failed to parse HybridWebView raw message.");
         }
+    }
+
+    /// <summary>
+    /// 处理前端发送的 appReady 消息
+    /// </summary>
+    private void HandleAppReady()
+    {
+        _logger.LogInformation("Received appReady message from frontend.");
+        
+        // 取消超时定时器
+        _splashTimeoutCts?.Cancel();
+        _splashTimeoutCts = null;
+        
+        // 隐藏 Splash Screen
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            HideSplashScreen();
+        });
     }
 
     private void ApplyNativeTheme(string mode)

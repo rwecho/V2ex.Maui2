@@ -6,6 +6,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonSkeletonText,
   IonSpinner,
   IonText,
 } from "@ionic/react";
@@ -21,6 +22,32 @@ type TopicListProps = {
   onRetry?: () => void | Promise<void>;
   emptyText?: string;
 };
+
+// Skeleton 加载占位组件
+const TopicListSkeleton = () => {
+  return (
+    <IonList inset={false} lines="full">
+      {[...Array(8)].map((_, index) => (
+        <IonItem key={index}>
+          <IonAvatar className="topicListAvatar" slot="start">
+            <IonSkeletonText animated style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+          </IonAvatar>
+          <IonLabel>
+            <div className="topicListTitle">
+              <IonSkeletonText animated style={{ width: '90%', height: '16px' }} />
+            </div>
+            <div className="topicListMeta" style={{ marginTop: '8px' }}>
+              <IonSkeletonText animated style={{ width: '60px', height: '12px', display: 'inline-block' }} />
+              <IonSkeletonText animated style={{ width: '40px', height: '18px', display: 'inline-block', marginLeft: '8px', borderRadius: '4px' }} />
+              <IonSkeletonText animated style={{ width: '30px', height: '12px', display: 'inline-block', marginLeft: '8px' }} />
+            </div>
+          </IonLabel>
+        </IonItem>
+      ))}
+    </IonList>
+  );
+};
+
 const TopicList = (props: TopicListProps) => {
   const { topics, loading, error, isActive, onRetry, emptyText } = props;
 
@@ -61,13 +88,9 @@ const TopicList = (props: TopicListProps) => {
     void onRetry();
   };
 
+  // 使用 Skeleton 代替简单的 spinner
   if (loading && topics.length === 0) {
-    return (
-      <div className="topicListLoadingRow">
-        <IonSpinner name="crescent" />
-        <IonText>加载中…</IonText>
-      </div>
-    );
+    return <TopicListSkeleton />;
   }
 
   // If we have no cached data, show a full error state.

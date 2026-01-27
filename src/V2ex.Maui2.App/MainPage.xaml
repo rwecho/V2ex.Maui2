@@ -20,50 +20,30 @@
                            RawMessageReceived="OnHybridWebViewRawMessageReceived"/>
         </Grid>
 
-        <!-- Splash Screen Overlay -->
+        <!-- Splash Screen Overlay - 简洁现代设计 -->
         <Grid x:Name="splashScreen"
               Grid.RowSpan="2"
               BackgroundColor="#121212"
               ZIndex="1000">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="100"/>
-            </Grid.RowDefinitions>
-
-            <!-- Logo / Icon -->
-            <VerticalStackLayout Grid.Row="1"
-                                 Spacing="20"
-                                 Padding="20"
-                                 HorizontalOptions="Center">
-                <!-- V2EX Logo Placeholder -->
-                <Border
-                    BackgroundColor="#27272a"
-                    Padding="20">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="40"/>
-                    </Border.StrokeShape>
-                    <Label Text="V2EX"
-                           FontSize="48"
-                           FontAttributes="Bold"
-                           TextColor="#f4f4f5"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center"/>
-                </Border>
-
-                <!-- Loading Spinner -->
+            
+            <!-- 使用应用 Logo -->
+            <Image Source="splash.png"
+                   WidthRequest="120"
+                   HeightRequest="120"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   Margin="0,0,0,60"/>
+            
+            <!-- 底部加载指示器 -->
+            <VerticalStackLayout VerticalOptions="End"
+                                 HorizontalOptions="Center"
+                                 Padding="0,0,0,80"
+                                 Spacing="12">
                 <ActivityIndicator IsRunning="{Binding IsLoading}"
-                                   Color="#f4f4f5"
+                                   Color="#71717a"
                                    HorizontalOptions="Center"
-                                   WidthRequest="40"
-                                   HeightRequest="40"/>
-
-                <!-- Loading Text -->
-                <Label Text="{Binding LoadingText}"
-                       FontSize="14"
-                       TextColor="#92949c"
-                       HorizontalOptions="Center"
-                       HorizontalTextAlignment="Center"/>
+                                   WidthRequest="24"
+                                   HeightRequest="24"/>
             </VerticalStackLayout>
         </Grid>
     </Grid>

@@ -169,7 +169,7 @@
 
 /* Basic prose styles for HTML content (contentRendered). */
 .prose {
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
   line-height: 1.75;
   font-size: 15px;
   word-break: break-word;
@@ -214,7 +214,7 @@
   margin: 10px 0 10px;
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ion-text-color);
 }
 
 .topicReplyEmpty {
@@ -279,7 +279,7 @@
 @keyframes usernamePulse {
   0%,
   100% {
-    color: var(--ion-color-dark);
+    color: var(--ion-text-color);
     transform: scale(1);
   }
   50% {
@@ -567,5 +567,39 @@
 
   .douyin-send-btn.active:hover {
     background: rgba(254, 44, 85, 0.12);
+  }
+
+  /* Topic page dark mode overrides */
+  .topicPagePill {
+    color: #e2e8f0;
+    background: #374151;
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .topicPageTitle,
+  .topicTitle {
+    color: #f5f5f5;
+  }
+
+  .topicPagePlainText {
+    color: #e5e5e5;
+  }
+
+  .replyUser {
+    color: #f5f5f5;
+  }
+
+  /* Prose dark mode - ensure high contrast text */
+  .prose {
+    color: #e5e5e5;
+  }
+
+  .prose a {
+    color: #60a5fa;
+  }
+
+  .prose pre {
+    background: #1e1e1e;
+    color: #e5e7eb;
   }
 }

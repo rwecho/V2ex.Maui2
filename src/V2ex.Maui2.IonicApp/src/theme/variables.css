@@ -181,16 +181,16 @@ http://ionicframework.com/docs/theming/ */
   }
 
   /*
-   * MD Dark Theme - Dark Gray
+   * MD (Android) Dark Theme - Improved Contrast
    */
   .md body {
     --ion-background-color: #121212;
     --ion-background-color-rgb: 18, 18, 18;
 
-    --ion-text-color: #ffffff;
-    --ion-text-color-rgb: 255, 255, 255;
+    --ion-text-color: #f5f5f5;
+    --ion-text-color-rgb: 245, 245, 245;
 
-    --ion-border-color: #222222;
+    --ion-border-color: #2a2a2a;
 
     --ion-color-step-50: #1e1e1e;
     --ion-color-step-100: #2a2a2a;
@@ -215,6 +215,7 @@ http://ionicframework.com/docs/theming/ */
     --ion-item-background: #1e1e1e;
 
     --ion-toolbar-background: #1f1f1f;
+    --ion-toolbar-color: #f5f5f5;
 
     --ion-tab-bar-background: #1f1f1f;
 
