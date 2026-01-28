@@ -16,7 +16,8 @@ import {
   IonSegmentView,
   IonTitle,
   IonToast,
-  IonToggle,
+  IonSelect,
+  IonSelectOption,
   IonToolbar,
   IonAvatar,
   IonImg,
@@ -38,7 +39,7 @@ import VersionFooter from "../../components/VersionFooter";
 import {
   applyColorMode,
   getStoredMode,
-  getSystemPreferredMode,
+
   setStoredMode,
   type ColorMode,
 } from "../../theme/colorMode";
@@ -73,7 +74,7 @@ const HomePage = () => {
   );
 
   const [colorMode, setColorMode] = useState<ColorMode>(
-    () => getStoredMode() ?? getSystemPreferredMode(),
+    () => getStoredMode() ?? "system",
   );
 
   const [activeKey, setActiveKey] = useState<string>(() => {
@@ -398,13 +399,17 @@ const HomePage = () => {
 
           <IonList inset>
             <IonItem lines="full">
-              <IonLabel>深色模式</IonLabel>
-              <IonToggle
-                checked={colorMode === "dark"}
-                onIonChange={(e) =>
-                  setColorMode(e.detail.checked ? "dark" : "light")
-                }
-              />
+              <IonLabel>外观</IonLabel>
+              <IonSelect
+                value={colorMode}
+                onIonChange={(e) => setColorMode(e.detail.value as ColorMode)}
+                interface="action-sheet"
+                interfaceOptions={{ header: "选择外观" }}
+              >
+                <IonSelectOption value="light">浅色</IonSelectOption>
+                <IonSelectOption value="dark">深色</IonSelectOption>
+                <IonSelectOption value="system">跟随系统</IonSelectOption>
+              </IonSelect>
             </IonItem>
 
             {devMode && (

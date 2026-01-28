@@ -1,8 +1,12 @@
-export type ColorMode = "light" | "dark";
+export type ColorMode = "light" | "dark" | "system";
 
 const STORAGE_KEY = "v2ex.colorMode";
 
-export function getSystemPreferredMode(): ColorMode {
+// Keep track of the media query listener so we can remove it
+let systemThemeListener: ((e: MediaQueryListEvent) => void) | null = null;
+let mediaQuery: MediaQueryList | null = null;
+
+export function getSystemPreferredMode(): "light" | "dark" {
   if (
     typeof window === "undefined" ||
     typeof window.matchMedia !== "function"
@@ -17,7 +21,7 @@ export function getSystemPreferredMode(): ColorMode {
 export function getStoredMode(): ColorMode | null {
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === "dark" || v === "light") return v;
+    if (v === "dark" || v === "light" || v === "system") return v;
     return null;
   } catch {
     return null;
@@ -32,7 +36,7 @@ export function setStoredMode(mode: ColorMode): void {
   }
 }
 
-function notifyHostTheme(mode: ColorMode): void {
+function notifyHostTheme(mode: "light" | "dark"): void {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const hwv = (window as any).HybridWebView;
@@ -44,12 +48,8 @@ function notifyHostTheme(mode: ColorMode): void {
   }
 }
 
-export function applyColorMode(mode: ColorMode): void {
-  // Ionic's dark palette can be applied via a class on the root element.
-  // Depending on Ionic version/build, the selector may be:
-  // - body.dark (classic dark.class.css)
-  // - .ion-palette-dark (newer palette-based builds)
-  const isDark = mode === "dark";
+function applyEffectiveTheme(effectiveMode: "light" | "dark"): void {
+  const isDark = effectiveMode === "dark";
 
   // Prefer palette-based toggle (this matches what ends up in our bundled CSS).
   document.documentElement.classList.toggle("ion-palette-dark", isDark);
@@ -59,11 +59,43 @@ export function applyColorMode(mode: ColorMode): void {
 
   // Hint the UA for form controls/scrollbars.
   document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-  notifyHostTheme(mode);
+  
+  notifyHostTheme(effectiveMode);
+}
+
+export function applyColorMode(mode: ColorMode): void {
+  // Remove existing system theme listener if any
+  if (systemThemeListener && mediaQuery) {
+    mediaQuery.removeEventListener("change", systemThemeListener);
+    systemThemeListener = null;
+    mediaQuery = null;
+  }
+
+  if (mode === "system") {
+    // Apply based on system preference
+    const systemMode = getSystemPreferredMode();
+    applyEffectiveTheme(systemMode);
+
+    // Listen for system theme changes
+    if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+      mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      systemThemeListener = (e: MediaQueryListEvent) => {
+        applyEffectiveTheme(e.matches ? "dark" : "light");
+      };
+      mediaQuery.addEventListener("change", systemThemeListener);
+    }
+  } else {
+    applyEffectiveTheme(mode);
+  }
+}
+
+export function getEffectiveMode(mode: ColorMode): "light" | "dark" {
+  return mode === "system" ? getSystemPreferredMode() : mode;
 }
 
 export function initColorMode(): ColorMode {
-  const mode = getStoredMode() ?? getSystemPreferredMode();
+  const mode = getStoredMode() ?? "system";
   applyColorMode(mode);
   return mode;
 }
+
