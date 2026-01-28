@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -27,5 +27,22 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script src="/src/hybridwebview.ts" type="module"></script>
+
+    <script>
+      function checkWebViewHealth() {
+        try {
+          if (!document || !document.body) return "NO_BODY";
+          if (document.body.innerHTML.length < 100) return "EMPTY_PAGE";
+          var appRoot =
+            document.getElementById("root") || document.getElementById("app");
+          if (appRoot && appRoot.children.length > 0) {
+            return "HEALTHY";
+          }
+          return "UNKNOWN";
+        } catch (e) {
+          return "ERROR:" + e.message;
+        }
+      }
+    </script>
   </body>
 </html>
