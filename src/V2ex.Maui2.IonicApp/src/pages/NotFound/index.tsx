@@ -30,7 +30,7 @@ const NotFoundPage = () => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton color={"medium"} text="" />
+            <IonBackButton defaultHref="/home"  color={"medium"} text="" />
           </IonButtons>
           <IonTitle>404</IonTitle>
         </IonToolbar>

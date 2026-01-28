@@ -208,7 +208,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton color={"medium"} text="" />
+            <IonBackButton defaultHref="/home" color={"medium"} text="" />
           </IonButtons>
           <IonTitle>{headerTitle}</IonTitle>
         </IonToolbar>

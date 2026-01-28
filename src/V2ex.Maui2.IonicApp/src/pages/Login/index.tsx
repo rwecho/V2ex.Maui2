@@ -45,7 +45,7 @@ const LoginPage = () => {
   useEffect(() => {
     // 如果已经登录，直接跳转回首页
     if (isAuthenticated) {
-      history.replace("/");
+      history.replace("/home");
     }
   }, [isAuthenticated, history]);
 
@@ -157,8 +157,12 @@ const LoginPage = () => {
       });
 
       // 延迟跳转，让用户看到成功提示
+      // 延迟跳转，让用户看到成功提示
+      // 注意：useEffect 中也会监听 isAuthenticated 变化并跳转
+      // 这里显式跳转是为了更快的响应（如果 useEffect 有延迟）
+      // 使用 /home 避免根路径重定向
       setTimeout(() => {
-        history.replace("/");
+        history.replace("/home");
       }, 500);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "登录失败";
@@ -180,7 +184,7 @@ const LoginPage = () => {
       <IonHeader translucent>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/" color={"medium"} text="" />
+            <IonBackButton defaultHref="/home" color={"medium"} text="" />
           </IonButtons>
           <IonTitle>登录</IonTitle>
         </IonToolbar>

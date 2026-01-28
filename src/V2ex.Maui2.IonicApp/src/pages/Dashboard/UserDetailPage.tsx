@@ -30,7 +30,7 @@ const UserDetailPage: React.FC<UserDetailPageProps> = ({ match, history }) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton color={"medium"} text="" />
+            <IonBackButton defaultHref="/home"  color={"medium"} text="" />
           </IonButtons>
           <IonTitle>User Detail</IonTitle>
         </IonToolbar>
