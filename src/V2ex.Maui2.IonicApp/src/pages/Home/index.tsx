@@ -24,7 +24,9 @@ import {
   IonThumbnail,
   IonFooter,
 } from "@ionic/react";
-import { useEffect, useState } from "react";
+import { menuController } from "@ionic/core/components";
+
+import { useRef, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { useTabStore } from "../../store/tabStore";
 import { useTopicStore } from "../../store/topicStore";
@@ -50,6 +52,7 @@ interface RefresherEventDetail {
 const HomePage = () => {
   const history = useHistory();
   const tabs = useTabStore((state) => state.tabs);
+  const menuRef = useRef<HTMLIonMenuElement>(null);
 
   const { topicsByKey, loadingByKey, errorByKey, fetchTabTopics } =
     useTopicStore(
@@ -99,6 +102,7 @@ const HomePage = () => {
 
   // 处理登出
   const handleSignOut = async () => {
+    void menuController.close();
     try {
       const res = await apiService.signOut();
       if (res.error === null) {
@@ -425,7 +429,10 @@ const HomePage = () => {
             {!isAuthenticated && (
               <IonItem
                 lines="none"
-                onClick={() => history.push("/login")}
+                onClick={() => {
+                  void menuController.close();
+                  history.push("/login");
+                }}
                 button
                 detail={false}
               >

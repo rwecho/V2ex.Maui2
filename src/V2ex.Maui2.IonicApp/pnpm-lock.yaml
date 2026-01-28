@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@ionic/core':
+        specifier: ^8.7.17
+        version: 8.7.17
       '@ionic/react':
         specifier: ^8.5.0
         version: 8.7.16(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -829,6 +832,10 @@ packages:
 
   '@ionic/core@8.7.16':
     resolution: {integrity: sha512-+vdv/o2Z/2YfoZJIDBLnoh11eJmOOZqQdfwC0zl2MemAVRSofjGuIQlUTZqiUUNht56Rnk9oo53TvmgjNCtmDA==}
+    engines: {node: '>= 16'}
+
+  '@ionic/core@8.7.17':
+    resolution: {integrity: sha512-gp7PIEJX27NX/FkjiUlpjQUtJiFFE5W1lofRC5CfORQ8p4PrLh9wJO9EJH0YryCr2qZS0k47sYgRQP5FwiXlpg==}
     engines: {node: '>= 16'}
 
   '@ionic/react-router@8.7.16':
@@ -4104,6 +4111,12 @@ snapshots:
   '@humanwhocodes/retry@0.4.3': {}
 
   '@ionic/core@8.7.16':
+    dependencies:
+      '@stencil/core': 4.38.0
+      ionicons: 8.0.13
+      tslib: 2.8.1
+
+  '@ionic/core@8.7.17':
     dependencies:
       '@stencil/core': 4.38.0
       ionicons: 8.0.13
