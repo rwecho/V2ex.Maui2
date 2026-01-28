@@ -55,12 +55,34 @@
   padding-top: 12px;
 }
 
+
 .supplementItem {
   margin-bottom: 16px;
+  background-color: #fcfcfc; /* subtle light bg */
+  border-left: 4px solid #e2e2e2;
+  padding: 12px 16px;
+  border-radius: 0 4px 4px 0;
 }
 
 .supplementHeader {
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.supplementBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  background: #eaeaea;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.supplementDate {
+  font-size: 12px;
+  color: #999;
 }
 
 .topicPlain {
@@ -604,6 +626,21 @@
     color: #cccccc;
   }
 
+  /* Supplement Dark Mode */
+  body:not(.light) .supplementItem {
+    background-color: #1a1a1c;
+    border-left-color: #333;
+  }
+
+  body:not(.light) .supplementBadge {
+    background: #333;
+    color: #aaa;
+  }
+
+  body:not(.light) .supplementDate {
+    color: #666;
+  }
+
   body:not(.light) .replyUser {
     color: #e2e2e2;
   }
@@ -690,6 +727,21 @@ body.dark .topicTitle {
 
 body.dark .topicPagePlainText {
   color: #cccccc;
+}
+
+/* Supplement Dark Mode (Manual Toggle) */
+body.dark .supplementItem {
+  background-color: #1a1a1c;
+  border-left-color: #333;
+}
+
+body.dark .supplementBadge {
+  background: #333;
+  color: #aaa;
+}
+
+body.dark .supplementDate {
+  color: #666;
 }
 
 body.dark .replyUser {

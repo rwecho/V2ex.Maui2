@@ -73,9 +73,23 @@ const HomePage = () => {
     () => getStoredMode() ?? getSystemPreferredMode(),
   );
 
-  const [activeKey, setActiveKey] = useState<string>(
-    () => tabs[0]?.key ?? "latest",
-  );
+  const [activeKey, setActiveKey] = useState<string>(() => {
+    // 1. Try to load from localStorage
+    const saved = localStorage.getItem("v2ex_home_active_tab");
+    // 2. Validate validity
+    if (saved && tabs.some((t) => t.key === saved)) {
+      return saved;
+    }
+    // 3. Fallback to default
+    return tabs[0]?.key ?? "latest";
+  });
+
+  // Persist activeKey on change
+  useEffect(() => {
+    if (activeKey) {
+      localStorage.setItem("v2ex_home_active_tab", activeKey);
+    }
+  }, [activeKey]);
 
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");

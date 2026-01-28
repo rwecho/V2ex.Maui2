@@ -130,7 +130,7 @@ const ErrorDebugScreen = (props: ErrorDebugScreenProps) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/" color={"medium"} text="" />
+            <IonBackButton defaultHref="/home" color={"medium"} text="" />
           </IonButtons>
           <IonTitle>发生异常</IonTitle>
           <IonButtons slot="end">
