@@ -46,10 +46,42 @@ public class MauiCookieStorage : ICookieContainerStorage
 
     public void ClearCookies()
     {
+        // 1. Native Clear (Platform Specific) - Critical for iOS/Android where HttpClient uses native handlers
+#if IOS || MACCATALYST
+        try
+        {
+            // Clear NSHttpCookieStorage (Used by NSUrlSessionHandler / HttpClient)
+            var storage = Foundation.NSHttpCookieStorage.SharedStorage;
+            if (storage.Cookies != null)
+            {
+                foreach (var cookie in storage.Cookies)
+                {
+                    storage.DeleteCookie(cookie);
+                }
+            }
+            Foundation.NSUserDefaults.StandardUserDefaults.Synchronize();
+
+            // Clear WKWebsiteDataStore (Used by WebView)
+            // RemoveDataOfTypes is void-returning with a completion handler, fitting our void method signature.
+            WebKit.WKWebsiteDataStore.DefaultDataStore.RemoveDataOfTypes(
+                WebKit.WKWebsiteDataStore.AllWebsiteDataTypes,
+                Foundation.NSDate.FromTimeIntervalSince1970(0),
+                () => {
+                    System.Diagnostics.Debug.WriteLine("[MauiCookieStorage] WKWebsiteDataStore cleared.");
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+             Console.WriteLine($"[MauiCookieStorage] iOS native clear failed: {ex.Message}");
+        }
+#endif
         foreach (Cookie cookie in this._cookieContainer.GetAllCookies())
         {
             cookie.Expires = DateTime.UtcNow.AddYears(-1);
         }
+
+        // 3. Clear Persistence
         Preferences.Set(CookiesKey, JsonSerializer.Serialize(Array.Empty<Cookie>()));
     }
 
