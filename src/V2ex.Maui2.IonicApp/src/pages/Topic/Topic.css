@@ -327,21 +327,9 @@
    ========================================== */
 
 /* 背景遮罩 */
-.douyin-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 999;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* ==========================================
+   抖音风格回复输入框 (Douyin-style Reply Input)
+   ========================================== */
 
 /* 底部输入框容器 */
 .douyin-reply-footer {
@@ -407,16 +395,8 @@
 }
 
 /* ==========================================
-   展开状态 (Expanded State)
+   展开状态由 IonModal 接管，保留内部容器样式
    ========================================== */
-
-.douyin-reply-footer.expanded {
-  border-top: none;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-  padding: 16px 16px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
-}
 
 .douyin-reply-container {
   display: flex;
@@ -558,10 +538,6 @@
 
 /* Use both media query and .dark class for compatibility */
 @media (prefers-color-scheme: dark) {
-  body:not(.light) .douyin-backdrop {
-    background: rgba(0, 0, 0, 0.6);
-  }
-
   body:not(.light) .douyin-reply-footer {
     background: var(--ion-background-color, #111);
   }
@@ -584,10 +560,6 @@
 
   body:not(.light) .douyin-collapsed-icons {
     color: #888;
-  }
-
-  body:not(.light) .douyin-reply-footer.expanded {
-    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.6);
   }
 
   body:not(.light) .douyin-textarea {
@@ -655,37 +627,29 @@
 }
 
 /* Explicit class-based dark mode for manual toggle */
-body.dark .douyin-backdrop {
-  background: rgba(0, 0, 0, 0.6);
-}
+  body.dark .douyin-reply-footer {
+    background: var(--ion-background-color, #111);
+  }
 
-body.dark .douyin-reply-footer {
-  background: var(--ion-background-color, #111);
-}
+  body.dark .douyin-reply-footer.collapsed {
+    border-top-color: rgba(255, 255, 255, 0.05);
+  }
 
-body.dark .douyin-reply-footer.collapsed {
-  border-top-color: rgba(255, 255, 255, 0.05);
-}
+  body.dark .douyin-collapsed-input {
+    background: #1a1a1c;
+  }
 
-body.dark .douyin-collapsed-input {
-  background: #1a1a1c;
-}
+  body.dark .douyin-collapsed-input:active {
+    background: #242426;
+  }
 
-body.dark .douyin-collapsed-input:active {
-  background: #242426;
-}
+  body.dark .douyin-placeholder {
+    color: #777;
+  }
 
-body.dark .douyin-placeholder {
-  color: #777;
-}
-
-body.dark .douyin-collapsed-icons {
-  color: #888;
-}
-
-body.dark .douyin-reply-footer.expanded {
-  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.6);
-}
+  body.dark .douyin-collapsed-icons {
+    color: #888;
+  }
 
 body.dark .douyin-textarea {
   --color: #bbb;

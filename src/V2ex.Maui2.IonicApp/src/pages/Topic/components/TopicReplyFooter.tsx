@@ -1,6 +1,6 @@
-import React from "react";
-import { IonIcon, IonSpinner, IonTextarea } from "@ionic/react";
-import { imageOutline, atOutline, happyOutline } from "ionicons/icons";
+import React, { useRef, useEffect } from "react";
+import { IonIcon, IonSpinner, IonTextarea, IonModal, IonContent, IonButton, IonButtons, IonHeader, IonToolbar, IonTitle } from "@ionic/react";
+import { imageOutline, atOutline, happyOutline, closeOutline, sendOutline } from "ionicons/icons";
 import EmojiPicker from "../../../components/EmojiPicker";
 import MentionPicker, { ReplyItem as MentionReplyItem } from "../../../components/MentionPicker";
 
@@ -45,42 +45,56 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
   replyItems,
   canReply,
 }) => {
+  const modalContentRef = useRef<HTMLIonContentElement>(null);
+
   if (!isAuthenticated) return null;
 
   return (
     <>
-      {/* 展开时的背景遮罩 */}
-      {isReplyExpanded && (
-        <div className="douyin-backdrop" onClick={() => setIsReplyExpanded(false)} />
-      )}
-      <div className={`douyin-reply-footer ${isReplyExpanded ? "expanded" : "collapsed"}`}>
-        {/* 收起状态: 一行式输入框 */}
-        {!isReplyExpanded ? (
-          <div className="douyin-collapsed-bar" onClick={() => setIsReplyExpanded(true)}>
-            <div className="douyin-collapsed-input">
-              <span className="douyin-placeholder">有什么想法，展开说说</span>
-            </div>
-            <div className="douyin-collapsed-icons">
-              <IonIcon
-                icon={imageOutline}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsReplyExpanded(true);
-                  handleImageUpload();
-                }}
-              />
-              <IonIcon
-                icon={happyOutline}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsReplyExpanded(true);
-                  setShowEmojiPicker(true);
-                }}
-              />
-            </div>
+      <div className="douyin-reply-footer collapsed">
+        <div className="douyin-collapsed-bar" onClick={() => setIsReplyExpanded(true)}>
+          <div className="douyin-collapsed-input">
+            <span className="douyin-placeholder">有什么想法，展开说说</span>
           </div>
-        ) : (
-          /* 展开状态: 完整编辑器 */
+          <div className="douyin-collapsed-icons">
+            <IonIcon
+              icon={imageOutline}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsReplyExpanded(true);
+                handleImageUpload();
+              }}
+            />
+            <IonIcon
+              icon={happyOutline}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsReplyExpanded(true);
+                setShowEmojiPicker(true);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <IonModal
+        isOpen={isReplyExpanded}
+        onDidDismiss={() => setIsReplyExpanded(false)}
+        initialBreakpoint={0.5}
+        breakpoints={[0, 0.5, 0.75, 1]}
+        handle={true}
+      >
+        <IonHeader className="ion-no-border">
+          <IonToolbar>
+            <IonTitle>回复</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={() => setIsReplyExpanded(false)}>
+                <IonIcon icon={closeOutline} />
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="ion-padding" ref={modalContentRef}>
           <div className="douyin-reply-container">
             <div className="douyin-textarea-wrapper">
               <IonTextarea
@@ -89,13 +103,14 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
                 placeholder="有什么想法，展开说说"
                 value={replyContent}
                 onIonInput={(e) => setReplyContent(e.detail.value ?? "")}
-                rows={3}
+                rows={4}
                 autoGrow={true}
                 disabled={isSubmittingReply || !canReply}
                 maxlength={20000}
               />
             </div>
-            <div className="douyin-bottom-bar">
+            
+            <div className="douyin-bottom-bar" style={{ marginTop: "16px" }}>
               <div className="douyin-action-icons">
                 <button
                   className="douyin-icon-btn"
@@ -114,7 +129,9 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
                   type="button"
                   onClick={() => {
                     setShowMentionPicker(!showMentionPicker);
-                    setShowEmojiPicker(false); // 互斥
+                    setShowEmojiPicker(false);
+                    // Scroll to bottom to show picker
+                    setTimeout(() => modalContentRef.current?.scrollToBottom(300), 100);
                   }}
                 >
                   <IonIcon icon={atOutline} />
@@ -122,40 +139,54 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
                 <button
                   className={`douyin-icon-btn ${showEmojiPicker ? "active" : ""}`}
                   type="button"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  onClick={() => {
+                    setShowEmojiPicker(!showEmojiPicker);
+                    setShowMentionPicker(false);
+                     // Scroll to bottom to show picker
+                     setTimeout(() => modalContentRef.current?.scrollToBottom(300), 100);
+                  }}
                 >
                   <IonIcon icon={happyOutline} />
                 </button>
               </div>
-              <button
-                className={`douyin-send-btn ${replyContent.trim() ? "active" : ""}`}
-                type="button"
+              <IonButton
+                className="douyin-send-btn-ionic"
                 onClick={handleSubmitReply}
                 disabled={!replyContent.trim() || isSubmittingReply || !canReply}
+                shape="round"
+                size="small"
               >
                 {isSubmittingReply ? <IonSpinner name="crescent" /> : "发送"}
-              </button>
+                <IonIcon slot="end" icon={sendOutline} />
+              </IonButton>
             </div>
 
             {/* Emoji Picker */}
             {showEmojiPicker && (
-              <EmojiPicker
-                onSelect={handleEmojiSelect}
-                onClose={() => setShowEmojiPicker(false)}
-              />
+              <div className="emoji-picker-container">
+                <EmojiPicker
+                  onSelect={handleEmojiSelect}
+                  onClose={() => setShowEmojiPicker(false)}
+                />
+              </div>
             )}
 
             {/* Mention Picker */}
             {showMentionPicker && (
-              <MentionPicker
-                replies={replyItems}
-                onSelect={handleMentionSelect}
-                onClose={() => setShowMentionPicker(false)}
-              />
+              <div className="mention-picker-container">
+                <MentionPicker
+                  replies={replyItems}
+                  onSelect={handleMentionSelect}
+                  onClose={() => setShowMentionPicker(false)}
+                />
+              </div>
             )}
+            
+            {/* 底部留白，防止内容被圆角遮挡 */}
+            <div style={{ height: "40px" }}></div>
           </div>
-        )}
-      </div>
+        </IonContent>
+      </IonModal>
     </>
   );
 };

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiService } from "../../../services/apiService";
 import { uploadImageToImgur, toMarkdownImage } from "../../../services/ImgurService";
 import { useTopicStore } from "../../../store/topicStore";
@@ -28,6 +28,17 @@ export const useTopicReply = ({
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const logAnalytics = usePageAnalytics();
   const updateTopicInfo = useTopicStore((s) => s.updateTopicInfo);
+
+  // 展开回复框时自动聚焦
+  useEffect(() => {
+    if (isReplyExpanded) {
+      // 延迟确保 DOM 已渲染且动画完成
+      const timer = setTimeout(() => {
+        textareaRef.current?.setFocus();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isReplyExpanded, textareaRef]);
 
   const handleImageUpload = async () => {
     if (isUploadingImage) return;
