@@ -70,18 +70,21 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
         Toast.Make(message, CommunityToolkit.Maui.Core.ToastDuration.Short).Show();
     }
 
-    public Task<SystemInfo> GetSystemInfo()
+    public Task<string> GetSystemInfo()
     {
+        var displayVersion = AppInfo.Current.VersionString;
         var systemInfo = new SystemInfo
         {
             Platform = DeviceInfo.Platform.ToString(),
-            AppVersion = AppInfo.VersionString,
+            AppVersion = displayVersion,
             DeviceModel = DeviceInfo.Model,
             Manufacturer = DeviceInfo.Manufacturer,
             DeviceName = DeviceInfo.Name,
             OperatingSystem = DeviceInfo.VersionString
         };
-        return Task.FromResult(systemInfo);
+        logger.LogInformation("Bridge: 获取系统信息 - Version: {Version}", displayVersion);
+
+        return Task.FromResult(JsonSerializer.Serialize(systemInfo, _jsonOptions));
     }
 
     /// <summary>
@@ -334,7 +337,7 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
                     // 获取 MIME 类型
                     var contentType = photo.ContentType ?? "image/jpeg";
 
-                    logger.LogInformation("Bridge: 图片选择成功, 大小: {Size} bytes, 类型: {ContentType}", 
+                    logger.LogInformation("Bridge: 图片选择成功, 大小: {Size} bytes, 类型: {ContentType}",
                         bytes.Length, contentType);
 
                     return JsonSerializer.Serialize(new
