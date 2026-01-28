@@ -465,12 +465,14 @@ public partial class MainPage : ContentPage
                 NativeStatusBarColor = Color.FromArgb("#0b0b0d");
                 NativeStatusBarStyle = StatusBarStyle.LightContent;
                 BackgroundColor = Color.FromArgb("#0b0b0d");
+                splashScreen.BackgroundColor = Color.FromArgb("#0b0b0d");
             }
             else
             {
                 NativeStatusBarColor = Color.FromArgb("#f3f4f6");
                 NativeStatusBarStyle = StatusBarStyle.DarkContent;
                 BackgroundColor = Color.FromArgb("#ffffff");
+                splashScreen.BackgroundColor = Color.FromArgb("#ffffff");
             }
         });
     }

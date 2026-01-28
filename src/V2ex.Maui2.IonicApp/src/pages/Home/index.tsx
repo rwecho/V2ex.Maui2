@@ -483,7 +483,7 @@ const HomePage = () => {
                       error={error}
                       isActive={tab.key === activeKey}
                       onRetry={() => fetchForTab(tab)}
-                      emptyText={`暂无话题：${tab.label}`}
+                      emptyText={``}
                     />
                   );
                 })()}
