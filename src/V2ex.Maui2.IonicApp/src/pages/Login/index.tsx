@@ -180,7 +180,7 @@ const LoginPage = () => {
       <IonHeader translucent>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/" />
+            <IonBackButton defaultHref="/" color={"medium"} text="" />
           </IonButtons>
           <IonTitle>登录</IonTitle>
         </IonToolbar>

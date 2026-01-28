@@ -1,4 +1,5 @@
 import {
+  IonBackButton,
   IonButton,
   IonButtons,
   IonContent,
@@ -128,15 +129,16 @@ const ErrorDebugScreen = (props: ErrorDebugScreenProps) => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/" color={"medium"} text="" />
+          </IonButtons>
           <IonTitle>发生异常</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleCopy}>
               <IonIcon slot="start" icon={copyOutline} />
-              Copy
             </IonButton>
             <IonButton onClick={handleReload}>
               <IonIcon slot="start" icon={refreshOutline} />
-              Reload
             </IonButton>
           </IonButtons>
         </IonToolbar>

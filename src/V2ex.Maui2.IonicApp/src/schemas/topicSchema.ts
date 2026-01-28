@@ -168,6 +168,13 @@ export const ReplyInfoSchema = z
     thanked: NullishString,
   })
   .passthrough();
+  
+export const SupplementInfoSchema = z
+  .object({
+    createdText: NullishString,
+    content: NullishString,
+  })
+  .passthrough();
 
 export const TopicInfoSchema = z
   .object({
@@ -189,10 +196,13 @@ export const TopicInfoSchema = z
     once: NullishString,
     currentPage: z.number().optional(), // Computed in C#, typically serialized
     maximumPage: z.number().optional(), // Computed in C#, typically serialized
+    supplements: z.array(SupplementInfoSchema).optional(),
+    tags: z.array(z.string()).optional(),
   })
   .passthrough();
 
 export type ReplyInfoType = z.infer<typeof ReplyInfoSchema>;
+export type SupplementInfoType = z.infer<typeof SupplementInfoSchema>;
 export type TopicInfoType = z.infer<typeof TopicInfoSchema>;
 
 export const NodesNavInfoSchema = z

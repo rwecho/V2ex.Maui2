@@ -70,7 +70,7 @@ public class TopicsController : ControllerBase
     }
 
     [HttpPost("{id}/replies")]
-    public async Task<IActionResult> ReplyTopic(string id, [FromBody] ReplyTopicRequest request)
+    public async Task<IActionResult> ReplyTopic(int id, [FromBody] ReplyTopicRequest request)
     {
         try
         {
@@ -91,56 +91,56 @@ public class TopicsController : ControllerBase
     }
 
     [HttpPost("{id}/append")]
-    public async Task<IActionResult> AppendTopic(string id, [FromBody] AppendTopicRequest request)
+    public async Task<IActionResult> AppendTopic(int id, [FromBody] AppendTopicRequest request)
     {
         var result = await _apiService.AppendTopic(id, request.Once, request.Content);
         return Ok(result);
     }
 
     [HttpPost("{id}/thank")]
-    public async Task<IActionResult> ThankTopic(string id, [FromQuery] string once)
+    public async Task<IActionResult> ThankTopic(int id, [FromQuery] string once)
     {
         var result = await _apiService.ThankCreator(id, once);
         return Ok(result);
     }
 
     [HttpPost("{id}/ignore")]
-    public async Task<IActionResult> IgnoreTopic(string id, [FromQuery] string once)
+    public async Task<IActionResult> IgnoreTopic(int id, [FromQuery] string once)
     {
         var result = await _apiService.IgnoreTopic(id, once);
         return Ok(result);
     }
 
     [HttpPost("{id}/unignore")]
-    public async Task<IActionResult> UnignoreTopic(string id, [FromQuery] string once)
+    public async Task<IActionResult> UnignoreTopic(int id, [FromQuery] string once)
     {
         var result = await _apiService.UnignoreTopic(id, once);
         return Ok(result);
     }
 
     [HttpPost("{id}/favorite")]
-    public async Task<IActionResult> FavoriteTopic(string id, [FromQuery] string once)
+    public async Task<IActionResult> FavoriteTopic(int id, [FromQuery] string once)
     {
         var result = await _apiService.FavoriteTopic(id, once);
         return Ok(result);
     }
 
     [HttpPost("{id}/unfavorite")]
-    public async Task<IActionResult> UnfavoriteTopic(string id, [FromQuery] string once)
+    public async Task<IActionResult> UnfavoriteTopic(int id, [FromQuery] string once)
     {
         var result = await _apiService.UnfavoriteTopic(id, once);
         return Ok(result);
     }
 
     [HttpPost("{id}/up")]
-    public async Task<IActionResult> UpTopic(string id, [FromQuery] string once)
+    public async Task<IActionResult> UpTopic(int id, [FromQuery] string once)
     {
         var result = await _apiService.UpTopic(id, once);
         return Ok(result);
     }
 
     [HttpPost("{id}/down")]
-    public async Task<IActionResult> DownTopic(string id, [FromQuery] string once)
+    public async Task<IActionResult> DownTopic(int id, [FromQuery] string once)
     {
         var result = await _apiService.DownTopic(id, once);
         return Ok(result);

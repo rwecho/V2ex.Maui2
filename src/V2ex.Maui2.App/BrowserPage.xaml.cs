@@ -106,21 +106,21 @@ public partial class BrowserPage : ContentPage
         var isDark = Application.Current?.RequestedTheme == AppTheme.Dark;
         if (isDark != true)
         {
-            StatusBarColor = Color.FromArgb("#f3f4f6");
+            StatusBarColor = Color.FromArgb("#ffffff");
             StatusBarStyle = StatusBarStyle.DarkContent;
-            TitleBarBackgroundColor = Color.FromArgb("#f3f4f6");
+            TitleBarBackgroundColor = Color.FromArgb("#ffffff");
             TitleTextColor = Colors.Black;
-            AccentColor = Color.FromArgb("#7cabff");
+            AccentColor = Color.FromArgb("#92949c");
             BackgroundColor = Colors.White;
         }
         else
         {
-            StatusBarColor = Color.FromArgb("#0b0b0d");
+            StatusBarColor = Color.FromArgb("#1f1f1f");
             StatusBarStyle = StatusBarStyle.LightContent;
-            TitleBarBackgroundColor = Color.FromArgb("#0b0b0d");
+            TitleBarBackgroundColor = Color.FromArgb("#1f1f1f");
             TitleTextColor = Colors.White;
-            AccentColor = Color.FromArgb("#4d8dff");
-            BackgroundColor = Color.FromArgb("#0b0b0d");
+            AccentColor = Color.FromArgb("#989aa2");
+            BackgroundColor = Color.FromArgb("#000000");
         }
     }
 

@@ -27,7 +27,7 @@ type TopicListProps = {
 const TopicListSkeleton = () => {
   return (
     <IonList inset={false} lines="full">
-      {[...Array(8)].map((_, index) => (
+      {[...Array(20)].map((_, index) => (
         <IonItem key={index}>
           <IonAvatar className="topicListAvatar" slot="start">
             <IonSkeletonText animated style={{ width: '100%', height: '100%', borderRadius: '50%' }} />

@@ -10,15 +10,16 @@
                                    StatusBarStyle="{Binding StatusBarStyle}"/>
     </ContentPage.Behaviors>
 
-    <Grid RowDefinitions="48,*">
+    <Grid RowDefinitions="Auto,*">
         <Grid x:Name="titleBar"
               Grid.Row="0"
-              Padding="4,12"
+              HeightRequest="56"
+              Padding="8,0"
               BackgroundColor="{Binding TitleBarBackgroundColor}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="56"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="56"/>
             </Grid.ColumnDefinitions>
 
             <Button x:Name="backButton"
@@ -26,13 +27,11 @@
                     Text="&lt;"
                     BackgroundColor="Transparent"
                     TextColor="{Binding AccentColor}"
-                    FontSize="24"
-                    FontAttributes="Bold"
-                    Padding="8"
-                    Margin="0,0,8,0"
-                    Clicked="OnBackClicked"
-                    WidthRequest="40"
-                    HeightRequest="40"/>
+                    FontSize="28"
+                    Padding="0"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Clicked="OnBackClicked"/>
 
             <Label x:Name="titleLabel"
                    Grid.Column="1"
@@ -41,6 +40,7 @@
                    FontAttributes="Bold"
                    VerticalOptions="Center"
                    HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
                    LineBreakMode="TailTruncation"
                    MaxLines="1"
                    TextColor="{Binding TitleTextColor}"/>
@@ -50,12 +50,11 @@
                     Text="↻"
                     BackgroundColor="Transparent"
                     TextColor="{Binding AccentColor}"
-                    FontSize="18"
-                    Padding="8"
-                    Margin="8,0,0,0"
-                    Clicked="OnRefreshClicked"
-                    WidthRequest="40"
-                    HeightRequest="40"/>
+                    FontSize="22"
+                    Padding="0"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Clicked="OnRefreshClicked"/>
         </Grid>
 
         <ActivityIndicator x:Name="activityIndicator"
