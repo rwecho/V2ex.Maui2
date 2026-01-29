@@ -15,7 +15,6 @@ import {
   IonSegmentContent,
   IonSegmentView,
   IonTitle,
-  IonToast,
   IonSelect,
   IonSelectOption,
   IonToolbar,
@@ -95,8 +94,7 @@ const HomePage = () => {
     }
   }, [activeKey]);
 
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string>("");
+  // Toast 状态已移除 (迁移至原生)
   const [appVersion, setAppVersion] = useState<string>("");
   const devMode = useDevModeStore((state) => state.devMode);
   const logAnalytics = usePageAnalytics();
@@ -108,18 +106,15 @@ const HomePage = () => {
       const res = await apiService.signOut();
       if (res.error === null) {
         signOut();
-        setToastMessage("已退出登录");
-        setToastOpen(true);
+        apiService.showToast("已退出登录");
         void logAnalytics("sign_out", { success: true });
       } else {
-        setToastMessage(`退出失败：${res.error}`);
-        setToastOpen(true);
+        apiService.showToast(`退出失败：${res.error}`);
         void logAnalytics("sign_out", { success: false, reason: res.error });
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "退出失败";
-      setToastMessage(errorMsg);
-      setToastOpen(true);
+      apiService.showToast(errorMsg);
       void logAnalytics("sign_out", { success: false, reason: "exception" });
     }
   };
@@ -208,8 +203,7 @@ const HomePage = () => {
     try {
       const activeTab = tabs.find((t) => t.key === activeKey);
       if (!activeTab) {
-        setToastMessage("刷新失败：未找到当前 Tab");
-        setToastOpen(true);
+        apiService.showToast("刷新失败：未找到当前 Tab");
         void logAnalytics("refresh_tab", {
           tab_key: activeKey,
           success: false,
@@ -220,20 +214,19 @@ const HomePage = () => {
       await fetchTabTopics(activeTab.key, activeTab.tab);
       const err = useTopicStore.getState().errorByKey[activeTab.key];
       if (err) {
-        setToastMessage(`刷新失败：${err}`);
+        apiService.showToast(`刷新失败：${err}`);
         void logAnalytics("refresh_tab", {
           tab_key: activeTab.key,
           success: false,
           reason: "fetch_error",
         });
       } else {
-        setToastMessage("刷新成功");
+        apiService.showToast("刷新成功");
         void logAnalytics("refresh_tab", {
           tab_key: activeTab.key,
           success: true,
         });
       }
-      setToastOpen(true);
     } finally {
       event.detail.complete();
     }
@@ -527,13 +520,7 @@ const HomePage = () => {
             ))}
           </IonSegmentView>
 
-          <IonToast
-            isOpen={toastOpen}
-            message={toastMessage}
-            duration={1200}
-            position="top"
-            onDidDismiss={() => setToastOpen(false)}
-          />
+          {/* Toast 移除 */}
 
           <IonAlert
             isOpen={showLogoutAlert}
@@ -546,9 +533,13 @@ const HomePage = () => {
                 role: "cancel",
               },
               {
-                text: "确认",
+                text: "确定",
                 role: "destructive",
-                handler: handleSignOut,
+                handler: () => {
+                  signOut();
+                  menuController.close();
+                  apiService.showToast("已退出登录");
+                },
               },
             ]}
           />

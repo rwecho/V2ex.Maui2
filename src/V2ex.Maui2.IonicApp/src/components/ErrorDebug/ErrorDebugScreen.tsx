@@ -11,11 +11,11 @@ import {
   IonPage,
   IonText,
   IonTitle,
-  IonToast,
   IonToolbar,
 } from "@ionic/react";
 import { copyOutline, refreshOutline } from "ionicons/icons";
 import { useMemo, useState } from "react";
+import { apiService } from "../../services/apiService";
 import "./ErrorDebugScreen.css";
 
 export type CapturedError = {
@@ -101,8 +101,7 @@ const ErrorDebugScreen = (props: ErrorDebugScreenProps) => {
   const { error, onReload } = props;
 
   const [showDetails, setShowDetails] = useState(false);
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string>("");
+  // Toast 状态已移除 (迁移至原生)
 
   const basicTitle = useMemo(() => {
     const name = error.name ? `${error.name}: ` : "";
@@ -113,8 +112,7 @@ const ErrorDebugScreen = (props: ErrorDebugScreenProps) => {
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(copyText);
-    setToastMessage(ok ? "已复制完整堆栈" : "复制失败（系统限制）");
-    setToastOpen(true);
+    apiService.showToast(ok ? "已复制完整堆栈" : "复制失败（系统限制）");
   };
 
   const handleReload = () => {
@@ -209,13 +207,8 @@ const ErrorDebugScreen = (props: ErrorDebugScreenProps) => {
           </IonList>
         ) : null}
 
-        <IonToast
-          isOpen={toastOpen}
-          message={toastMessage}
-          duration={1200}
-          position="top"
-          onDidDismiss={() => setToastOpen(false)}
-        />
+
+        {/* Toast 移除 */}
       </IonContent>
     </IonPage>
   );

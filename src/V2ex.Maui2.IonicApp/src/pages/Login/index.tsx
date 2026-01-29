@@ -9,7 +9,6 @@ import {
   IonPage,
   IonSpinner,
   IonTitle,
-  IonToast,
   IonToolbar,
   IonImg,
   IonButton,
@@ -34,8 +33,7 @@ const LoginPage = () => {
   const [captchaCode, setCaptchaCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCaptcha, setIsLoadingCaptcha] = useState(false);
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  // Toast 状态已移除 (迁移至原生)
   const [formInfo, setFormInfo] = useState<SignInFormInfoType | null>(null);
 
   useEffect(() => {
@@ -50,8 +48,7 @@ const LoginPage = () => {
   }, [isAuthenticated, history]);
 
   const showToast = useCallback((message: string) => {
-    setToastMessage(message);
-    setToastOpen(true);
+    apiService.showToast(message);
   }, []);
 
   // 页面加载时获取登录表单信息和验证码
@@ -334,13 +331,9 @@ const LoginPage = () => {
           </IonText>
         </div>
 
-        <IonToast
-          isOpen={toastOpen}
-          message={toastMessage}
-          duration={2000}
-          position="top"
-          onDidDismiss={() => setToastOpen(false)}
-        />
+
+          {/* Toast 移除 */}
+        
       </IonContent>
     </IonPage>
   );

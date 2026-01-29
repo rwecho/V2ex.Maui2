@@ -14,7 +14,6 @@ import {
   IonList,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonToast,
   IonActionSheet,
   IonIcon,
   IonAlert,
@@ -91,8 +90,8 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     useShallow((s) => ({ isAuthenticated: s.isAuthenticated })),
   );
 
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string>("");
+  // 5. Toast 状态 (迁移至原生)
+  // 移除 setToastOpen, setToastMessage, toastOpen, toastMessage
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showReplyActionSheet, setShowReplyActionSheet] = useState(false);
   const [selectedReply, setSelectedReply] = useState<ReplyInfoType | null>(null);
@@ -103,12 +102,12 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     try {
       const result = await apiService.reportTopic(parsedTopicId, headerTitle);
       if (!result.error) {
-        setToastMessage("已举报该主题，感谢您的反馈");
+        apiService.showToast("举报成功");
       } else {
-        setToastMessage(`举报失败：${result.error || "未知错误"}`);
+        apiService.showToast(`操作失败：${result.error}`);
       }
     } catch (e) {
-      setToastMessage("无法启动邮件客户端");
+      apiService.showToast("无法启动邮件客户端");
     } finally {
       setShowActionSheet(false);
     }
@@ -119,15 +118,13 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     try {
       const result = await apiService.thankReply(selectedReply.id, topicInfo.once);
       if (!result.error) {
-        setToastMessage("感谢成功");
+        apiService.showToast("感谢成功");
         thankReply(parsedTopicId, selectedReply.id);
       } else {
-        setToastMessage(`操作失败：${result.error}`);
+        apiService.showToast(`操作失败：${result.error}`);
       }
     } catch (e) {
-      setToastMessage("操作异常");
-    } finally {
-      setToastOpen(true);
+      apiService.showToast("操作异常");
     }
   };
 
@@ -136,15 +133,13 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     try {
       const result = await apiService.ignoreReply(reply.id, topicInfo.once);
       if (!result.error) {
-        setToastMessage("已隐藏该回复");
+        apiService.showToast("已隐藏该回复");
         removeReply(parsedTopicId, reply.id);
       } else {
-        setToastMessage(`操作失败：${result.error}`);
+        apiService.showToast(`操作失败：${result.error}`);
       }
     } catch (e) {
-      setToastMessage("操作异常");
-    } finally {
-      setToastOpen(true);
+      apiService.showToast("操作异常");
     }
   };
 
@@ -179,8 +174,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     isAuthenticated,
     textareaRef,
     showLoginPrompt: async () => {
-      setToastMessage("发表回复需要先登录 V2EX 账号");
-      setToastOpen(true);
+      apiService.showToast("发表回复需要先登录 V2EX 账号");
       setTimeout(() => {
         history.push("/login");
       }, 1500);
@@ -268,8 +262,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const onRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     const refreshError = await handleRefreshLogic();
     event.detail.complete();
-    setToastMessage(refreshError ? `刷新失败：${refreshError}` : "刷新成功");
-    setToastOpen(true);
+    apiService.showToast(refreshError ? `刷新失败：${refreshError}` : "刷新成功");
   };
 
   const onInfinite = async (event: CustomEvent<void>) => {
@@ -451,13 +444,6 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
         <div className="topicPageBottomSpacer" aria-hidden="true" />
 
-        <IonToast
-          isOpen={toastOpen}
-          message={toastMessage}
-          duration={1200}
-          position="top"
-          onDidDismiss={() => setToastOpen(false)}
-        />
 
         <TopicReplyFooter
           isAuthenticated={isAuthenticated}
