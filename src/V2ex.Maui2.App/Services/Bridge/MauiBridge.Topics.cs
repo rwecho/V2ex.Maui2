@@ -6,225 +6,86 @@ namespace V2ex.Maui2.App.Services.Bridge;
 
 public partial class MauiBridge
 {
-    public async Task<string> GetLatestTopicsAsync()
+    public Task<string> GetLatestTopicsAsync()
     {
-        try
-        {
-            logger.LogInformation("Bridge: 获取最新话题");
-            var topics = await apiService.GetDailyHot();
-            return JsonSerializer.Serialize(topics, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 获取最新话题失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.GetDailyHot());
     }
 
-    public async Task<string> GetHotTopicsAsync()
+    public Task<string> GetHotTopicsAsync()
     {
-        try
-        {
-            logger.LogInformation("Bridge: 获取热门话题");
-            var topics = await apiService.GetDailyHot(); // Using daily hot for hot topics
-            return JsonSerializer.Serialize(topics, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 获取热门话题失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        // Using daily hot for hot topics as per original code
+        return ExecuteSafeAsync(() => apiService.GetDailyHot());
     }
 
-    public async Task<string> GetRecentTopicsAsync()
+    public Task<string> GetRecentTopicsAsync()
     {
-        try
-        {
-            logger.LogInformation("Bridge: 获取最近话题");
-            var topics = await apiService.GetRecentTopics();
-            return JsonSerializer.Serialize(topics, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 获取最近话题失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.GetRecentTopics());
     }
 
-    public async Task<string> GetTagInfoAsync(string tagName)
+    public Task<string> GetTagInfoAsync(string tagName)
     {
-        try
-        {
-            logger.LogInformation("Bridge: get tag topics, Tag: {Tag}", tagName);
-            var tagInfo = await apiService.GetTagInfo(tagName);
-            return JsonSerializer.Serialize(tagInfo, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: get tag topics failed");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.GetTagInfo(tagName));
     }
 
-    public async Task<string> GetTopicDetailAsync(int topicId, int page = 1)
+    public Task<string> GetTopicDetailAsync(int topicId, int page = 1)
     {
-        try
-        {
-            logger.LogInformation("Bridge: 获取话题详情，ID: {Id}, Page: {Page}", topicId, page);
-            var topic = await apiService.GetTopicDetail(topicId, page);
-            return JsonSerializer.Serialize(topic, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 获取话题详情失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.GetTopicDetail(topicId, page));
     }
 
-    public async Task<string> CreateTopicAsync(string title, string content, string nodeId, string once)
+    public Task<string> CreateTopicAsync(string title, string content, string nodeId, string once)
     {
-        try
-        {
-            logger.LogInformation("Bridge: 创建话题");
-            var result = await apiService.PostTopic(title, content, nodeId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 创建话题失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.PostTopic(title, content, nodeId, once));
     }
 
-    public async Task<string> GetAppendTopicParameterAsync(string topicId)
+    public Task<string> GetAppendTopicParameterAsync(string topicId)
     {
-        try
-        {
-            var result = await apiService.GetAppendTopicParameter(topicId);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.GetAppendTopicParameter(topicId));
     }
 
-    public async Task<string> AppendTopicAsync(int topicId, string once, string content)
+    public Task<string> AppendTopicAsync(int topicId, string once, string content)
     {
-        try
-        {
-            var result = await apiService.AppendTopic(topicId, once, content);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.AppendTopic(topicId, once, content));
     }
 
     // Interactions
-    public async Task<string> ThankTopicAsync(int topicId, string once)
+    public Task<string> ThankTopicAsync(int topicId, string once)
     {
-        try
-        {
-            var result = await apiService.ThankCreator(topicId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.ThankCreator(topicId, once));
     }
 
-    public async Task<string> IgnoreTopicAsync(int topicId, string once)
+    public Task<string> IgnoreTopicAsync(int topicId, string once)
     {
-        try
-        {
-            var result = await apiService.IgnoreTopic(topicId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.IgnoreTopic(topicId, once));
     }
 
-    public async Task<string> UnignoreTopicAsync(int topicId, string once)
+    public Task<string> UnignoreTopicAsync(int topicId, string once)
     {
-        try
-        {
-            var result = await apiService.UnignoreTopic(topicId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.UnignoreTopic(topicId, once));
     }
 
-    public async Task<string> FavoriteTopicAsync(int topicId, string once)
+    public Task<string> FavoriteTopicAsync(int topicId, string once)
     {
-        try
-        {
-            var result = await apiService.FavoriteTopic(topicId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.FavoriteTopic(topicId, once));
     }
 
-    public async Task<string> UnfavoriteTopicAsync(int topicId, string once)
+    public Task<string> UnfavoriteTopicAsync(int topicId, string once)
     {
-        try
-        {
-            var result = await apiService.UnfavoriteTopic(topicId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.UnfavoriteTopic(topicId, once));
     }
 
-    public async Task<string> UpTopicAsync(int topicId, string once)
+    public Task<string> UpTopicAsync(int topicId, string once)
     {
-        try
-        {
-            var result = await apiService.UpTopic(topicId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.UpTopic(topicId, once));
     }
 
-    public async Task<string> DownTopicAsync(int topicId, string once)
+    public Task<string> DownTopicAsync(int topicId, string once)
     {
-        try
-        {
-            var result = await apiService.DownTopic(topicId, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.DownTopic(topicId, once));
     }
 
-    public async Task<string> ReplyTopicAsync(int topicId, string content, string once)
+    public Task<string> ReplyTopicAsync(int topicId, string content, string once)
     {
-        try
-        {
-            var result = await apiService.ReplyTopic(topicId, content, once);
-            return JsonSerializer.Serialize(result, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+        return ExecuteSafeAsync(() => apiService.ReplyTopic(topicId, content, once));
     }
 
     // Legacy mapping
@@ -237,7 +98,7 @@ public partial class MauiBridge
 
     public async Task<string> GetReplyOnceTokenAsync(int topicId)
     {
-        try
+        return await ExecuteSafeAsync(async () =>
         {
             logger.LogInformation("Bridge: 获取回复 once token, TopicId={TopicId}", topicId);
 
@@ -249,34 +110,35 @@ public partial class MauiBridge
             {
                 logger.LogInformation("Bridge: 成功获取 once token, length={Length}", topicInfo.Once.Length);
 
-                return JsonSerializer.Serialize(new
+                return new
                 {
                     success = true,
                     once = topicInfo.Once
-                }, _jsonOptions);
+                };
             }
 
             logger.LogWarning("Bridge: TopicInfo.Once 为空或 null");
-            return JsonSerializer.Serialize(new
-            {
-                success = false,
-                error = "无法获取 once token：TopicInfo.Once 为空或 null"
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 获取回复 once token 失败");
-            return JsonSerializer.Serialize(new { success = false, error = ex.Message }, _jsonOptions);
-        }
+            throw new Exception("无法获取 once token：TopicInfo.Once 为空或 null");
+        });
     }
 
-    public Task<string> RequiresLoginAsync(int topicId)
+
+    public Task<string> ReportTopicAsync(int topicId, string title)
     {
-        // Assuming always require login for reply?
-        return Task.FromResult(JsonSerializer.Serialize(new
+        return ExecuteSafeVoidAsync(async () =>
         {
-            success = true,
-            requiresLogin = true
-        }, _jsonOptions));
+            var subject = $"[Report] Topic #{topicId}: {title}";
+            var body = $"I would like to report the following topic due to inappropriate content:\n\nTopic ID: {topicId}\nTitle: {title}\n\n(Please describe the issue below)\n";
+            var recipients = new[] { "rwecho@live.com" };
+
+            var message = new EmailMessage
+            {
+                Subject = subject,
+                Body = body,
+                To = recipients.ToList()
+            };
+
+            await Email.Default.ComposeAsync(message);
+        });
     }
 }

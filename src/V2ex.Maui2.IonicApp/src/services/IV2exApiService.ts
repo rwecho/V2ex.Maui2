@@ -51,18 +51,21 @@ export interface IV2exApiService {
     nodeId: string,
     once: string,
   ): Promise<Result<{ topicId?: number; url?: string }>>;
-  thankTopic(topicId: string, once: string): Promise<Result<void>>;
-  ignoreTopic(topicId: string, once: string): Promise<Result<void>>;
-  unignoreTopic(topicId: string, once: string): Promise<Result<void>>;
-  favoriteTopic(topicId: string, once: string): Promise<Result<void>>;
-  unfavoriteTopic(topicId: string, once: string): Promise<Result<void>>;
-  upTopic(topicId: string, once: string): Promise<Result<void>>;
-  downTopic(topicId: string, once: string): Promise<Result<void>>;
+  thankTopic(topicId: number, once: string): Promise<Result<void>>;
+  ignoreTopic(topicId: number, once: string): Promise<Result<void>>;
+  unignoreTopic(topicId: number, once: string): Promise<Result<void>>;
+  favoriteTopic(topicId: number, once: string): Promise<Result<void>>;
+  unfavoriteTopic(topicId: number, once: string): Promise<Result<void>>;
+  upTopic(topicId: number, once: string): Promise<Result<void>>;
+  downTopic(topicId: number, once: string): Promise<Result<void>>;
   appendTopic(
-    topicId: string,
+    topicId: number,
     content: string,
     once: string,
   ): Promise<Result<void>>;
+
+  // Report Interactions - ADDED
+  reportTopic(topicId: number, title: string): Promise<Result<void>>;
 
   // Reply Interactions - ADDED
   getReplyOnceToken(topicId: number): Promise<Result<string>>;
@@ -71,7 +74,6 @@ export interface IV2exApiService {
     content: string,
     once: string,
   ): Promise<Result<TopicInfoType | null>>;
-  requiresLogin(topicId: number): Promise<Result<boolean>>;
 
   // Node Interactions
   ignoreNode(nodeId: string, once: string): Promise<Result<void>>;

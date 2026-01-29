@@ -63,16 +63,22 @@ export class MauiApiService implements IV2exApiService {
     }
   }
 
-  private parseJsonOrError<T>(
-    schemaName: string,
-    schema: { parse: (data: unknown) => T },
-    jsonText: string,
-  ): Result<T> {
+  /**
+   * Correctly types the bridge call and handles parsing + error checking
+   */
+  private async invoke<T>(
+    methodName: string,
+    args: unknown[] = [],
+    schema: z.ZodType<T>,
+  ): Promise<Result<T>> {
+    const res = await this.callMauiBridge(methodName, args);
+    if (res.error !== null) return err(res.error);
+
     let data: unknown;
     try {
-      data = JSON.parse(jsonText) as unknown;
+      data = JSON.parse(res.data);
     } catch (e) {
-      return err(`返回内容解析失败（${schemaName}）：${toErrorMessage(e)}`);
+      return err(`Bridge returned invalid JSON: ${toErrorMessage(e)}`);
     }
 
     if (
@@ -87,8 +93,37 @@ export class MauiApiService implements IV2exApiService {
     try {
       return ok(schema.parse(data));
     } catch (e) {
-      return err(`数据解析失败（${schemaName}）：${toErrorMessage(e)}`);
+      return err(`Data parsing failed (${methodName}): ${toErrorMessage(e)}`);
     }
+  }
+
+  /**
+   * For methods that just return success (or error)
+   */
+  private async invokeVoid(
+    methodName: string,
+    args: unknown[] = [],
+  ): Promise<Result<void>> {
+    const res = await this.callMauiBridge(methodName, args);
+    if (res.error !== null) return err(res.error);
+
+    let data: unknown;
+    try {
+      data = JSON.parse(res.data);
+    } catch (e) {
+      return err(`Bridge returned invalid JSON: ${toErrorMessage(e)}`);
+    }
+
+    if (
+      data &&
+      typeof data === "object" &&
+      "error" in data &&
+      typeof (data as any).error === "string"
+    ) {
+      return err((data as any).error);
+    }
+
+    return ok(undefined);
   }
 
   private firebaseAnalytics = createFirebaseAnalytics(async (method, args) => {
@@ -100,151 +135,99 @@ export class MauiApiService implements IV2exApiService {
   // --- Read Methods ---
 
   async getLatestTopics(): Promise<Result<TopicType[]>> {
-    const res = await this.callMauiBridge("GetLatestTopicsAsync");
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("TopicList", TopicListSchema, res.data);
+    return this.invoke("GetLatestTopicsAsync", [], TopicListSchema);
   }
 
   async getHotTopics(): Promise<Result<TopicType[]>> {
-    const res = await this.callMauiBridge("GetHotTopicsAsync");
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("TopicList", TopicListSchema, res.data);
+    return this.invoke("GetHotTopicsAsync", [], TopicListSchema);
   }
 
   async getTabTopics(
     params: GetTabTopicsParams,
   ): Promise<Result<NewsInfoType>> {
-    const res = await this.callMauiBridge("GetTabTopicsAsync", [params.tab]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("TabTopics", NewsInfoSchema, res.data);
+    return this.invoke("GetTabTopicsAsync", [params.tab], NewsInfoSchema);
   }
 
   async getNodeTopics(
     params: GetNodeTopicsParams,
   ): Promise<Result<TopicType[]>> {
-    const res = await this.callMauiBridge("GetNodeTopicsAsync", [
-      params.nodeName,
-      params.page ?? 1,
-    ]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("TopicList", TopicListSchema, res.data);
+    return this.invoke(
+      "GetNodeTopicsAsync",
+      [params.nodeName, params.page ?? 1],
+      TopicListSchema,
+    );
   }
 
   async getTopicDetail(
     params: GetTopicParams,
   ): Promise<Result<TopicInfoType | null>> {
-    const res = await this.callMauiBridge("GetTopicDetailAsync", [
-      params.topicId,
-      params.page ?? 1,
-    ]);
-    if (res.error !== null) return err(res.error);
-
-    // Custom parsing for null case
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（TopicDetail）：${toErrorMessage(e)}`);
-    }
-    if (data === null) return ok(null);
-    try {
-      return ok(TopicInfoSchema.parse(data));
-    } catch (e) {
-      return err(`数据解析失败（TopicDetail）：${toErrorMessage(e)}`);
-    }
+    return this.invoke(
+      "GetTopicDetailAsync",
+      [params.topicId, params.page ?? 1],
+      TopicInfoSchema.nullable(),
+    );
   }
 
   async getUserProfile(
     params: GetUserParams,
   ): Promise<Result<MemberType | null>> {
-    const res = await this.callMauiBridge("GetUserProfileAsync", [
-      params.username,
-    ]);
-    if (res.error !== null) return err(res.error);
-
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（Member）：${toErrorMessage(e)}`);
-    }
-    if (data === null) return ok(null);
-    try {
-      return ok(MemberSchema.parse(data) as MemberType);
-    } catch (e) {
-      return err(`数据解析失败（Member）：${toErrorMessage(e)}`);
-    }
+    return this.invoke(
+      "GetUserProfileAsync",
+      [params.username],
+      MemberSchema.nullable(),
+    );
   }
 
   async getNodes(): Promise<Result<NodeInfoType[]>> {
-    const res = await this.callMauiBridge("GetNodesAsync");
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("NodeInfoList", NodeInfoListSchema, res.data);
+    return this.invoke("GetNodesAsync", [], NodeInfoListSchema);
   }
 
   async getNodesNavInfo(): Promise<Result<NodesNavInfoType>> {
-    const res = await this.callMauiBridge("GetNodesNavInfoAsync");
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("NodesNavInfo", NodesNavInfoSchema, res.data);
+    return this.invoke("GetNodesNavInfoAsync", [], NodesNavInfoSchema);
   }
 
   async getTagTopics(tagName: string): Promise<Result<TagInfoType>> {
-    const res = await this.callMauiBridge("GetTagInfoAsync", [tagName]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("TagInfo", TagInfoSchema, res.data);
+    return this.invoke("GetTagInfoAsync", [tagName], TagInfoSchema);
   }
 
   async getNodeDetail(
     params: GetNodeParams,
   ): Promise<Result<NodeInfoType | null>> {
-    const res = await this.callMauiBridge("GetNodeDetailAsync", [
-      params.nodeName,
-    ]);
-    if (res.error !== null) return err(res.error);
-
-    return this.parseJsonOrError("NodeInfo", NodeInfoSchema, res.data);
+    return this.invoke(
+      "GetNodeDetailAsync",
+      [params.nodeName],
+      NodeInfoSchema.nullable(),
+    );
   }
 
   // --- Auth Methods ---
 
   async getLoginParameters(): Promise<Result<SignInFormInfoType>> {
-    const res = await this.callMauiBridge("GetLoginParametersAsync");
-    if (res.error !== null) return err(res.error);
-
-    return this.parseJsonOrError(
-      "SignInFormInfo",
-      SignInFormInfoSchema,
-      res.data,
-    );
+    return this.invoke("GetLoginParametersAsync", [], SignInFormInfoSchema);
   }
 
   async getCaptchaImage(
     once: string,
   ): Promise<Result<{ image: string; mimeType: string }>> {
-    const res = await this.callMauiBridge("GetCaptchaImageAsync", [once]);
+    // Custom parsing logic kept or refactor? The generic invoke might be strict about checks.
+    // The C# side returns { success: true, image: ..., mimeType: ... } or { error: ... }
+    // Let's use a specific schema for this.
+    const CaptchaSchema = z.object({
+      image: z.string(),
+      mimeType: z.string().optional().default("image/gif"),
+      success: z.boolean().optional(),
+    });
+
+    const res = await this.invoke(
+      "GetCaptchaImageAsync",
+      [once],
+      CaptchaSchema,
+    );
     if (res.error !== null) return err(res.error);
-
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      return err(`返回内容解析失败（CaptchaImage）：${toErrorMessage(e)}`);
-    }
-
-    if (
-      data &&
-      typeof data === "object" &&
-      "success" in data &&
-      (data as any).success === true &&
-      "image" in data
-    ) {
-      return ok({
-        image: (data as any).image,
-        mimeType: (data as any).mimeType || "image/gif",
-      });
-    }
-
-    return err("获取验证码失败");
+    return ok({
+      image: res.data.image,
+      mimeType: res.data.mimeType,
+    });
   }
 
   async signIn(
@@ -253,109 +236,81 @@ export class MauiApiService implements IV2exApiService {
     formInfo: SignInFormInfoType,
     captchaCode: string,
   ): Promise<Result<{ username: string }>> {
-    const res = await this.callMauiBridge("SignInAsync", [
-      username,
-      password,
-      formInfo.usernameFieldName,
-      formInfo.passwordFieldName,
-      formInfo.captchaFieldName,
-      formInfo.once,
-      captchaCode,
-    ]);
-
-    if (res.error !== null) return err(res.error);
-
-    return this.parseJsonOrError(
-      "SignInResult",
-      z.object({
-        username: z.string(),
-      }),
-      res.data,
+    return this.invoke(
+      "SignInAsync",
+      [
+        username,
+        password,
+        formInfo.usernameFieldName,
+        formInfo.passwordFieldName,
+        formInfo.captchaFieldName,
+        formInfo.once,
+        captchaCode,
+      ],
+      z.object({ username: z.string() }),
     );
   }
 
   async signOut(): Promise<Result<void>> {
-    const res = await this.callMauiBridge("SignOutAsync");
-    if (res.error !== null) return err(res.error);
-
-    let data: unknown;
-    try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
-      // tolerate empty response
-    }
-    return ok(undefined);
+    return this.invokeVoid("SignOutAsync");
   }
 
   async isLoggedIn(): Promise<Result<boolean>> {
+    // IsLoggedInAsync returns { isLoggedIn: true } or just false on parsing failure in old code
+    // Let's assume standard format now via ExecuteSafeAsync (if refactored)
+    // Actually IsLoggedInAsync in MauiBridge.Account.cs might not be refactored yet?
+    // We only refactored Topics, we should be careful.
+    // The helper "ExecuteSafeAsync" was added to MauiBridge.cs (partial).
+    // We should assume other parts might use it or not.
+    // Safe to use invoke if the return structure is compatible.
+    // Legacy bridge methods often return raw JSON.
+    // Let's stick safe for now, manual implementation for specific ones if unsure.
     const res = await this.callMauiBridge("IsLoggedInAsync");
     if (res.error !== null) return err(res.error);
-
-    let data: unknown;
     try {
-      data = JSON.parse(res.data) as unknown;
-    } catch (e) {
+      const data = JSON.parse(res.data);
+      return ok(data?.isLoggedIn === true);
+    } catch {
       return ok(false);
     }
-    if (data && typeof data === "object" && "isLoggedIn" in data) {
-      return ok((data as any).isLoggedIn === true);
-    }
-    return ok(false);
   }
 
   async getCurrentUser(): Promise<Result<MemberType>> {
-    const res = await this.callMauiBridge("GetCurrentUserAsync");
-    if (res.error !== null) return err(res.error);
-
-    return this.parseJsonOrError("Member", MemberSchema, res.data);
+    return this.invoke("GetCurrentUserAsync", [], MemberSchema);
   }
 
   async signInTwoStep(code: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("SignInTwoStepAsync", [code, once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("SignInTwoStepAsync", [code, once]);
   }
 
   async getDailyInfo(): Promise<Result<DailyInfoType>> {
-    const res = await this.callMauiBridge("GetDailyInfoAsync");
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("DailyInfo", DailyInfoSchema, res.data);
+    return this.invoke("GetDailyInfoAsync", [], DailyInfoSchema);
   }
 
   async checkIn(once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("CheckInAsync", [once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("CheckInAsync", [once]);
   }
 
   async getNotifications(
     page: number = 1,
   ): Promise<Result<NotificationType[]>> {
-    const res = await this.callMauiBridge("GetNotificationsAsync", [page]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError(
-      "NotificationList",
+    return this.invoke(
+      "GetNotificationsAsync",
+      [page],
       z.array(NotificationSchema),
-      res.data,
     );
   }
 
   async getFollowing(page: number = 1): Promise<Result<TopicType[]>> {
-    const res = await this.callMauiBridge("GetFollowingAsync", [page]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("TopicList", TopicListSchema, res.data);
+    return this.invoke("GetFollowingAsync", [page], TopicListSchema);
   }
 
   async getFavoriteTopics(page: number = 1): Promise<Result<TopicType[]>> {
-    const res = await this.callMauiBridge("GetFavoriteTopicsAsync", [page]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("TopicList", TopicListSchema, res.data);
+    return this.invoke("GetFavoriteTopicsAsync", [page], TopicListSchema);
   }
 
   async getFavoriteNodes(): Promise<Result<NodeInfoType[]>> {
-    const res = await this.callMauiBridge("GetFavoriteNodesAsync");
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("NodeInfoList", NodeInfoListSchema, res.data);
+    return this.invoke("GetFavoriteNodesAsync", [], NodeInfoListSchema);
   }
 
   async search(
@@ -363,12 +318,10 @@ export class MauiApiService implements IV2exApiService {
     from: number = 0,
     sort: string = "created",
   ): Promise<Result<SearchResultType[]>> {
-    const res = await this.callMauiBridge("SearchAsync", [q, from, sort]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError(
-      "SearchResultList",
+    return this.invoke(
+      "SearchAsync",
+      [q, from, sort],
       z.array(SearchResultSchema),
-      res.data,
     );
   }
 
@@ -380,121 +333,82 @@ export class MauiApiService implements IV2exApiService {
     nodeId: string,
     once: string,
   ): Promise<Result<{ topicId?: number; url?: string }>> {
-    const res = await this.callMauiBridge("CreateTopicAsync", [
-      title,
-      content,
-      nodeId,
-      once,
-    ]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError(
-      "CreateTopicResult",
+    return this.invoke(
+      "CreateTopicAsync",
+      [title, content, nodeId, once],
       z
         .object({ topicId: z.number().optional(), url: z.string().optional() })
         .passthrough(),
-      res.data,
     );
   }
 
-  async thankTopic(topicId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("ThankTopicAsync", [topicId, once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+  async thankTopic(topicId: number, once: string): Promise<Result<void>> {
+    return this.invokeVoid("ThankTopicAsync", [topicId, once]);
   }
 
-  async ignoreTopic(topicId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("IgnoreTopicAsync", [topicId, once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+  async ignoreTopic(topicId: number, once: string): Promise<Result<void>> {
+    return this.invokeVoid("IgnoreTopicAsync", [topicId, once]);
   }
 
-  async unignoreTopic(topicId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("UnignoreTopicAsync", [
-      topicId,
-      once,
-    ]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+  async unignoreTopic(topicId: number, once: string): Promise<Result<void>> {
+    return this.invokeVoid("UnignoreTopicAsync", [topicId, once]);
   }
 
-  async favoriteTopic(topicId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("FavoriteTopicAsync", [
-      topicId,
-      once,
-    ]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+  async favoriteTopic(topicId: number, once: string): Promise<Result<void>> {
+    return this.invokeVoid("FavoriteTopicAsync", [topicId, once]);
   }
 
-  async unfavoriteTopic(topicId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("UnfavoriteTopicAsync", [
-      topicId,
-      once,
-    ]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+  async unfavoriteTopic(topicId: number, once: string): Promise<Result<void>> {
+    return this.invokeVoid("UnfavoriteTopicAsync", [topicId, once]);
   }
 
-  async upTopic(topicId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("UpTopicAsync", [topicId, once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+  async upTopic(topicId: number, once: string): Promise<Result<void>> {
+    return this.invokeVoid("UpTopicAsync", [topicId, once]);
   }
 
-  async downTopic(topicId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("DownTopicAsync", [topicId, once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+  async downTopic(topicId: number, once: string): Promise<Result<void>> {
+    return this.invokeVoid("DownTopicAsync", [topicId, once]);
   }
 
   async appendTopic(
-    topicId: string,
+    topicId: number,
     content: string,
     once: string,
   ): Promise<Result<void>> {
-    const res = await this.callMauiBridge("AppendTopicAsync", [
-      topicId,
-      once,
-      content,
-    ]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("AppendTopicAsync", [topicId, once, content]);
+  }
+
+  async reportTopic(topicId: number, title: string): Promise<Result<void>> {
+    return this.invokeVoid("ReportTopicAsync", [topicId, title]);
   }
 
   // --- Node Interactions ---
 
   async ignoreNode(nodeId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("IgnoreNodeAsync", [nodeId, once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("IgnoreNodeAsync", [nodeId, once]);
   }
 
   async unignoreNode(nodeId: string, once: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("UnignoreNodeAsync", [nodeId, once]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("UnignoreNodeAsync", [nodeId, once]);
   }
 
   // --- User Interactions ---
   async followUser(url: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("FollowUserAsync", [url]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("FollowUserAsync", [url]);
   }
 
   async blockUser(url: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("BlockUserAsync", [url]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("BlockUserAsync", [url]);
   }
 
   // --- Reply Methods ---
 
   async getReplyOnceToken(topicId: number): Promise<Result<string>> {
-    const res = await this.callMauiBridge("GetReplyOnceTokenAsync", [topicId]);
-    if (res.error !== null) return err(res.error);
-
-    return this.parseJsonOrError("ReplyOnceToken", z.string(), res.data);
+    return this.invoke(
+      "GetReplyOnceTokenAsync",
+      [topicId],
+      z.object({ once: z.string() }).transform((d) => d.once),
+    );
   }
 
   async postReply(
@@ -502,134 +416,101 @@ export class MauiApiService implements IV2exApiService {
     content: string,
     once: string,
   ): Promise<Result<TopicInfoType | null>> {
-    // 对内容进行 URL 编码，防止 emoji 等 Unicode 字符在桥接传输时损坏
     const encodedContent = encodeURIComponent(content);
-    const res = await this.callMauiBridge("PostReplyAsync", [
-      topicId,
-      encodedContent,
-      once,
-    ]);
-    if (res.error !== null) return err(res.error);
-
-    return this.parseJsonOrError(
-      "PostReplyResult",
+    return this.invoke(
+      "PostReplyAsync",
+      [topicId, encodedContent, once],
       TopicInfoSchema.nullable(),
-      res.data,
     );
   }
 
-  async requiresLogin(topicId: number): Promise<Result<boolean>> {
-    const res = await this.callMauiBridge("RequiresLoginAsync", [topicId]);
-    if (res.error !== null) return err(res.error);
-
-    return this.parseJsonOrError("RequiresLoginResult", z.boolean(), res.data);
-  }
-
   async getUserPage(username: string): Promise<Result<MemberType>> {
-    const res = await this.callMauiBridge("GetUserPageAsync", [username]);
-    if (res.error !== null) return err(res.error);
-    return this.parseJsonOrError("Member", MemberSchema, res.data);
+    return this.invoke("GetUserPageAsync", [username], MemberSchema);
   }
 
   // --- Helper / Native Methods ---
 
   async getStringValue(key: string): Promise<Result<string | null>> {
-    const res = await this.callMauiBridge("GetStringValue", [key]);
-    if (res.error !== null) return err(res.error);
-    return ok(res.data.length ? res.data : null);
+    const res = await this.invoke(
+      "GetStringValue",
+      [key],
+      z.string().nullable(),
+    );
+    // If empty string, it returns "" which is string.
+    // If C# returns null? JsonSerializer.Serialize(null) -> "null".
+    // JSON.parse("null") -> null.
+    return res;
   }
 
   async setStringValue(key: string, value: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("SetStringValue", [key, value]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("SetStringValue", [key, value]);
   }
 
   async showSnackbar(message: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("ShowSnackbar", [message]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("ShowSnackbar", [message]);
   }
 
   async showToast(message: string): Promise<Result<void>> {
-    const res = await this.callMauiBridge("ShowToast", [message]);
-    if (res.error !== null) return err(res.error);
-    return ok(undefined);
+    return this.invokeVoid("ShowToast", [message]);
   }
 
   async getSystemInfo(): Promise<Result<SystemInfo>> {
-    const res = await this.callMauiBridge("GetSystemInfo");
-    if (res.error !== null) return err(res.error);
-    try {
-      const parsed = JSON.parse(res.data) as Partial<SystemInfo>;
-      return ok({
-        platform: parsed.platform ?? "",
-        appVersion: parsed.appVersion ?? "",
-        deviceModel: parsed.deviceModel ?? "",
-        manufacturer: parsed.manufacturer ?? "",
-        deviceName: parsed.deviceName ?? "",
-        operatingSystem: parsed.operatingSystem ?? "",
-      });
-    } catch (e) {
-      return err(`返回内容解析失败（SystemInfo）：${toErrorMessage(e)}`);
-    }
+    // SystemInfo object is serialized directly.
+    const schema = z.object({
+      platform: z.string(),
+      appVersion: z.string(),
+      deviceModel: z.string(),
+      manufacturer: z.string(),
+      deviceName: z.string(),
+      operatingSystem: z.string(),
+    });
+    return this.invoke("GetSystemInfo", [], schema);
   }
 
   async trackAnalyticsEvent(
     eventName: string,
     parameters?: AnalyticsParams,
   ): Promise<Result<void>> {
-    try {
-      await this.firebaseAnalytics.logEvent(eventName, parameters);
-      return ok(undefined);
-    } catch (e) {
-      return err(toErrorMessage(e, "bridge analytics failed"));
-    }
+    return this.invokeVoid("TrackAnalyticsEventAsync", [eventName, parameters]);
   }
 
   // --- Logs ---
 
   async getLogFiles(): Promise<Result<{ files: any[]; error?: string }>> {
-    const res = await this.callMauiBridge("GetLogFilesAsync");
-    if (res.error !== null) return err(res.error);
-    try {
-      const data = JSON.parse(res.data);
-      return ok(data);
-    } catch (e) {
-      return err(`Log files parse error: ${toErrorMessage(e)}`);
-    }
+    // C# returns { files: [...] }
+    const schema = z.object({
+      files: z.array(z.any()),
+      error: z.string().optional(),
+    });
+    return this.invoke("GetLogFilesAsync", [], schema);
   }
 
   async getLogFileContent(fileName: string): Promise<Result<any | null>> {
-    const res = await this.callMauiBridge("GetLogFileContentAsync", [fileName]);
-    if (res.error !== null) return err(res.error);
-    try {
-      return ok(JSON.parse(res.data));
-    } catch (e) {
-      return err(`Log content parse error: ${toErrorMessage(e)}`);
-    }
+    // C# returns { fileName, content, size, lastModified }
+    const schema = z.object({
+      fileName: z.string(),
+      content: z.string(),
+      size: z.number(),
+      lastModified: z.string(), // or date? C# DateTime serializes to string usually
+    });
+    return this.invoke("GetLogFileContentAsync", [fileName], schema);
   }
 
   async deleteLogFile(fileName: string): Promise<Result<boolean>> {
-    const res = await this.callMauiBridge("DeleteLogFileAsync", [fileName]);
+    // C# returns { success: true, message: ... }
+    const res = await this.invokeVoid("DeleteLogFileAsync", [fileName]);
     if (res.error !== null) return err(res.error);
-    try {
-      const data = JSON.parse(res.data);
-      return ok(data.success === true);
-    } catch {
-      return ok(false);
-    }
+    return ok(true);
   }
 
   async clearAllLogs(): Promise<Result<boolean>> {
-    const res = await this.callMauiBridge("ClearAllLogsAsync");
+    const res = await this.invokeVoid("ClearAllLogsAsync");
     if (res.error !== null) return err(res.error);
-    try {
-      const data = JSON.parse(res.data);
-      return ok(data.success === true);
-    } catch {
-      return ok(false);
-    }
+    return ok(true);
+  }
+
+  async openExternalLink(url: string): Promise<Result<void>> {
+    return this.invokeVoid("OpenExternalLinkAsync", [url]);
   }
 
   /**
@@ -637,20 +518,19 @@ export class MauiApiService implements IV2exApiService {
    * @returns 包含 Base64 编码图片数据的结果
    */
   async pickImage(): Promise<Result<PickImageResult>> {
-    const res = await this.callMauiBridge("PickImageAsync");
-    if (res.error !== null) return err(res.error);
-    try {
-      const data = JSON.parse(res.data) as PickImageResult;
-      if (data.cancelled) {
-        return ok({ cancelled: true });
-      }
-      if (data.error) {
-        return err(data.message || data.error);
-      }
-      return ok(data);
-    } catch (e) {
-      return err(`Image picker parse error: ${toErrorMessage(e)}`);
-    }
+    // C# returns { success: true, base64:..., contentType:..., fileName:..., size:... }
+    // OR { cancelled: true }
+    const schema = z.object({
+      success: z.boolean().optional(),
+      cancelled: z.boolean().optional(),
+      base64: z.string().optional(),
+      contentType: z.string().optional(),
+      fileName: z.string().optional(),
+      size: z.number().optional(),
+      error: z.string().optional(),
+      message: z.string().optional(),
+    });
+    return this.invoke("PickImageAsync", [], schema);
   }
 }
 

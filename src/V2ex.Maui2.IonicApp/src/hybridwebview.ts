@@ -17,7 +17,7 @@ declare global {
       __InvokeJavaScript: (
         taskId: any,
         methodName: any,
-        args: any
+        args: any,
       ) => Promise<void>;
     };
   }
@@ -100,7 +100,7 @@ declare global {
       sendMessageFunction(messageToSend);
     } else {
       console.error(
-        "Unable to send messages to .NET because the host environment for the HybridWebView was unknown."
+        "Unable to send messages to .NET because the host environment for the HybridWebView was unknown.",
       );
     }
   }
@@ -192,7 +192,7 @@ declare global {
         "Content-Type": "application/json",
         Accept: "application/json",
         "X-Maui-Invoke-Token": "HybridWebView",
-        "X-Maui-Request-Body": message, // Some platforms (Android) do not expose the POST body
+        // "X-Maui-Request-Body": message, // Some platforms (Android) do not expose the POST body
       },
       body: message,
     });
@@ -204,7 +204,7 @@ declare global {
     // Check if the response indicates an error
     if (response.IsError) {
       const error = new Error(
-        response.ErrorMessage || "Unknown error occurred in .NET method"
+        response.ErrorMessage || "Unknown error occurred in .NET method",
       ) as any;
       if (response.ErrorType) {
         error.dotNetErrorType = response.ErrorType;

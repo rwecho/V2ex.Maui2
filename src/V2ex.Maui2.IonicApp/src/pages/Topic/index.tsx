@@ -15,6 +15,8 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonToast,
+  IonActionSheet,
+  IonIcon,
 } from "@ionic/react";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -27,6 +29,9 @@ import { usePageAnalytics } from "../../hooks/usePageAnalytics";
 import { useAuthStore } from "../../store/authStore";
 import { useTopicDetail } from "./hooks/useTopicDetail";
 import { useTopicReply } from "./hooks/useTopicReply";
+
+import { ellipsisHorizontal, flagOutline } from "ionicons/icons";
+import { apiService } from "../../services/apiService";
 
 import TopicHeader from "./components/TopicHeader";
 import TopicSupplements from "./components/TopicSupplements";
@@ -79,6 +84,23 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");
+  const [showActionSheet, setShowActionSheet] = useState(false);
+
+  const handleReport = async () => {
+    if (!parsedTopicId || !headerTitle) return;
+    try {
+      const result = await apiService.reportTopic(parsedTopicId, headerTitle);
+      if (!result.error) {
+        setToastMessage("已举报该主题，感谢您的反馈");
+      } else {
+        setToastMessage(`举报失败：${result.error || "未知错误"}`);
+      }
+    } catch (e) {
+      setToastMessage("无法启动邮件客户端");
+    } finally {
+      setToastOpen(true);
+    }
+  };
 
   // 3. 回复功能 Hook
   const {
@@ -210,11 +232,36 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/home" color={"medium"} text="" />
           </IonButtons>
+
           <IonTitle>{headerTitle}</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={() => setShowActionSheet(true)}>
+              <IonIcon icon={ellipsisHorizontal} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
       <IonContent>
+        <IonActionSheet
+          isOpen={showActionSheet}
+          onDidDismiss={() => setShowActionSheet(false)}
+          header="操作"
+          buttons={[
+            {
+              text: "举报此主题",
+              icon: flagOutline,
+              role: "destructive",
+              handler: () => {
+                handleReport();
+              },
+            },
+            {
+              text: "取消",
+              role: "cancel",
+            },
+          ]}
+        />
         <IonRefresher slot="fixed" onIonRefresh={onRefresh}>
           <IonRefresherContent
             pullingIcon="chevron-down-circle-outline"

@@ -273,7 +273,7 @@ export class HttpApiService implements IV2exApiService {
     return err(data?.error || "Create topic failed");
   }
 
-  async thankTopic(topicId: string, once: string): Promise<Result<void>> {
+  async thankTopic(topicId: number, once: string): Promise<Result<void>> {
     const res = await this.fetchApi(
       `/topics/${topicId}/thank?once=${encodeURIComponent(once)}`,
       { method: "POST" },
@@ -282,7 +282,7 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
-  async ignoreTopic(topicId: string, once: string): Promise<Result<void>> {
+  async ignoreTopic(topicId: number, once: string): Promise<Result<void>> {
     const res = await this.fetchApi(
       `/topics/${topicId}/ignore?once=${encodeURIComponent(once)}`,
       { method: "POST" },
@@ -291,7 +291,7 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
-  async unignoreTopic(topicId: string, once: string): Promise<Result<void>> {
+  async unignoreTopic(topicId: number, once: string): Promise<Result<void>> {
     const res = await this.fetchApi(
       `/topics/${topicId}/unignore?once=${encodeURIComponent(once)}`,
       { method: "POST" },
@@ -300,7 +300,7 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
-  async favoriteTopic(topicId: string, once: string): Promise<Result<void>> {
+  async favoriteTopic(topicId: number, once: string): Promise<Result<void>> {
     const res = await this.fetchApi(
       `/topics/${topicId}/favorite?once=${encodeURIComponent(once)}`,
       { method: "POST" },
@@ -309,7 +309,7 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
-  async unfavoriteTopic(topicId: string, once: string): Promise<Result<void>> {
+  async unfavoriteTopic(topicId: number, once: string): Promise<Result<void>> {
     const res = await this.fetchApi(
       `/topics/${topicId}/unfavorite?once=${encodeURIComponent(once)}`,
       { method: "POST" },
@@ -318,7 +318,7 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
-  async upTopic(topicId: string, once: string): Promise<Result<void>> {
+  async upTopic(topicId: number, once: string): Promise<Result<void>> {
     const res = await this.fetchApi(
       `/topics/${topicId}/up?once=${encodeURIComponent(once)}`,
       { method: "POST" },
@@ -327,7 +327,7 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
-  async downTopic(topicId: string, once: string): Promise<Result<void>> {
+  async downTopic(topicId: number, once: string): Promise<Result<void>> {
     const res = await this.fetchApi(
       `/topics/${topicId}/down?once=${encodeURIComponent(once)}`,
       { method: "POST" },
@@ -337,7 +337,7 @@ export class HttpApiService implements IV2exApiService {
   }
 
   async appendTopic(
-    topicId: string,
+    topicId: number,
     content: string,
     once: string,
   ): Promise<Result<void>> {
@@ -346,6 +346,18 @@ export class HttpApiService implements IV2exApiService {
       body: JSON.stringify({ content, once }),
     });
     if (res.error) return err(res.error);
+    return ok(undefined);
+  }
+
+  async reportTopic(topicId: number, title: string): Promise<Result<void>> {
+    const subject = encodeURIComponent(`[Report] Topic #${topicId}: ${title}`);
+    const body = encodeURIComponent(
+      `I would like to report the following topic due to inappropriate content:\n\nTopic ID: ${topicId}\nTitle: ${title}\n\n(Please describe the issue below)\n`,
+    );
+    window.open(
+      `mailto:report@v2ex.maui?subject=${subject}&body=${body}`,
+      "_blank",
+    );
     return ok(undefined);
   }
 
@@ -481,10 +493,6 @@ export class HttpApiService implements IV2exApiService {
     if (res.error) return err(res.error);
 
     return this.parseOrError("TopicDetail", TopicInfoSchema, res.data);
-  }
-
-  async requiresLogin(topicId: number): Promise<Result<boolean>> {
-    return ok(true);
   }
 
   // --- Native / UI Methods ---

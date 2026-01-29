@@ -19,12 +19,56 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
     };
 
     /// <summary>
+    /// Executes a bridge operation safely, handling exceptions and serializing the result.
+    /// </summary>
+    /// <typeparam name="T">The type of the result data.</typeparam>
+    /// <param name="operation">The async operation to execute.</param>
+    /// <param name="operationName">Name of the operation for logging.</param>
+    /// <returns>A JSON string representing the result or error.</returns>
+    private async Task<string> ExecuteSafeAsync<T>(Func<Task<T>> operation, [System.Runtime.CompilerServices.CallerMemberName] string operationName = "")
+    {
+        try
+        {
+            logger.LogInformation("Bridge: Start {Operation}", operationName);
+            var result = await operation();
+            return JsonSerializer.Serialize(result, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Bridge: Failed {Operation}", operationName);
+            // Ensure error format is consistent: { error: "message" }
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    /// <summary>
+    /// Executes a void bridge operation safely.
+    /// </summary>
+    /// <param name="operation">The async operation to execute.</param>
+    /// <param name="operationName">Name of the operation for logging.</param>
+    /// <returns>A JSON string representing success or error.</returns>
+    private async Task<string> ExecuteSafeVoidAsync(Func<Task> operation, [System.Runtime.CompilerServices.CallerMemberName] string operationName = "")
+    {
+        try
+        {
+            logger.LogInformation("Bridge: Start {Operation}", operationName);
+            await operation();
+            return JsonSerializer.Serialize(new { success = true }, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Bridge: Failed {Operation}", operationName);
+            return JsonSerializer.Serialize(new { error = ex.Message }, _jsonOptions);
+        }
+    }
+
+    /// <summary>
     /// 获取平台信息（用于 React 环境检测）
     /// </summary>
     /// <returns>平台名称（iOS/Android/Mac/Windows/Unknown）</returns>
-    public string GetPlatformInfo()
+    public Task<string> GetPlatformInfo()
     {
-        try
+        return ExecuteSafeAsync(() =>
         {
             string platform = DeviceInfo.Platform.ToString() switch
             {
@@ -38,53 +82,65 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
             };
 
             logger.LogInformation("Bridge: 获取平台信息 - {Platform}", platform);
-            return platform;
-        }
-        catch (Exception ex)
+            return Task.FromResult(new { platform });
+        });
+    }
+
+    public Task<string> GetStringValue(string key)
+    {
+        return ExecuteSafeAsync(() => Task.FromResult(Preferences.Default.Get(key, string.Empty)));
+    }
+
+    public Task<string> SetStringValue(string key, string value)
+    {
+        return ExecuteSafeVoidAsync(() =>
         {
-            logger.LogError(ex, "Bridge: 获取平台信息失败");
-            return "Unknown";
-        }
-    }
-
-    public Task<string?> GetStringValue(string key)
-    {
-        return Task.FromResult((string?)Preferences.Default.Get(key, string.Empty));
-    }
-
-    public Task SetStringValue(string key, string value)
-    {
-        Preferences.Default.Set(key, value);
-        return Task.CompletedTask;
+            Preferences.Default.Set(key, value);
+            return Task.CompletedTask;
+        });
     }
 
     // show snackbar
-    public void ShowSnackbar(string message)
+    public Task<string> ShowSnackbar(string message)
     {
-        Snackbar.Make(message).Show();
+        return ExecuteSafeVoidAsync(() =>
+        {
+            return MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                Snackbar.Make(message).Show();
+            });
+        });
     }
 
     // show toast
-    public void ShowToast(string message)
+    public Task<string> ShowToast(string message)
     {
-        Toast.Make(message, CommunityToolkit.Maui.Core.ToastDuration.Short).Show();
+        return ExecuteSafeVoidAsync(() =>
+        {
+            return MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                Toast.Make(message, CommunityToolkit.Maui.Core.ToastDuration.Short).Show();
+            });
+        });
     }
 
     public Task<string> GetSystemInfo()
     {
-        var displayVersion = AppInfo.Current.VersionString;
-        var systemInfo = new SystemInfo
+        return ExecuteSafeAsync(() =>
         {
-            Platform = DeviceInfo.Platform.ToString(),
-            AppVersion = displayVersion,
-            DeviceModel = DeviceInfo.Model,
-            Manufacturer = DeviceInfo.Manufacturer,
-            DeviceName = DeviceInfo.Name,
-            OperatingSystem = DeviceInfo.VersionString
-        };
-        logger.LogInformation("Bridge: 获取系统信息 - Version: {Version}", displayVersion);
-
-        return Task.FromResult(JsonSerializer.Serialize(systemInfo, _jsonOptions));
+            var displayVersion = AppInfo.Current.VersionString;
+            var systemInfo = new SystemInfo
+            {
+                Platform = DeviceInfo.Platform.ToString(),
+                AppVersion = displayVersion,
+                DeviceModel = DeviceInfo.Model,
+                Manufacturer = DeviceInfo.Manufacturer,
+                DeviceName = DeviceInfo.Name,
+                OperatingSystem = DeviceInfo.VersionString
+            };
+            logger.LogInformation("Bridge: 获取系统信息 - Version: {Version}", displayVersion);
+            return Task.FromResult(systemInfo);
+        });
     }
 
     /// <summary>
@@ -94,35 +150,29 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
     public Task<string> TrackAnalyticsEventAsync(string eventName,
         Dictionary<string, object?>? parameters = null)
     {
-        try
+        return ExecuteSafeVoidAsync(() =>
         {
             CrossFirebaseAnalytics.Current.LogEvent(eventName!, parameters);
             logger.LogInformation("Analytics event sent via bridge: {Event}", eventName);
-            return Task.FromResult("ok");
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to log analytics event via bridge: {Event}", eventName);
-            return Task.FromResult($"error: {ex.Message}");
-        }
+            return Task.CompletedTask;
+        });
     }
 
     /// <summary>
     /// 获取日志文件列表
     /// </summary>
     /// <returns>日志文件列表（JSON 格式）</returns>
-    public async Task<string> GetLogFilesAsync()
+    public Task<string> GetLogFilesAsync()
     {
-        try
+        return ExecuteSafeAsync(() =>
         {
             logger.LogInformation("Bridge: 获取日志文件列表");
-
             var logsDir = Path.Combine(FileSystem.AppDataDirectory, "logs");
 
             if (!Directory.Exists(logsDir))
             {
                 logger.LogWarning("Logs directory does not exist: {LogsDir}", logsDir);
-                return JsonSerializer.Serialize(new { files = new List<object>() });
+                return Task.FromResult((object)new { files = new List<object>() });
             }
 
             var files = Directory.GetFiles(logsDir, "v2ex-*.txt")
@@ -137,14 +187,8 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
                 .ToList();
 
             logger.LogInformation("Found {Count} log files", files.Count);
-
-            return JsonSerializer.Serialize(new { files }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 获取日志文件列表失败");
-            return JsonSerializer.Serialize(new { error = ex.Message, files = new List<object>() });
-        }
+            return Task.FromResult((object)new { files });
+        });
     }
 
     /// <summary>
@@ -152,13 +196,13 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
     /// </summary>
     /// <param name="fileName">日志文件名</param>
     /// <returns>日志文件内容</returns>
-    public async Task<string> GetLogFileContentAsync(string fileName)
+    public Task<string> GetLogFileContentAsync(string fileName)
     {
-        try
+        return ExecuteSafeAsync(async () =>
         {
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                return JsonSerializer.Serialize(new { error = "Invalid fileName" });
+                throw new ArgumentException("Invalid fileName");
             }
 
             // 防止路径穿越攻击
@@ -168,26 +212,20 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
             if (!File.Exists(filePath))
             {
                 logger.LogWarning("Log file not found: {FilePath}", filePath);
-                return JsonSerializer.Serialize(new { error = "File not found" });
+                throw new FileNotFoundException("File not found");
             }
 
             logger.LogInformation("Bridge: 读取日志文件 {FileName}", fileName);
-
             var content = await File.ReadAllTextAsync(filePath);
 
-            return JsonSerializer.Serialize(new
+            return new
             {
                 fileName = safeFileName,
                 content = content,
                 size = new FileInfo(filePath).Length,
                 lastModified = File.GetLastWriteTime(filePath)
-            }, _jsonOptions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 读取日志文件失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+            };
+        });
     }
 
     /// <summary>
@@ -195,13 +233,13 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
     /// </summary>
     /// <param name="fileName">日志文件名</param>
     /// <returns>操作结果</returns>
-    public async Task<string> DeleteLogFileAsync(string fileName)
+    public Task<string> DeleteLogFileAsync(string fileName)
     {
-        try
+        return ExecuteSafeAsync(() => 
         {
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                return JsonSerializer.Serialize(new { error = "Invalid fileName" });
+                 throw new ArgumentException("Invalid fileName");
             }
 
             var safeFileName = Path.GetFileName(fileName);
@@ -209,37 +247,30 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
 
             if (!File.Exists(filePath))
             {
-                return JsonSerializer.Serialize(new { error = "File not found" });
+                 throw new FileNotFoundException("File not found");
             }
 
             logger.LogInformation("Bridge: 删除日志文件 {FileName}", fileName);
-
             File.Delete(filePath);
-
-            return JsonSerializer.Serialize(new { success = true, message = "File deleted successfully" });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 删除日志文件失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+            
+            return Task.FromResult(new { success = true, message = "File deleted successfully" });
+        });
     }
 
     /// <summary>
     /// 清空所有日志文件
     /// </summary>
     /// <returns>操作结果</returns>
-    public async Task<string> ClearAllLogsAsync()
+    public Task<string> ClearAllLogsAsync()
     {
-        try
+        return ExecuteSafeAsync(() =>
         {
             logger.LogInformation("Bridge: 清空所有日志文件");
-
             var logsDir = Path.Combine(FileSystem.AppDataDirectory, "logs");
 
             if (!Directory.Exists(logsDir))
             {
-                return JsonSerializer.Serialize(new { success = true, message = "Logs directory does not exist" });
+                return Task.FromResult(new { success = true, message = "Logs directory does not exist" });
             }
 
             var files = Directory.GetFiles(logsDir, "v2ex-*.txt");
@@ -254,28 +285,21 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
                     logger.LogWarning(ex, "Failed to delete log file: {FilePath}", file);
                 }
             }
-
-            return JsonSerializer.Serialize(new { success = true, message = $"Deleted {files.Length} log files" });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 清空日志文件失败");
-            return JsonSerializer.Serialize(new { error = ex.Message });
-        }
+            return Task.FromResult(new { success = true, message = $"Deleted {files.Length} log files" });
+        });
     }
 
-    public Task OpenExternalLinkAsync(string url)
+    public Task<string> OpenExternalLinkAsync(string url)
     {
-        try
+        return ExecuteSafeVoidAsync(async () =>
         {
             logger.LogInformation("Bridge: 打开外部链接: {Url}", url);
-
             if (string.IsNullOrWhiteSpace(url))
             {
                 throw new ArgumentException("URL cannot be empty", nameof(url));
             }
 
-            MainThread.BeginInvokeOnMainThread(async () =>
+            await MainThread.InvokeOnMainThreadAsync(async () =>
             {
                 try
                 {
@@ -293,27 +317,20 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
                     await Browser.Default.OpenAsync(url);
                 }
             });
-
-            return Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: 打开外部链接失败");
-            return Task.FromException(ex);
-        }
+        });
     }
 
     /// <summary>
     /// 从相册选择图片并返回 Base64 编码数据
     /// </summary>
     /// <returns>JSON 格式结果，包含 base64 数据或错误信息</returns>
-    public async Task<string> PickImageAsync()
+    public Task<string> PickImageAsync()
     {
-        try
+        return ExecuteSafeAsync(async () =>
         {
             logger.LogInformation("Bridge: 开始选择图片");
 
-            var result = await MainThread.InvokeOnMainThreadAsync(async () =>
+            return await MainThread.InvokeOnMainThreadAsync(async () =>
             {
                 try
                 {
@@ -324,7 +341,7 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
 
                     if (photo == null)
                     {
-                        return JsonSerializer.Serialize(new { cancelled = true });
+                        return new { cancelled = true };
                     }
 
                     // 读取图片并转换为 Base64
@@ -340,33 +357,26 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
                     logger.LogInformation("Bridge: 图片选择成功, 大小: {Size} bytes, 类型: {ContentType}",
                         bytes.Length, contentType);
 
-                    return JsonSerializer.Serialize(new
+                    return (object)new
                     {
                         success = true,
                         base64 = base64,
                         contentType = contentType,
                         fileName = photo.FileName,
                         size = bytes.Length
-                    }, _jsonOptions);
+                    };
                 }
                 catch (PermissionException)
                 {
                     logger.LogWarning("Bridge: 相册访问权限被拒绝");
-                    return JsonSerializer.Serialize(new { error = "permission_denied", message = "需要相册访问权限" });
+                    throw new Exception("需要相册访问权限");
                 }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Bridge: 图片选择时发生错误");
-                    return JsonSerializer.Serialize(new { error = "pick_failed", message = ex.Message });
+                    throw new Exception(ex.Message);
                 }
             });
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Bridge: PickImageAsync 失败");
-            return JsonSerializer.Serialize(new { error = "system_error", message = ex.Message });
-        }
+        });
     }
 }
