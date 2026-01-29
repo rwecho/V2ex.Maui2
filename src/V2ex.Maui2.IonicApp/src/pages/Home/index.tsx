@@ -39,7 +39,6 @@ import VersionFooter from "../../components/VersionFooter";
 import {
   applyColorMode,
   getStoredMode,
-
   setStoredMode,
   type ColorMode,
 } from "../../theme/colorMode";
@@ -398,6 +397,16 @@ const HomePage = () => {
           )}
 
           <IonList inset>
+            <IonItem
+              lines="full"
+              onClick={() => {
+                menuController.close();
+                history.push("/history");
+              }}
+            >
+              <IonLabel>浏览历史</IonLabel>
+            </IonItem>
+
             <IonItem lines="full">
               <IonLabel>外观</IonLabel>
               <IonSelect

@@ -133,6 +133,20 @@ export interface IV2exApiService {
 
   // Image Picker
   pickImage(): Promise<Result<PickImageResult>>;
+
+  // History Management
+  getHistory(): Promise<Result<HistoryItem[]>>;
+  recordHistory(item: HistoryItem): Promise<Result<void>>;
+  removeHistory(topicId: number): Promise<Result<void>>;
+  clearHistory(): Promise<Result<void>>;
+}
+
+export interface HistoryItem {
+  id: number;
+  title: string;
+  userName: string;
+  userAvatar: string;
+  viewedAt: string;
 }
 
 export interface LogFile {

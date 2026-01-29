@@ -32,7 +32,7 @@ import {
 import { z } from "zod";
 import { err, ok, toErrorMessage, type Result } from "./result";
 import { createFirebaseAnalytics, type AnalyticsParams } from "./firebase";
-import { IV2exApiService, SystemInfo } from "./IV2exApiService";
+import { IV2exApiService, SystemInfo, HistoryItem } from "./IV2exApiService";
 import {
   SignInFormInfoSchema,
   SignInFormInfoType,
@@ -161,11 +161,21 @@ export class MauiApiService implements IV2exApiService {
   async getTopicDetail(
     params: GetTopicParams,
   ): Promise<Result<TopicInfoType | null>> {
-    return this.invoke(
+    const res = await this.invoke(
       "GetTopicDetailAsync",
       [params.topicId, params.page ?? 1],
       TopicInfoSchema.nullable(),
     );
+    if (res.error === null && res.data && (!params.page || params.page === 1)) {
+      this.recordHistory({
+        id: params.topicId,
+        title: res.data.title,
+        userName: res.data.userName,
+        userAvatar: res.data.avatar,
+        viewedAt: new Date().toISOString(),
+      });
+    }
+    return res;
   }
 
   async getUserProfile(
@@ -531,6 +541,24 @@ export class MauiApiService implements IV2exApiService {
       message: z.string().optional(),
     });
     return this.invoke("PickImageAsync", [], schema);
+  }
+
+  // --- History Management ---
+
+  async getHistory(): Promise<Result<HistoryItem[]>> {
+    return this.invoke("GetHistoryAsync", [], z.array(z.any()) as any);
+  }
+
+  async recordHistory(item: HistoryItem): Promise<Result<void>> {
+    return this.invokeVoid("RecordHistoryAsync", [JSON.stringify(item)]);
+  }
+
+  async removeHistory(topicId: number): Promise<Result<void>> {
+    return this.invokeVoid("RemoveHistoryAsync", [topicId]);
+  }
+
+  async clearHistory(): Promise<Result<void>> {
+    return this.invokeVoid("ClearHistoryAsync", []);
   }
 }
 

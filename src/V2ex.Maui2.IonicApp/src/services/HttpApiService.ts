@@ -26,7 +26,7 @@ import {
   TopicInfoSchema,
   TopicInfoType,
 } from "../schemas/topicSchema";
-import { IV2exApiService } from "./IV2exApiService";
+import { IV2exApiService, HistoryItem } from "./IV2exApiService";
 import { err, ok, toErrorMessage, type Result } from "./result";
 import { SignInFormInfoType } from "../schemas/accountSchema";
 
@@ -128,7 +128,17 @@ export class HttpApiService implements IV2exApiService {
       `/topics/${params.topicId}?page=${params.page || 1}`,
     );
     if (res.error) return err(res.error);
-    return this.parseOrError("TopicDetail", TopicInfoSchema, res.data);
+    const parsed = this.parseOrError("TopicDetail", TopicInfoSchema, res.data);
+    if (parsed.error === null && parsed.data && (!params.page || params.page === 1)) {
+         this.recordHistory({
+            id: params.topicId,
+            title: parsed.data.title,
+            userName: parsed.data.userName,
+            userAvatar: parsed.data.avatar,
+            viewedAt: new Date().toISOString()
+        });
+    }
+    return parsed;
   }
 
   async getUserProfile(
@@ -564,4 +574,35 @@ export class HttpApiService implements IV2exApiService {
   async pickImage(): Promise<Result<{ cancelled?: boolean }>> {
     return err("[Http] Image picker is only available in the native app");
   }
+
+  // --- History Management ---
+
+  async getHistory(): Promise<Result<any[]>> {
+    const history = localStorage.getItem("viewing_history");
+    return ok(history ? JSON.parse(history) : []);
+  }
+
+  async recordHistory(item: any): Promise<Result<void>> {
+    const historyJson = localStorage.getItem("viewing_history") || "[]";
+    let history = JSON.parse(historyJson);
+    history = history.filter((x: any) => x.id !== item.id);
+    history.unshift(item);
+    if (history.length > 100) history = history.slice(0, 100);
+    localStorage.setItem("viewing_history", JSON.stringify(history));
+    return ok(undefined);
+  }
+
+  async removeHistory(topicId: number): Promise<Result<void>> {
+    const historyJson = localStorage.getItem("viewing_history") || "[]";
+    let history = JSON.parse(historyJson);
+    history = history.filter((x: any) => x.id !== topicId);
+    localStorage.setItem("viewing_history", JSON.stringify(history));
+    return ok(undefined);
+  }
+
+  async clearHistory(): Promise<Result<void>> {
+    localStorage.removeItem("viewing_history");
+    return ok(undefined);
+  }
 }
+

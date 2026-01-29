@@ -40,6 +40,7 @@ import LogsPage from "./pages/Logs";
 import LoginPage from "./pages/Login";
 import { initColorMode } from "./theme/colorMode";
 import TestPage from "./pages/Test";
+import HistoryPage from "./pages/History";
 import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
 import ErrorDebugScreen, {
   CapturedError,
@@ -168,6 +169,7 @@ const App: React.FC = () => {
               <Route path="/logs" render={() => <LogsPage />} />
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
+              <Route exact path="/history" component={HistoryPage} />
               <Route exact path="/login" component={LoginPage} />
               <Route component={NotFoundPage} />
             </IonRouterOutlet>
