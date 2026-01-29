@@ -22,8 +22,8 @@ import {
   IonAvatar,
   IonImg,
   IonButton,
-  IonThumbnail,
   IonFooter,
+  IonAlert,
 } from "@ionic/react";
 import { menuController } from "@ionic/core/components";
 
@@ -53,6 +53,7 @@ const HomePage = () => {
   const history = useHistory();
   const tabs = useTabStore((state) => state.tabs);
   const menuRef = useRef<HTMLIonMenuElement>(null);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
   const { topicsByKey, loadingByKey, errorByKey, fetchTabTopics } =
     useTopicStore(
@@ -456,7 +457,7 @@ const HomePage = () => {
             {isAuthenticated && (
               <IonItem
                 lines="none"
-                onClick={handleSignOut}
+                onClick={() => setShowLogoutAlert(true)}
                 button
                 detail={false}
               >
@@ -532,6 +533,24 @@ const HomePage = () => {
             duration={1200}
             position="top"
             onDidDismiss={() => setToastOpen(false)}
+          />
+
+          <IonAlert
+            isOpen={showLogoutAlert}
+            onDidDismiss={() => setShowLogoutAlert(false)}
+            header="退出登录"
+            message="确定要退出登录吗？"
+            buttons={[
+              {
+                text: "取消",
+                role: "cancel",
+              },
+              {
+                text: "确认",
+                role: "destructive",
+                handler: handleSignOut,
+              },
+            ]}
           />
         </IonContent>
       </IonPage>
