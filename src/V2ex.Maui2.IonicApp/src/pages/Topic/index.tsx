@@ -83,6 +83,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     handleRefresh: handleRefreshLogic,
     handleInfinite: handleInfiniteLogic,
     removeReply,
+    thankReply,
   } = useTopicDetail(id, initialTitle);
 
   // 2. 认证状态
@@ -114,11 +115,12 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   };
 
   const handleThankReply = async () => {
-    if (!selectedReply || !topicInfo?.once) return;
+    if (!selectedReply || !topicInfo?.once || !parsedTopicId) return;
     try {
       const result = await apiService.thankReply(selectedReply.id, topicInfo.once);
       if (!result.error) {
         setToastMessage("感谢成功");
+        thankReply(parsedTopicId, selectedReply.id);
       } else {
         setToastMessage(`操作失败：${result.error}`);
       }

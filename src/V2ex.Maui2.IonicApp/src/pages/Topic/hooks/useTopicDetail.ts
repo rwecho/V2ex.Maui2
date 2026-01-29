@@ -79,6 +79,7 @@ export const useTopicDetail = (id: string, initialTitle?: string) => {
   }, [topicInfo?.replies?.length, visibleCount, parsedTopicId, logAnalytics]);
 
   const removeReply = useTopicStore(useShallow((s) => s.removeReply));
+  const thankReply = useTopicStore(useShallow((s) => s.thankReply));
 
   return {
     parsedTopicId,
@@ -90,5 +91,6 @@ export const useTopicDetail = (id: string, initialTitle?: string) => {
     handleRefresh,
     handleInfinite,
     removeReply,
+    thankReply,
   };
 };
