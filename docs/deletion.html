@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Deletion Request - MV2</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+      }
+      .container {
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        border-bottom: 2px solid #eaeaea;
+        padding-bottom: 10px;
+        margin-bottom: 30px;
+      }
+      h2 {
+        margin-top: 30px;
+        color: #2c3e50;
+      }
+      .lang-section {
+        margin-bottom: 50px;
+      }
+      .divider {
+        border-top: 1px dashed #ccc;
+        margin: 40px 0;
+      }
+      a {
+        color: #007aff;
+        text-decoration: none;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 16px;
+      }
+      textarea {
+        height: 100px;
+        resize: vertical;
+      }
+      button {
+        background-color: #007aff;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .footer {
+        margin-top: 40px;
+        font-size: 0.9em;
+        color: #666;
+        text-align: center;
+      }
+      .note {
+        background-color: #fdf2f2;
+        border-left: 4px solid #f87171;
+        padding: 15px;
+        margin-bottom: 30px;
+        font-size: 0.95em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="lang-section">
+        <h1>Data Deletion Request</h1>
+        <p>
+          If you wish to delete your account data stored by <strong>MV2</strong> (including settings, blocked lists, or browsing history synced via Firebase), please use the form below to generate a deletion request.
+        </p>
+        
+        <div class="note">
+          <strong>Note:</strong> Deleting your data in MV2 will not affect your V2EX account. It only removes data specific to the MV2 application.
+        </div>
+
+        <div class="form-group">
+          <label for="id-en">User/Device ID (if known):</label>
+          <input type="text" id="id-en" placeholder="Enter your ID or V2EX account name">
+        </div>
+        <div class="form-group">
+          <label for="reason-en">Reason for Deletion (Optional):</label>
+          <textarea id="reason-en" placeholder="Tell us why you want to delete your data"></textarea>
+        </div>
+        <button onclick="sendEmail('en')">Send Request via Email</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="lang-section">
+        <h1>数据删除请求</h1>
+        <p>
+          如果您希望删除 <strong>MV2</strong> 存储的您的应用数据（包括设置、屏蔽列表或通过 Firebase 同步的浏览历史），请使用下方表单生成删除请求。
+        </p>
+
+        <div class="note">
+          <strong>注意：</strong> 删除 MV2 中的数据不会影响您的 V2EX 账号。它仅移除 MV2 应用特有的本地或云端配置数据。
+        </div>
+
+        <div class="form-group">
+          <label for="id-zh">用户/设备 ID (如已知):</label>
+          <input type="text" id="id-zh" placeholder="输入您的 ID 或 V2EX 账号名">
+        </div>
+        <div class="form-group">
+          <label for="reason-zh">删除原因 (可选):</label>
+          <textarea id="reason-zh" placeholder="告诉我们您为什么要删除数据"></textarea>
+        </div>
+        <button onclick="sendEmail('zh')">通过邮件发送请求</button>
+      </div>
+
+      <div class="footer">
+        <p>&copy; 2026 MV2 Open Source Project. All rights reserved.</p>
+      </div>
+    </div>
+
+    <script>
+      function sendEmail(lang) {
+        const id = document.getElementById(`id-${lang}`).value;
+        const reason = document.getElementById(`reason-${lang}`).value;
+        const email = "rwecho@live.com";
+        
+        let subject, body;
+        
+        if (lang === 'zh') {
+          subject = "MV2 数据删除请求";
+          body = `用户 ID / 账号: ${id || '未填写'}\n\n请求删除原因:\n${reason || '无'}\n\n---\n发送此邮件即表示我请求永久删除我在 MV2 应用中的相关存储数据。`;
+        } else {
+          subject = "MV2 Data Deletion Request";
+          body = `User ID / Account: ${id || 'Not provided'}\n\nReason for deletion:\n${reason || 'None'}\n\n---\nBy sending this email, I request the permanent deletion of my stored data within the MV2 application.`;
+        }
+        
+        window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      }
+    </script>
+  </body>
+</html>
