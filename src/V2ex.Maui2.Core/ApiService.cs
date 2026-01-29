@@ -433,15 +433,18 @@ public class ApiService
     public async Task<UnitInfo> IgnoreReply(string replyId, string once)
     {
         var url = $"/ignore/reply/{replyId}?once={once}";
-        var response = await this.HttpClient.GetAsync(url);
-        var result = await response.GetEncapsulatedData<UnitInfo>(this.Logger);
-        return result;
+        var response = await this.HttpClient.PostAsync(url, null);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException("Can not ignore the reply.");
+        }
+        return new UnitInfo();
     }
 
     public async Task<NodeTopicInfo> IgnoreNode(string nodeId, string once)
     {
         var url = $"/settings/ignore/node/{nodeId}?once={once}";
-        var response = await this.HttpClient.GetAsync(url);
+        var response = await this.HttpClient.PostAsync(url, null);
         var result = await response.GetEncapsulatedData<NodeTopicInfo>(this.Logger);
         return result;
     }
@@ -449,7 +452,7 @@ public class ApiService
     public async Task<NodeTopicInfo> UnignoreNode(string nodeId, string once)
     {
         var url = $"/settings/ignore/node/{nodeId}?once={once}";
-        var response = await this.HttpClient.GetAsync(url);
+        var response = await this.HttpClient.PostAsync(url, null);
         var result = await response.GetEncapsulatedData<NodeTopicInfo>(this.Logger);
         return result;
     }

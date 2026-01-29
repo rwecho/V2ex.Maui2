@@ -17,7 +17,14 @@ import {
   IonToast,
   IonActionSheet,
   IonIcon,
+  IonAlert,
 } from "@ionic/react";
+
+import {
+  TagInfoType,
+  CurrentUserType,
+  ReplyInfoType,
+} from "../../schemas/topicSchema";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RouteComponentProps } from "react-router";
@@ -30,7 +37,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useTopicDetail } from "./hooks/useTopicDetail";
 import { useTopicReply } from "./hooks/useTopicReply";
 
-import { ellipsisHorizontal, flagOutline } from "ionicons/icons";
+import { ellipsisHorizontal, flagOutline, heartOutline, chatbubbleOutline, eyeOffOutline } from "ionicons/icons";
 import { apiService } from "../../services/apiService";
 
 import TopicHeader from "./components/TopicHeader";
@@ -75,6 +82,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     visibleCount,
     handleRefresh: handleRefreshLogic,
     handleInfinite: handleInfiniteLogic,
+    removeReply,
   } = useTopicDetail(id, initialTitle);
 
   // 2. 认证状态
@@ -85,6 +93,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showReplyActionSheet, setShowReplyActionSheet] = useState(false);
+  const [selectedReply, setSelectedReply] = useState<ReplyInfoType | null>(null);
+  const [showThankAlert, setShowThankAlert] = useState(false);
 
   const handleReport = async () => {
     if (!parsedTopicId || !headerTitle) return;
@@ -98,8 +109,50 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     } catch (e) {
       setToastMessage("无法启动邮件客户端");
     } finally {
+      setShowActionSheet(false);
+    }
+  };
+
+  const handleThankReply = async () => {
+    if (!selectedReply || !topicInfo?.once) return;
+    try {
+      const result = await apiService.thankReply(selectedReply.id, topicInfo.once);
+      if (!result.error) {
+        setToastMessage("感谢成功");
+      } else {
+        setToastMessage(`操作失败：${result.error}`);
+      }
+    } catch (e) {
+      setToastMessage("操作异常");
+    } finally {
       setToastOpen(true);
     }
+  };
+
+  const handleIgnoreReply = async (reply: ReplyInfoType) => {
+    if (!topicInfo?.once || !parsedTopicId) return;
+    try {
+      const result = await apiService.ignoreReply(reply.id, topicInfo.once);
+      if (!result.error) {
+        setToastMessage("已隐藏该回复");
+        removeReply(parsedTopicId, reply.id);
+      } else {
+        setToastMessage(`操作失败：${result.error}`);
+      }
+    } catch (e) {
+      setToastMessage("操作异常");
+    } finally {
+      setToastOpen(true);
+    }
+  };
+
+  const handleReplyToAction = (reply: ReplyInfoType) => {
+    const mention = `@${reply.userName} #${reply.floor} `;
+    setReplyContent((prev) => prev + mention);
+    setIsReplyExpanded(true);
+    setTimeout(() => {
+      textareaRef.current?.setFocus();
+    }, 300);
   };
 
   // 3. 回复功能 Hook
@@ -244,6 +297,57 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
       <IonContent>
         <IonActionSheet
+          isOpen={showReplyActionSheet}
+          onDidDismiss={() => setShowReplyActionSheet(false)}
+          header={`回复由 @${selectedReply?.userName} 发布`}
+          buttons={[
+            {
+              text: "回复",
+              icon: chatbubbleOutline,
+              handler: () => {
+                if (selectedReply) handleReplyToAction(selectedReply);
+              },
+            },
+            {
+              text: "感谢",
+              icon: heartOutline,
+              handler: () => {
+                setShowThankAlert(true);
+              },
+            },
+            {
+              text: "隐藏",
+              icon: eyeOffOutline,
+              role: "destructive",
+              handler: () => {
+                if (selectedReply) handleIgnoreReply(selectedReply);
+              },
+            },
+            {
+              text: "取消",
+              role: "cancel",
+            },
+          ]}
+        />
+        <IonAlert
+          isOpen={showThankAlert}
+          onDidDismiss={() => setShowThankAlert(false)}
+          header="确认发送感谢？"
+          message="发送感谢将消耗 10 个铜币。"
+          buttons={[
+            {
+              text: "取消",
+              role: "cancel",
+            },
+            {
+              text: "确定",
+              handler: () => {
+                handleThankReply();
+              },
+            },
+          ]}
+        />
+        <IonActionSheet
           isOpen={showActionSheet}
           onDidDismiss={() => setShowActionSheet(false)}
           header="操作"
@@ -319,6 +423,10 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                         reply={reply}
                         isOP={reply.userName === topicInfo.userName}
                         normalizeAvatarUrl={normalizeAvatarUrl}
+                        onClick={(r) => {
+                          setSelectedReply(r);
+                          setShowReplyActionSheet(true);
+                        }}
                       />
                     ))}
                   </IonList>

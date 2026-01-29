@@ -505,6 +505,16 @@ export class HttpApiService implements IV2exApiService {
     return this.parseOrError("TopicDetail", TopicInfoSchema, res.data);
   }
 
+  async thankReply(replyId: string, once: string): Promise<Result<void>> {
+    console.log("[Http] Thank Reply", replyId, once);
+    return ok(undefined);
+  }
+
+  async ignoreReply(replyId: string, once: string): Promise<Result<void>> {
+    console.log("[Http] Ignore Reply", replyId, once);
+    return ok(undefined);
+  }
+
   // --- Native / UI Methods ---
   async getSystemInfo(): Promise<
     Result<{

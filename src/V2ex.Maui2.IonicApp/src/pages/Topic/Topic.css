@@ -144,11 +144,31 @@
 .replyRight {
   color: var(--ion-color-medium);
   font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.replyThanks {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ion-color-medium);
 }
 
 .replyItem {
   padding: 12px 16px;
   border-bottom: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.05));
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.replyItem:active {
+  background-color: var(--ion-color-step-50, rgba(0, 0, 0, 0.02));
+}
+
+body.dark .replyItem:active {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .replyContent {

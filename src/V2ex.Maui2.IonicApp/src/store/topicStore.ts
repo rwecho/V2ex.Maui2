@@ -23,6 +23,7 @@ interface TopicActions {
   ) => Promise<void>;
   clearTopicInfo: (topicId: number) => void;
   updateTopicInfo: (topicId: number, topicInfo: TopicInfoType) => void;
+  removeReply: (topicId: number, replyId: string) => void;
 }
 
 export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
@@ -267,6 +268,24 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
       topicInfoById: {
         ...get().topicInfoById,
         [idKey]: topicInfo,
+      },
+    });
+  },
+
+  removeReply: (topicId: number, replyId: string) => {
+    const idKey = String(topicId);
+    const topicInfo = get().topicInfoById[idKey];
+    if (!topicInfo || !topicInfo.replies) return;
+
+    const newTopicInfo = {
+      ...topicInfo,
+      replies: topicInfo.replies.filter((r) => String(r.id) !== String(replyId)),
+    };
+
+    set({
+      topicInfoById: {
+        ...get().topicInfoById,
+        [idKey]: newTopicInfo,
       },
     });
   },

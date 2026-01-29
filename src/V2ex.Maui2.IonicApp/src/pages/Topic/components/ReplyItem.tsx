@@ -1,24 +1,31 @@
 import React from "react";
-import { IonAvatar, IonImg, IonBadge } from "@ionic/react";
+import { IonAvatar, IonImg, IonBadge, IonIcon } from "@ionic/react";
+import { heartOutline } from "ionicons/icons";
 import { ReplyInfoType } from "../../../schemas/topicSchema";
 
 interface ReplyItemProps {
   reply: ReplyInfoType;
   isOP: boolean;
   normalizeAvatarUrl: (url?: string | null) => string | null;
+  onClick?: (reply: ReplyInfoType) => void;
 }
 
 const ReplyItem: React.FC<ReplyItemProps> = ({
   reply,
   isOP,
   normalizeAvatarUrl,
+  onClick,
 }) => {
   const username = reply.userName || "unknown";
   const avatarUrl = reply.avatar ? normalizeAvatarUrl(reply.avatar) : null;
   const initial = username.trim().slice(0, 1).toUpperCase();
 
   return (
-    <div className="replyItem" data-reply-id={reply.id}>
+    <div
+      className="replyItem"
+      data-reply-id={reply.id}
+      onClick={() => onClick?.(reply)}
+    >
       <div className="replyMeta">
         <div className="replyMetaLeft">
           {avatarUrl ? (
@@ -38,6 +45,15 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
           )}
         </div>
         <span className="replyRight">
+          {reply.thanks && (
+            <span className="replyThanks">
+              <IonIcon
+                icon={heartOutline}
+                color={reply.thanked ? "danger" : "medium"}
+              />
+              {reply.thanks.trim()}
+            </span>
+          )}
           #{reply.floor}
           {reply.replyTimeText ? ` · ${reply.replyTimeText}` : ""}
         </span>

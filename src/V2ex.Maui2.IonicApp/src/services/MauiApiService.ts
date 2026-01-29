@@ -426,15 +426,22 @@ export class MauiApiService implements IV2exApiService {
     content: string,
     once: string,
   ): Promise<Result<TopicInfoType | null>> {
-    const encodedContent = encodeURIComponent(content);
-    return this.invoke(
+    const res = await this.invoke(
       "PostReplyAsync",
-      [topicId, encodedContent, once],
+      [topicId, encodeURIComponent(content), once],
       TopicInfoSchema.nullable(),
     );
+    return res;
   }
 
-  async getUserPage(username: string): Promise<Result<MemberType>> {
+  async thankReply(replyId: string, once: string): Promise<Result<void>> {
+    return this.invokeVoid("ThankReplyAsync", [replyId, once]);
+  }
+
+  async ignoreReply(replyId: string, once: string): Promise<Result<void>> {
+    return this.invokeVoid("IgnoreReplyAsync", [replyId, once]);
+  }
+async getUserPage(username: string): Promise<Result<MemberType>> {
     return this.invoke("GetUserPageAsync", [username], MemberSchema);
   }
 

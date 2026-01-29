@@ -74,6 +74,8 @@ export interface IV2exApiService {
     content: string,
     once: string,
   ): Promise<Result<TopicInfoType | null>>;
+  thankReply(replyId: string, once: string): Promise<Result<void>>;
+  ignoreReply(replyId: string, once: string): Promise<Result<void>>;
 
   // Node Interactions
   ignoreNode(nodeId: string, once: string): Promise<Result<void>>;

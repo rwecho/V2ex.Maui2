@@ -141,4 +141,15 @@ public partial class MauiBridge
             await Email.Default.ComposeAsync(message);
         });
     }
+
+    public Task<string> ThankReplyAsync(string replyId, string once)
+    {
+        return ExecuteSafeAsync(() => apiService.ThanksReplier(replyId, once));
+    }
+
+    public Task<string> IgnoreReplyAsync(string replyId, string once)
+    {
+        replyId = replyId.Replace("r_", "");
+        return ExecuteSafeAsync(() => apiService.IgnoreReply(replyId, once));
+    }
 }
