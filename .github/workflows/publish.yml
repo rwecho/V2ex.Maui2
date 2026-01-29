@@ -120,7 +120,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: "tech.zb.v2ex.maui.app"
-          releaseFile: "src/V2ex.Maui2.App/bin/Release/net10.0-android/*Signed.aab"
+          releaseFiles: "src/V2ex.Maui2.App/bin/Release/net10.0-android/tech.zb.v2ex.maui.app-Signed.aab"
           track: "internal"
 
   # iOS 构建
