@@ -150,6 +150,7 @@ const App: React.FC = () => {
               <Route exact path="/home" component={HomePage} />
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
+              <Route exact path="/t/:id" component={TopicPage} />
               <Route exact path="/login" component={LoginPage} />
               <Route exact path="/" render={() => <Redirect to="/home" />} />
               <Route component={NotFoundPage} />
