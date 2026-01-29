@@ -80,9 +80,16 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
       <IonModal
         isOpen={isReplyExpanded}
         onDidDismiss={() => setIsReplyExpanded(false)}
-        initialBreakpoint={0.5}
+        onDidPresent={() => {
+          // Auto-focus textarea when modal opens
+          setTimeout(() => {
+            textareaRef.current?.setFocus();
+          }, 100);
+        }}
+        initialBreakpoint={0.75}
         breakpoints={[0, 0.5, 0.75, 1]}
         handle={true}
+        keyboardClose={false}
       >
         <IonHeader className="ion-no-border">
           <IonToolbar>
