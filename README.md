@@ -104,13 +104,4 @@ dotnet restore
 
 ## 许可证
 
-<<<<<<< HEAD
-MIT
-
-## 致谢
-
-- V2EX (https://www.v2ex.com/)
-- MAUI / Ionic Frameworks
-- # Firebase (https://firebase.google.com/)
-  本项目采用 [MIT](LICENSE) 许可证。
-  > > > > > > > gh-pages
+本项目采用 [MIT](LICENSE) 许可证。
