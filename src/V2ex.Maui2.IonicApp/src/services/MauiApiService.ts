@@ -567,6 +567,10 @@ async getUserPage(username: string): Promise<Result<MemberType>> {
   async clearHistory(): Promise<Result<void>> {
     return this.invokeVoid("ClearHistoryAsync", []);
   }
+
+  async haptics(type: string): Promise<Result<void>> {
+    return this.invokeVoid("HapticsAsync", [type]);
+  }
 }
 
 /**

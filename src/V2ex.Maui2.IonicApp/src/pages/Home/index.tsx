@@ -43,6 +43,7 @@ import {
 } from "../../theme/colorMode";
 import { useShallow } from "zustand/shallow";
 import { usePageAnalytics } from "../../hooks/usePageAnalytics";
+import { Haptics } from "../../utils/haptics";
 
 interface RefresherEventDetail {
   complete(): void;
@@ -228,6 +229,7 @@ const HomePage = () => {
         });
       }
     } finally {
+      Haptics.light();
       event.detail.complete();
     }
   };

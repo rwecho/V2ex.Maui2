@@ -379,4 +379,47 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
             });
         });
     }
+
+    /// <summary>
+    /// 触发触觉反馈
+    /// </summary>
+    /// <param name="type">反馈类型：Light, Medium, Heavy, Click, DoubleClick</param>
+    /// <returns></returns>
+    public Task<string> HapticsAsync(string type)
+    {
+        return ExecuteSafeVoidAsync(() =>
+        {
+            logger.LogInformation("Bridge: 触发触觉反馈 {Type}", type);
+            return MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                try
+                {
+                    switch (type?.ToLower())
+                    {
+                        case "light":
+                        case "click":
+                            HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+                            break;
+                        case "longpress":
+                        case "heavy":
+                            HapticFeedback.Default.Perform(HapticFeedbackType.LongPress);
+                            break;
+                        case "error":
+                        case "doubleclick":
+                            // 这里可以用 Vibration API 模拟更复杂的或者多次震动
+                            // 目前暂时用 LongPress 或者 Click 代替
+                            HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+                            break;
+                        default:
+                            HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to perform haptics");
+                }
+            });
+        });
+    }
 }

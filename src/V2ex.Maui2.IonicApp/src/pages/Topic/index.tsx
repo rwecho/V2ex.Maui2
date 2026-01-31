@@ -38,6 +38,7 @@ import { useTopicReply } from "./hooks/useTopicReply";
 
 import { ellipsisHorizontal, flagOutline, heartOutline, chatbubbleOutline, eyeOffOutline } from "ionicons/icons";
 import { apiService } from "../../services/apiService";
+import { Haptics } from "../../utils/haptics";
 
 import TopicHeader from "./components/TopicHeader";
 import TopicSupplements from "./components/TopicSupplements";
@@ -102,11 +103,14 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     try {
       const result = await apiService.reportTopic(parsedTopicId, headerTitle);
       if (!result.error) {
+        Haptics.success();
         apiService.showToast("举报成功");
       } else {
+        Haptics.error();
         apiService.showToast(`操作失败：${result.error}`);
       }
     } catch (e) {
+      Haptics.error();
       apiService.showToast("无法启动邮件客户端");
     } finally {
       setShowActionSheet(false);
@@ -118,12 +122,15 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     try {
       const result = await apiService.thankReply(selectedReply.id, topicInfo.once);
       if (!result.error) {
+        Haptics.success();
         apiService.showToast("感谢成功");
         thankReply(parsedTopicId, selectedReply.id);
       } else {
+        Haptics.error();
         apiService.showToast(`操作失败：${result.error}`);
       }
     } catch (e) {
+      Haptics.error();
       apiService.showToast("操作异常");
     }
   };
@@ -133,12 +140,15 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     try {
       const result = await apiService.ignoreReply(reply.id, topicInfo.once);
       if (!result.error) {
+        Haptics.success();
         apiService.showToast("已隐藏该回复");
         removeReply(parsedTopicId, reply.id);
       } else {
+        Haptics.error();
         apiService.showToast(`操作失败：${result.error}`);
       }
     } catch (e) {
+      Haptics.error();
       apiService.showToast("操作异常");
     }
   };
@@ -261,12 +271,14 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
   const onRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     const refreshError = await handleRefreshLogic();
+    Haptics.light();
     event.detail.complete();
     apiService.showToast(refreshError ? `刷新失败：${refreshError}` : "刷新成功");
   };
 
   const onInfinite = async (event: CustomEvent<void>) => {
     await handleInfiniteLogic();
+    Haptics.light();
     await (event.target as any).complete();
   };
 
@@ -283,7 +295,10 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
           <IonTitle>{headerTitle}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={() => setShowActionSheet(true)}>
+            <IonButton onClick={() => {
+              Haptics.click();
+              setShowActionSheet(true);
+            }}>
               <IonIcon icon={ellipsisHorizontal} />
             </IonButton>
           </IonButtons>
@@ -419,6 +434,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                         isOP={reply.userName === topicInfo.userName}
                         normalizeAvatarUrl={normalizeAvatarUrl}
                         onClick={(r) => {
+                          Haptics.click();
                           setSelectedReply(r);
                           setShowReplyActionSheet(true);
                         }}

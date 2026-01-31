@@ -141,6 +141,7 @@ export interface IV2exApiService {
   recordHistory(item: HistoryItem): Promise<Result<void>>;
   removeHistory(topicId: number): Promise<Result<void>>;
   clearHistory(): Promise<Result<void>>;
+  haptics(type: string): Promise<Result<void>>;
 }
 
 export interface HistoryItem {

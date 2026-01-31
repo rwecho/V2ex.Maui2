@@ -13,6 +13,7 @@ import {
 import { useHistory } from "react-router";
 import type { TopicType } from "../../schemas/topicSchema";
 import "./TopicList.css";
+import { Haptics } from "../../utils/haptics";
 
 type TopicListProps = {
   topics: TopicType[];
@@ -146,6 +147,7 @@ const TopicList = (props: TopicListProps) => {
             button
             detail={false}
             onClick={() => {
+              Haptics.click();
               const search = t.title
                 ? `?title=${encodeURIComponent(t.title)}`
                 : undefined;

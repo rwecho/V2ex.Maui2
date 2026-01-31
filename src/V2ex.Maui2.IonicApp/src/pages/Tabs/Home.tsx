@@ -14,6 +14,7 @@ import { Tab1 } from "./Tab1";
 import { Tab2 } from "./Tab2";
 import { useEffect } from "react";
 import { usePageAnalytics } from "../../hooks/usePageAnalytics";
+import { Haptics } from "../../utils/haptics";
 
 const TabsHome: React.FC = () => {
   const logAnalytics = usePageAnalytics();
@@ -43,7 +44,10 @@ const TabsHome: React.FC = () => {
         <IonTabButton
           tab="tab1"
           href="/tabs/tab1"
-          onClick={() => void logAnalytics("tab_switch", { tab: "tab1" })}
+          onClick={() => {
+            Haptics.click();
+            void logAnalytics("tab_switch", { tab: "tab1" });
+          }}
         >
           <IonIcon icon={triangle} />
           <IonLabel>Tab 1</IonLabel>
@@ -51,7 +55,10 @@ const TabsHome: React.FC = () => {
         <IonTabButton
           tab="tab2"
           href="/tabs/tab2"
-          onClick={() => void logAnalytics("tab_switch", { tab: "tab2" })}
+          onClick={() => {
+            Haptics.click();
+            void logAnalytics("tab_switch", { tab: "tab2" });
+          }}
         >
           <IonIcon icon={ellipse} />
           <IonLabel>Tab 2</IonLabel>
@@ -59,7 +66,10 @@ const TabsHome: React.FC = () => {
         <IonTabButton
           tab="tab3"
           href="/tabs/tab3"
-          onClick={() => void logAnalytics("tab_switch", { tab: "tab3" })}
+          onClick={() => {
+            Haptics.click();
+            void logAnalytics("tab_switch", { tab: "tab3" });
+          }}
         >
           <IonIcon icon={square} />
           <IonLabel>Tab 3</IonLabel>
