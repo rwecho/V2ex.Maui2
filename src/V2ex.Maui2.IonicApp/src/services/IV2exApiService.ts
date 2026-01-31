@@ -142,6 +142,10 @@ export interface IV2exApiService {
   removeHistory(topicId: number): Promise<Result<void>>;
   clearHistory(): Promise<Result<void>>;
   haptics(type: string): Promise<Result<void>>;
+
+  // Network Status
+  getNetworkStatus(): Promise<Result<{ isConnected: boolean; networkType: string }>>;
+  getCacheStatus(): Promise<Result<{ fromCache: boolean }>>;
 }
 
 export interface HistoryItem {

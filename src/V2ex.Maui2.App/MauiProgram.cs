@@ -44,6 +44,9 @@ public static class MauiProgram
 			loggingBuilder.AddSerilog(dispose: true);
 		});
 
+		// 注册连接状态服务
+		builder.Services.AddSingleton<IConnectivityService, MauiConnectivityService>();
+
 		builder.Services.AddSingleton<ApiHttpClientHandler>();
 
 		// add http client and configure cookie handler

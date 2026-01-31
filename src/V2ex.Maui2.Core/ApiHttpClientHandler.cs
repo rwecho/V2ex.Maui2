@@ -1,81 +1,179 @@
-using System;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace V2ex.Maui2.Core;
 
 public class ApiHttpClientHandler : HttpClientHandler
 {
     private readonly ILogger<ApiHttpClientHandler> _logger;
+    private readonly IConnectivityService? _connectivityService;
+    private readonly string _cacheDirectory;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(7);
 
-    public ApiHttpClientHandler(ICookieContainerStorage cookieContainerStorage, ILogger<ApiHttpClientHandler> logger)
+    /// <summary>
+    /// Indicates if the last HTTP response was served from cache.
+    /// </summary>
+    public static bool LastResponseFromCache { get; private set; }
+
+    public ApiHttpClientHandler(ICookieContainerStorage cookieContainerStorage, ILogger<ApiHttpClientHandler> logger, IConnectivityService? connectivityService = null)
     {
         _logger = logger;
+        _connectivityService = connectivityService;
         this.CookieContainer = cookieContainerStorage.GetCookieContainer();
         this.UseCookies = true;
         this.UseDefaultCredentials = false;
         this.AllowAutoRedirect = false;
         this.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+        // Initialize cache directory
+        _cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "http_cache");
+        if (!Directory.Exists(_cacheDirectory))
+        {
+            Directory.CreateDirectory(_cacheDirectory);
+        }
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Request: {Method} {Uri}", request.Method, request.RequestUri);
-        foreach (var header in request.Headers)
+
+        // Only cache GET requests
+        bool isCacheable = request.Method == HttpMethod.Get && request.RequestUri != null;
+        string? cacheKey = isCacheable ? GetCacheKey(request.RequestUri!) : null;
+
+        bool isOffline = _connectivityService != null && !_connectivityService.IsConnected;
+        if (isOffline && isCacheable && cacheKey != null)
         {
-            _logger.LogDebug("Request Header: {Key}: {Value}", header.Key, string.Join(", ", header.Value));
-        }
-
-        var cookies = this.CookieContainer.GetCookies(new Uri(request.RequestUri.GetLeftPart(UriPartial.Authority)));
-
-        foreach (Cookie cookie in cookies)
-        {
-            _logger.LogDebug("Request Cookie: {Name}={Value}", cookie.Name, cookie.Value);
-        }
-
-        var response = await base.SendAsync(request, cancellationToken);
-
-        if (response.Headers.TryGetValues("Set-Cookie", out var responseCookies))
-        {
-            foreach (var cookie in responseCookies)
+            _logger.LogInformation("OFFLINE: Attempting cache for {Uri}", request.RequestUri);
+            var offlineCacheResponse = await TryGetCachedResponseAsync(cacheKey, request.RequestUri!, ignoreExpiry: true);
+            if (offlineCacheResponse != null)
             {
-                _logger.LogDebug("Response Set-Cookie: {Cookie}", cookie);
+                _logger.LogInformation("OFFLINE: Cache HIT for {Uri}", request.RequestUri);
+                LastResponseFromCache = true;
+                return offlineCacheResponse;
             }
+            _logger.LogWarning("OFFLINE: No cache available for {Uri}", request.RequestUri);
+        }
+
+        // Fetch from network
+        HttpResponseMessage response;
+        try
+        {
+            response = await base.SendAsync(request, cancellationToken);
+        }
+        catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "Network request failed for {Uri}", request.RequestUri);
+
+            // Fallback to stale cache on network error
+            if (isCacheable && cacheKey != null)
+            {
+                var staleResponse = await TryGetCachedResponseAsync(cacheKey, request.RequestUri!, ignoreExpiry: true);
+                if (staleResponse != null)
+                {
+                    _logger.LogInformation("Cache FALLBACK (stale) for {Uri}", request.RequestUri);
+                    LastResponseFromCache = true;
+                    return staleResponse;
+                }
+            }
+            throw;
         }
 
         _logger.LogInformation("Response: {StatusCode} {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
 
-        // Peek at the response content if possible, but be careful not to consume the stream if it's not seekable/memory backed.
-        // Actually, we can read it as string since we are likely bufferring it or using ReadAsStringAsync elsewhere.
-        // But to be safe and avoiding side effects on the stream, we might skip full content logging or use a safe way.
-        // Given the user wants to see "content", let's try reading it if it's text.
-        // However, response.Content.ReadAsStringAsync() will buffer it.
-        // Let's rely on the fact that we used AutomaticDecompression, so the stream is already wrapped.
+        // Response is from network, not cache
+        LastResponseFromCache = false;
 
-        try
+        // Cache successful responses
+        if (isCacheable && cacheKey != null && response.IsSuccessStatusCode)
         {
-            // We clone the content to read it without disturbing the original stream if possible, 
-            // but HttpClient response content is usually read-once. 
-            // Ideally we should LoadIntoBufferAsync() first.
-            await response.Content.LoadIntoBufferAsync();
-            var content = await response.Content.ReadAsStringAsync();
-            if (content.Length > 1000)
-            {
-                _logger.LogDebug("Response Content (First 1000 chars): {Content}", content.Substring(0, 1000));
-            }
-            else
-            {
-                _logger.LogDebug("Response Content: {Content}", content);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to log response content");
+            await CacheResponseAsync(cacheKey, response);
         }
 
         return response;
+    }
+
+    private string GetCacheKey(Uri uri)
+    {
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(uri.ToString()));
+        return BitConverter.ToString(hash).Replace("-", "");
+    }
+
+    private string GetCachePath(string cacheKey) => Path.Combine(_cacheDirectory, $"{cacheKey}.json");
+
+    private async Task<HttpResponseMessage?> TryGetCachedResponseAsync(string cacheKey, Uri requestUri, bool ignoreExpiry = false)
+    {
+        var cachePath = GetCachePath(cacheKey);
+        if (!File.Exists(cachePath))
+            return null;
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(cachePath);
+            var cacheEntry = JsonSerializer.Deserialize<CacheEntry>(json);
+
+            if (cacheEntry == null)
+                return null;
+
+            // Check expiry
+            if (!ignoreExpiry && DateTime.UtcNow - cacheEntry.CachedAt > CacheTtl)
+            {
+                _logger.LogDebug("Cache expired for {Uri}", requestUri);
+                return null;
+            }
+
+            var response = new HttpResponseMessage((HttpStatusCode)cacheEntry.StatusCode)
+            {
+                Content = new StringContent(cacheEntry.Body, Encoding.UTF8, cacheEntry.ContentType ?? "text/html")
+            };
+
+            // Add custom header to indicate this is from cache
+            response.Headers.Add("X-From-Cache", "true");
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read cache for {Uri}", requestUri);
+            return null;
+        }
+    }
+
+    private async Task CacheResponseAsync(string cacheKey, HttpResponseMessage response)
+    {
+        try
+        {
+            await response.Content.LoadIntoBufferAsync();
+            var body = await response.Content.ReadAsStringAsync();
+            var contentType = response.Content.Headers.ContentType?.MediaType;
+
+            var cacheEntry = new CacheEntry
+            {
+                StatusCode = (int)response.StatusCode,
+                Body = body,
+                ContentType = contentType,
+                CachedAt = DateTime.UtcNow
+            };
+
+            var json = JsonSerializer.Serialize(cacheEntry);
+            await File.WriteAllTextAsync(GetCachePath(cacheKey), json);
+
+            _logger.LogDebug("Cached response for {Uri}", response.RequestMessage?.RequestUri);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to cache response");
+        }
+    }
+
+    private class CacheEntry
+    {
+        public int StatusCode { get; set; }
+        public string Body { get; set; } = "";
+        public string? ContentType { get; set; }
+        public DateTime CachedAt { get; set; }
     }
 }

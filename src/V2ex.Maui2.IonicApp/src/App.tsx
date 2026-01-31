@@ -3,6 +3,7 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { createHashHistory } from "history";
 import { useEffect, useState } from "react";
+import { CacheIndicator } from "./components/CacheIndicator";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -140,6 +141,7 @@ const App: React.FC = () => {
 
   return (
     <IonApp>
+      <CacheIndicator />
       <FatalErrorBoundary onFatal={setFatalError}>
         {isTestEnv ? (
           <MemoryRouter>

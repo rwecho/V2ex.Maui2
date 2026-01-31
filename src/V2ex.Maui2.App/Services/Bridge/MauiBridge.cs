@@ -229,6 +229,47 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
     }
 
     /// <summary>
+    /// 获取当前网络连接状态
+    /// </summary>
+    /// <returns>JSON 格式结果，包含 isConnected 和 networkType</returns>
+    public Task<string> GetNetworkStatusAsync()
+    {
+        return ExecuteSafeAsync(() =>
+        {
+            var networkAccess = Microsoft.Maui.Networking.Connectivity.Current.NetworkAccess;
+            var isConnected = networkAccess == Microsoft.Maui.Networking.NetworkAccess.Internet;
+            var networkType = networkAccess.ToString();
+            
+            logger.LogInformation("Bridge: 获取网络状态 - IsConnected: {IsConnected}, Type: {Type}", isConnected, networkType);
+            
+            return Task.FromResult(new
+            {
+                isConnected,
+                networkType
+            });
+        }, "GetNetworkStatus");
+    }
+
+    /// <summary>
+    /// 获取最近一次 HTTP 响应的缓存状态
+    /// </summary>
+    /// <returns>JSON 格式结果，包含 fromCache</returns>
+    public Task<string> GetCacheStatusAsync()
+    {
+        return ExecuteSafeAsync(() =>
+        {
+            var fromCache = V2ex.Maui2.Core.ApiHttpClientHandler.LastResponseFromCache;
+            
+            logger.LogDebug("Bridge: 获取缓存状态 - FromCache: {FromCache}", fromCache);
+            
+            return Task.FromResult(new
+            {
+                fromCache
+            });
+        }, "GetCacheStatus");
+    }
+
+    /// <summary>
     /// 删除指定日志文件
     /// </summary>
     /// <param name="fileName">日志文件名</param>

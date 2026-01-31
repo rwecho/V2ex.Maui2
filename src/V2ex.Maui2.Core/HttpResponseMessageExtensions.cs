@@ -29,7 +29,6 @@ public static class HttpResponseMessageExtensions
         CheckStatusCode(response);
 
         var sw = ValueStopwatch.StartNew();
-        logger.LogDebug("Reading content of request {Url} as string", response.RequestMessage.RequestUri);
 
         var content = await response.Content.ReadAsStringAsync();
         logger.LogDebug("Reading content as string completed, elapsed {Elapsed}", sw.Elapsed);
@@ -46,7 +45,7 @@ public static class HttpResponseMessageExtensions
     {
         var statusCode = (int)response.StatusCode;
 
-        if (statusCode == Constants.ApiConstants.HttpStatusCodes.Unauthorized || 
+        if (statusCode == Constants.ApiConstants.HttpStatusCodes.Unauthorized ||
             statusCode == Constants.ApiConstants.HttpStatusCodes.Forbidden)
         {
             throw new NotAuthorizedException();
@@ -71,7 +70,6 @@ public static class HttpResponseMessageExtensions
         CheckStatusCode(response);
 
         var sw = ValueStopwatch.StartNew();
-        logger.LogDebug("Reading content of request {Url} as string", response.RequestMessage.RequestUri);
         var content = await response.Content.ReadAsStringAsync();
         logger.LogDebug("Reading content as string completed, elapsed {Elapsed}", sw.Elapsed);
         var document = new HtmlDocument();
@@ -90,7 +88,6 @@ public static class HttpResponseMessageExtensions
         logger ??= NullLogger.Instance;
         CheckStatusCode(response);
         var sw = ValueStopwatch.StartNew();
-        logger.LogDebug("Reading content of request {Url} as string", response.RequestMessage.RequestUri);
         var content = await response.Content.ReadAsStringAsync();
         logger?.LogDebug("Reading content as string completed, elapsed {Elapsed}", sw.Elapsed);
         var document = new HtmlDocument();

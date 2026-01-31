@@ -126,11 +126,30 @@ export class MauiApiService implements IV2exApiService {
     return ok(undefined);
   }
 
+
   private firebaseAnalytics = createFirebaseAnalytics(async (method, args) => {
     const res = await this.callMauiBridge(method, args);
     if (res.error !== null) throw new Error(res.error);
     return res.data;
   });
+
+  // --- Network Status ---
+
+  async getNetworkStatus(): Promise<Result<{ isConnected: boolean; networkType: string }>> {
+    return this.invoke(
+      "GetNetworkStatusAsync",
+      [],
+      z.object({ isConnected: z.boolean(), networkType: z.string() }),
+    );
+  }
+
+  async getCacheStatus(): Promise<Result<{ fromCache: boolean }>> {
+    return this.invoke(
+      "GetCacheStatusAsync",
+      [],
+      z.object({ fromCache: z.boolean() }),
+    );
+  }
 
   // --- Read Methods ---
 

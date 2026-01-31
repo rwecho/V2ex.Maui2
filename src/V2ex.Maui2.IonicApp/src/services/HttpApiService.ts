@@ -624,5 +624,20 @@ export class HttpApiService implements IV2exApiService {
     }
     return ok(undefined);
   }
+
+  // --- Network Status (Web Mock) ---
+  async getNetworkStatus(): Promise<Result<{ isConnected: boolean; networkType: string }>> {
+    return ok({
+      isConnected: navigator.onLine,
+      networkType: navigator.onLine ? "Internet" : "None",
+    });
+  }
+
+  // --- Cache Status (Web Mock) ---
+  async getCacheStatus(): Promise<Result<{ fromCache: boolean }>> {
+    return ok({
+      fromCache: false,
+    });
+  }
 }
 
