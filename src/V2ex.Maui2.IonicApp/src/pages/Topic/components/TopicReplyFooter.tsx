@@ -45,7 +45,6 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
   replyItems,
   canReply,
 }) => {
-  const modalContentRef = useRef<HTMLIonContentElement>(null);
 
   if (!isAuthenticated) return null;
 
@@ -101,7 +100,7 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
             </IonButtons>
           </IonToolbar>
         </IonHeader>
-        <IonContent className="ion-padding" ref={modalContentRef}>
+        <IonContent className="ion-padding">
           <div className="douyin-reply-container">
             <div className="douyin-textarea-wrapper">
               <IonTextarea
@@ -137,8 +136,6 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
                   onClick={() => {
                     setShowMentionPicker(!showMentionPicker);
                     setShowEmojiPicker(false);
-                    // Scroll to bottom to show picker
-                    setTimeout(() => modalContentRef.current?.scrollToBottom(300), 100);
                   }}
                 >
                   <IonIcon icon={atOutline} />
@@ -149,8 +146,6 @@ const TopicReplyFooter: React.FC<TopicReplyFooterProps> = ({
                   onClick={() => {
                     setShowEmojiPicker(!showEmojiPicker);
                     setShowMentionPicker(false);
-                     // Scroll to bottom to show picker
-                     setTimeout(() => modalContentRef.current?.scrollToBottom(300), 100);
                   }}
                 >
                   <IonIcon icon={happyOutline} />

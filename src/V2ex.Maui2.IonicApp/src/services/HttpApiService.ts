@@ -614,5 +614,15 @@ export class HttpApiService implements IV2exApiService {
     localStorage.removeItem("viewing_history");
     return ok(undefined);
   }
+
+  // --- Haptics (Web Mock) ---
+  async haptics(type: string): Promise<Result<void>> {
+    console.log("[Http] Haptic Feedback:", type);
+    // Optional: Use navigator.vibrate for basic web haptics if supported
+    if (navigator.vibrate) {
+      navigator.vibrate(10); 
+    }
+    return ok(undefined);
+  }
 }
 

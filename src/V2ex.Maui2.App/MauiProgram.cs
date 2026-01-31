@@ -64,6 +64,16 @@ public static class MauiProgram
 
 		builder.Services.AddSingleton<ApiService>();
 
+#if IOS
+		Microsoft.Maui.Handlers.HybridWebViewHandler.Mapper.AppendToMapping("RemoveInputAccessoryView", (handler, view) =>
+		{
+            handler.PlatformView.ScrollView.KeyboardDismissMode = UIKit.UIScrollViewKeyboardDismissMode.Interactive;
+            
+            // Use our helper to swizzle the internal view and remove the accessory bar
+            Platforms.iOS.WebViewHelpers.RemoveInputAccessoryView(handler.PlatformView);
+		});
+#endif
+
 #if DEBUG
 		builder.Services.AddHybridWebViewDeveloperTools();
 		builder.Logging.AddDebug();
