@@ -224,7 +224,25 @@ http://ionicframework.com/docs/theming/ */
   --ion-card-background: #1e1e1e;
 }
 
+
+:root {
+  --v2ex-font-size: 16px;
+}
+
+.font-small {
+  --v2ex-font-size: 14px;
+}
+
+.font-medium {
+  --v2ex-font-size: 16px;
+}
+
+.font-large {
+  --v2ex-font-size: 18px;
+}
+
 body {
+  font-size: var(--v2ex-font-size);
   /* 顶部避让刘海 */
   padding-top: env(safe-area-inset-top);
 
@@ -240,4 +258,20 @@ body {
 
 *::-webkit-scrollbar {
   display: none;
+}
+
+.base64-decode-btn {
+  color: var(--ion-color-primary);
+  background: var(--ion-color-light-shade);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin-left: 4px;
+  font-size: 0.8em;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--ion-color-medium-tint);
+}
+
+.base64-decode-btn:active {
+  background: var(--ion-color-medium-tint);
 }

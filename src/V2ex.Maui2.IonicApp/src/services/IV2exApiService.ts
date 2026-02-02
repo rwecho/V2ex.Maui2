@@ -143,6 +143,12 @@ export interface IV2exApiService {
   clearHistory(): Promise<Result<void>>;
   haptics(type: string): Promise<Result<void>>;
 
+  // Read Later methods
+  saveReadLaterTopic(topicId: number): Promise<Result<void>>;
+  getReadLaterTopics(): Promise<Result<TopicType[]>>;
+  removeReadLaterTopic(topicId: number): Promise<Result<void>>;
+  isReadLaterTopic(topicId: number): Promise<Result<boolean>>;
+
   // Network Status
   getNetworkStatus(): Promise<Result<{ isConnected: boolean; networkType: string }>>;
   getCacheStatus(): Promise<Result<{ fromCache: boolean }>>;

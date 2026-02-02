@@ -1,6 +1,7 @@
 import React from "react";
 import { IonText, IonBadge } from "@ionic/react";
 import { TopicInfoType } from "../../../schemas/topicSchema";
+import { HtmlContent } from "../../../components/HtmlContent";
 
 interface TopicHeaderProps {
   topicInfo: TopicInfoType;
@@ -34,11 +35,9 @@ const TopicHeader: React.FC<TopicHeaderProps> = ({ topicInfo }) => {
       </div>
 
       {topicInfo.content && (
-        <div
+        <HtmlContent
           className="topicContent prose"
-          dangerouslySetInnerHTML={{
-            __html: topicInfo.content ?? "",
-          }}
+          html={topicInfo.content ?? ""}
         />
       )}
     </div>

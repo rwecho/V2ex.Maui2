@@ -36,7 +36,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useTopicDetail } from "./hooks/useTopicDetail";
 import { useTopicReply } from "./hooks/useTopicReply";
 
-import { ellipsisHorizontal, flagOutline, heartOutline, chatbubbleOutline, eyeOffOutline } from "ionicons/icons";
+import { ellipsisHorizontal, flagOutline, heartOutline, chatbubbleOutline, eyeOffOutline, personOutline, personCircleOutline } from "ionicons/icons";
 import { apiService } from "../../services/apiService";
 import { Haptics } from "../../utils/haptics";
 
@@ -61,6 +61,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   const [nowSeconds, setNowSeconds] = useState<number | null>(null);
   const logAnalytics = usePageAnalytics();
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
+  const [onlyOP, setOnlyOP] = useState(false);
 
   // 从路由状态 / URL query 获取初始 title
   const initialTitle = useMemo(() => {
@@ -283,7 +284,14 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   };
 
   const replyCount = topicInfo?.replies?.length ?? 0;
-  const visibleReplies = (topicInfo?.replies ?? []).slice(0, visibleCount);
+  
+  const filteredReplies = useMemo(() => {
+    if (!topicInfo?.replies) return [];
+    if (!onlyOP) return topicInfo.replies;
+    return topicInfo.replies.filter(r => r.userName === topicInfo.userName);
+  }, [topicInfo?.replies, onlyOP, topicInfo?.userName]);
+
+  const visibleReplies = filteredReplies.slice(0, visibleCount);
 
   return (
     <IonPage className="topicPage">
@@ -362,6 +370,19 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           onDidDismiss={() => setShowActionSheet(false)}
           header="操作"
           buttons={[
+            {
+              text: onlyOP ? "查看全部" : "只看楼主",
+              icon: onlyOP ? personOutline : personCircleOutline,
+              handler: () => {
+                 setOnlyOP(!onlyOP);
+                 // Reset visible count logic might be needed if infinite scroll is complex, 
+                 // but for now simple filter is enough as infinite scroll handles the 'slice'.
+                 // Actually infinite scroll logic in useTopicDetail might need adjustment if it relies on index,
+                 // but here we are slicing the *filtered* array. 
+                 // Wait, useTopicDetail handles data fetching. Rendering slicing is done here.
+                 // So 'visibleCount' is just a number. If filter reduces count < visibleCount, it shows all filtered.
+              }
+            },
             {
               text: "举报此主题",
               icon: flagOutline,
@@ -445,7 +466,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                   <IonInfiniteScroll
                     threshold="160px"
                     onIonInfinite={onInfinite}
-                    disabled={visibleCount >= replyCount}
+                    disabled={visibleCount >= filteredReplies.length}
                   >
                     <IonInfiniteScrollContent
                       loadingSpinner="crescent"

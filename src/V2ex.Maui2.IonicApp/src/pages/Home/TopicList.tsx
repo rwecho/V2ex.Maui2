@@ -9,11 +9,19 @@ import {
   IonSkeletonText,
   IonSpinner,
   IonText,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  IonIcon,
 } from "@ionic/react";
+import { bookmarkOutline, bookmark } from "ionicons/icons";
 import { useHistory } from "react-router";
 import type { TopicType } from "../../schemas/topicSchema";
 import "./TopicList.css";
 import { Haptics } from "../../utils/haptics";
+import { useReadLaterStore } from "../../store/readLaterStore";
+import { TopicPreviewModal } from "../../components/TopicPreviewModal";
+import { useState } from "react";
 
 type TopicListProps = {
   topics: TopicType[];
@@ -51,6 +59,8 @@ const TopicListSkeleton = () => {
 
 const TopicList = (props: TopicListProps) => {
   const { topics, loading, error, isActive, onRetry, emptyText } = props;
+  const { add, remove, has } = useReadLaterStore();
+  const [previewTopic, setPreviewTopic] = useState<TopicType | null>(null);
 
   const history = useHistory();
 
@@ -142,11 +152,16 @@ const TopicList = (props: TopicListProps) => {
           </IonItem>
         ) : null}
         {topics.map((t) => (
-          <IonItem
-            key={t.id}
-            button
-            detail={false}
-            onClick={() => {
+          <IonItemSliding key={t.id} id={`sliding_${t.id}`}>
+            <IonItem
+              button
+              detail={false}
+              onContextMenu={(e) => {
+                  e.preventDefault();
+                  Haptics.medium();
+                  setPreviewTopic(t);
+              }}
+              onClick={() => {
               Haptics.click();
               const search = t.title
                 ? `?title=${encodeURIComponent(t.title)}`
@@ -201,6 +216,24 @@ const TopicList = (props: TopicListProps) => {
               </div>
             </IonLabel>
           </IonItem>
+          <IonItemOptions side="end">
+              <IonItemOption
+                color={has(t.id) ? "warning" : "primary"}
+                onClick={() => {
+                   if (has(t.id)) {
+                       remove(t.id);
+                   } else {
+                       add(t);
+                   }
+                   // Close sliding item
+                   const slidingItem = document.getElementById(`sliding_${t.id}`) as any;
+                   if (slidingItem) slidingItem.close();
+                }}
+              >
+                  <IonIcon slot="icon-only" icon={has(t.id) ? bookmark : bookmarkOutline} />
+              </IonItemOption>
+          </IonItemOptions>
+          </IonItemSliding>
         ))}
         {loading ? (
           <div className="topicListBottomLoading">
@@ -209,6 +242,12 @@ const TopicList = (props: TopicListProps) => {
         ) : null}
       </IonList>
       <div className="topicListBottomSpacer" aria-hidden="true" />
+      
+      <TopicPreviewModal
+        isOpen={!!previewTopic}
+        onClose={() => setPreviewTopic(null)}
+        topic={previewTopic}
+      />
     </>
   );
 };

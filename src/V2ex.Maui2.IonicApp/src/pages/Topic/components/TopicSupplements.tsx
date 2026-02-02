@@ -1,6 +1,7 @@
 import React from "react";
 import { IonText } from "@ionic/react";
 import { SupplementInfoType } from "../../../schemas/topicSchema";
+import { HtmlContent } from "../../../components/HtmlContent";
 
 interface TopicSupplementsProps {
   supplements: SupplementInfoType[];
@@ -25,11 +26,9 @@ const TopicSupplements: React.FC<TopicSupplementsProps> = ({ supplements }) => {
               <span className="supplementBadge">附言 {index + 1}</span>
               {cleanDate && <span className="supplementDate">{cleanDate}</span>}
             </div>
-            <div
+            <HtmlContent
               className="topicContent prose"
-              dangerouslySetInnerHTML={{
-                __html: sub.content ?? "",
-              }}
+              html={sub.content ?? ""}
             />
           </div>
         );

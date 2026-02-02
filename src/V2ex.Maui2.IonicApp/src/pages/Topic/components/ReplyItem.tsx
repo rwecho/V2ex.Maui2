@@ -2,6 +2,7 @@ import React from "react";
 import { IonAvatar, IonImg, IonBadge, IonIcon } from "@ionic/react";
 import { heartOutline } from "ionicons/icons";
 import { ReplyInfoType } from "../../../schemas/topicSchema";
+import { HtmlContent } from "../../../components/HtmlContent";
 
 interface ReplyItemProps {
   reply: ReplyInfoType;
@@ -60,11 +61,9 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
       </div>
 
       {reply.content ? (
-        <div
+        <HtmlContent
           className="replyContent prose"
-          dangerouslySetInnerHTML={{
-            __html: reply.content,
-          }}
+          html={reply.content}
         />
       ) : null}
     </div>

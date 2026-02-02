@@ -403,6 +403,26 @@ const HomePage = () => {
               <IonLabel>浏览历史</IonLabel>
             </IonItem>
 
+            <IonItem
+              lines="full"
+              onClick={() => {
+                menuController.close();
+                history.push("/read-later");
+              }}
+            >
+              <IonLabel>稍后阅读</IonLabel>
+            </IonItem>
+
+            <IonItem
+              lines="full"
+              onClick={() => {
+                menuController.close();
+                history.push("/settings");
+              }}
+            >
+              <IonLabel>设置</IonLabel>
+            </IonItem>
+
             <IonItem lines="full">
               <IonLabel>外观</IonLabel>
               <IonSelect

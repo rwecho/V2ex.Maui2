@@ -639,5 +639,23 @@ export class HttpApiService implements IV2exApiService {
       fromCache: false,
     });
   }
+
+  // --- Read Later Methods (Stubs) ---
+  async saveReadLaterTopic(topicId: number): Promise<Result<void>> {
+    console.warn("[Http] Save Read Later stub", topicId);
+    return ok(undefined);
+  }
+
+  async getReadLaterTopics(): Promise<Result<TopicType[]>> {
+    return ok([]);
+  }
+
+  async removeReadLaterTopic(topicId: number): Promise<Result<void>> {
+    return ok(undefined);
+  }
+
+  async isReadLaterTopic(topicId: number): Promise<Result<boolean>> {
+    return ok(false);
+  }
 }
 

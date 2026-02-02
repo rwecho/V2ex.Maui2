@@ -587,6 +587,31 @@ async getUserPage(username: string): Promise<Result<MemberType>> {
     return this.invokeVoid("ClearHistoryAsync", []);
   }
 
+  // --- Read Later Methods ---
+
+  async saveReadLaterTopic(topicId: number): Promise<Result<void>> {
+    return this.invokeVoid("SaveReadLaterTopicAsync", [topicId]);
+  }
+
+  async getReadLaterTopics(): Promise<Result<TopicType[]>> {
+    return this.invoke("GetReadLaterTopicsAsync", [], TopicListSchema);
+  }
+
+  async removeReadLaterTopic(topicId: number): Promise<Result<void>> {
+    return this.invokeVoid("RemoveReadLaterTopicAsync", [topicId]);
+  }
+
+  async isReadLaterTopic(topicId: number): Promise<Result<boolean>> {
+    const res = await this.callMauiBridge("IsReadLaterTopicAsync", [topicId]);
+    if (res.error !== null) return err(res.error);
+    try {
+        const data = JSON.parse(res.data);
+        return ok(data === true);
+    } catch {
+        return ok(false);
+    }
+  }
+
   async haptics(type: string): Promise<Result<void>> {
     return this.invokeVoid("HapticsAsync", [type]);
   }

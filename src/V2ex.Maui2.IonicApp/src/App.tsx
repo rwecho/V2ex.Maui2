@@ -42,6 +42,10 @@ import LoginPage from "./pages/Login";
 import { initColorMode } from "./theme/colorMode";
 import TestPage from "./pages/Test";
 import HistoryPage from "./pages/History";
+import SettingsPage from "./pages/Settings";
+import ReadLaterPage from "./pages/ReadLater";
+import { initFontSize } from "./theme/fontSize";
+import { useFontSizeStore } from "./store/fontSizeStore";
 import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
 import ErrorDebugScreen, {
   CapturedError,
@@ -68,9 +72,12 @@ const isTestEnv =
 const App: React.FC = () => {
   const [fatalError, setFatalError] = useState<CapturedError | null>(null);
 
+  const { fontSize } = useFontSizeStore();
+
   useEffect(() => {
     initColorMode();
-  }, []);
+    initFontSize(fontSize);
+  }, [fontSize]);
 
   // 为原生 Android 返回键提供路由状态检查
   useEffect(() => {
@@ -155,6 +162,8 @@ const App: React.FC = () => {
               <Route exact path="/topic/:id" component={TopicPage} />
               <Route exact path="/t/:id" component={TopicPage} />
               <Route exact path="/login" component={LoginPage} />
+              <Route exact path="/settings" component={SettingsPage} />
+              <Route exact path="/read-later" component={ReadLaterPage} />
               <Route exact path="/" render={() => <Redirect to="/home" />} />
               <Route component={NotFoundPage} />
             </Switch>
@@ -172,6 +181,8 @@ const App: React.FC = () => {
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
               <Route exact path="/history" component={HistoryPage} />
+              <Route exact path="/settings" component={SettingsPage} />
+              <Route exact path="/read-later" component={ReadLaterPage} />
               <Route exact path="/login" component={LoginPage} />
               <Route component={NotFoundPage} />
             </IonRouterOutlet>
