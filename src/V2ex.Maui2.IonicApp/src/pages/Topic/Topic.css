@@ -32,7 +32,7 @@
 
 .topicTitle {
   margin: 0 0 8px;
-  font-size: 18px;
+  font-size: 1.125em;
   font-weight: 700;
   line-height: 1.35;
 }
@@ -96,7 +96,7 @@
 }
 
 .replyTitle {
-  font-size: 14px;
+  font-size: 0.875em;
   font-weight: 700;
 }
 
@@ -137,7 +137,7 @@
 
 .replyUser {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875em;
   color: var(--ion-text-color);
 }
 
@@ -197,7 +197,7 @@ body.dark .replyItem:active {
 
 .topicPageMetaMuted {
   color: var(--ion-color-medium);
-  font-size: 13px;
+  font-size: 0.8125em;
 }
 
 .topicPageAvatar {
@@ -239,7 +239,7 @@ body.dark .replyItem:active {
 .topicPagePlainText {
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 15px;
+  font-size: 0.9375em;
   line-height: 1.75;
 }
 
@@ -247,7 +247,7 @@ body.dark .replyItem:active {
 .prose {
   color: var(--ion-text-color);
   line-height: 1.75;
-  font-size: 15px;
+  font-size: 0.9375em;
   word-break: break-word;
 }
 
@@ -288,7 +288,7 @@ body.dark .replyItem:active {
 .topicReplyTitle {
   padding: 0 12px;
   margin: 10px 0 10px;
-  font-size: 15px;
+  font-size: 0.9375em;
   font-weight: 700;
   color: var(--ion-text-color);
 }
@@ -461,7 +461,8 @@ body.dark .replyItem:active {
   --color: #222;
   --placeholder-color: #999;
   --placeholder-opacity: 1;
-  font-size: 16px;
+  --placeholder-opacity: 1;
+  font-size: 1em;
   line-height: 1.5;
   min-height: 60px;
   max-height: 150px;

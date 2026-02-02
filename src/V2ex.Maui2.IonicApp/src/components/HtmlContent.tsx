@@ -9,8 +9,6 @@ interface HtmlContentProps {
   style?: React.CSSProperties;
 }
 
-const BASE64_REGEX = /([A-Za-z0-9+/]{10,}(?:={0,2}))/g;
-
 export const HtmlContent: React.FC<HtmlContentProps> = ({
   html,
   className,
@@ -20,6 +18,9 @@ export const HtmlContent: React.FC<HtmlContentProps> = ({
 
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // Define regex locally to avoid global state issues
+    const BASE64_REGEX = /([A-Za-z0-9+/]{10,}(?:={0,2}))/g;
 
     const walker = document.createTreeWalker(
       containerRef.current,
@@ -33,24 +34,29 @@ export const HtmlContent: React.FC<HtmlContentProps> = ({
     }
 
     textNodes.forEach((textNode) => {
-      const text = textNode.nodeValue;
-      if (!text || !text.match(BASE64_REGEX)) return;
-
       const parent = textNode.parentNode;
       if (!parent) return;
 
-      // Avoid double processing
+      // Avoid double processing: check if parent is already a wrapper
       if (
         parent.nodeName === "SPAN" &&
-        (parent as HTMLElement).classList.contains("base64-processed")
-      )
+        ((parent as HTMLElement).classList.contains("base64-wrapper") || 
+         (parent as HTMLElement).classList.contains("base64-decoded"))
+      ) {
         return;
+      }
+
+      const text = textNode.nodeValue;
+      if (!text) return;
+
+      // Quick check before regex
+      if (!text.match(BASE64_REGEX)) return;
 
       const fragments = document.createDocumentFragment();
       let lastIndex = 0;
       let match;
 
-      // Reset regex
+      // Reset regex lastIndex just in case
       BASE64_REGEX.lastIndex = 0;
 
       while ((match = BASE64_REGEX.exec(text)) !== null) {
@@ -71,7 +77,7 @@ export const HtmlContent: React.FC<HtmlContentProps> = ({
 
         // Add Base64 wrapper
         const wrapper = document.createElement("span");
-        wrapper.className = "base64-wrapper";
+        wrapper.className = "base64-wrapper"; // Class used for detection
         wrapper.textContent = fullMatch;
 
         const btn = document.createElement("span");
@@ -80,10 +86,38 @@ export const HtmlContent: React.FC<HtmlContentProps> = ({
         btn.onclick = async (e) => {
             e.stopPropagation();
             try {
-              const decoded = atob(fullMatch); // decode
-              await navigator.clipboard.writeText(decoded); // copy
-              apiService.showToast(`已解码并复制: ${decoded}`);
+              let decoded = atob(fullMatch);
+              try {
+                  decoded = decodeURIComponent(escape(decoded));
+              } catch {
+                  // Ignore
+              }
+              
+              await navigator.clipboard.writeText(decoded);
+              apiService.showToast(`已解码并复制`);
+              
+              // Update UI
+              wrapper.innerHTML = "";
+              wrapper.classList.add("base64-decoded"); // Mark as decoded
+              
+              if (decoded.startsWith("http://") || decoded.startsWith("https://")) {
+                  const link = document.createElement("a");
+                  link.href = decoded;
+                  link.textContent = decoded;
+                  link.style.color = "var(--ion-color-primary)";
+                  link.onclick = (ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      apiService.openExternalLink(decoded);
+                  };
+                  wrapper.appendChild(link);
+              } else {
+                  wrapper.textContent = decoded;
+                  wrapper.style.color = "var(--ion-color-success)";
+              }
+              
             } catch (e) {
+                console.error(e);
                 apiService.showToast("解码失败");
             }
         };

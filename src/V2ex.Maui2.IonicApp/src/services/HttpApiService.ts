@@ -625,6 +625,11 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
+  async openExternalLink(url: string): Promise<Result<void>> {
+    window.open(url, "_blank");
+    return ok(undefined);
+  }
+
   // --- Network Status (Web Mock) ---
   async getNetworkStatus(): Promise<Result<{ isConnected: boolean; networkType: string }>> {
     return ok({
