@@ -1,12 +1,11 @@
 import {
+  IonList,
   IonItem,
   IonAvatar,
-  IonLabel,
-  IonList,
   IonSkeletonText,
+  IonLabel,
 } from "@ionic/react";
 
-// Skeleton 加载占位组件
 const TopicListSkeleton = () => {
   return (
     <IonList inset={false} lines="full">

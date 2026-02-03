@@ -1,15 +1,11 @@
+import { useState, useCallback } from "react";
 import {
-  IonBadge,
-  IonAvatar,
   IonButton,
-  IonImg,
   IonItem,
   IonLabel,
   IonList,
-  IonSkeletonText,
   IonSpinner,
   IonText,
-  IonIcon,
   IonActionSheet,
 } from "@ionic/react";
 import {
@@ -24,7 +20,7 @@ import "./TopicList.css";
 import { Haptics } from "../../utils/haptics";
 import { useReadLaterStore } from "../../store/readLaterStore";
 import { TopicPreviewModal } from "../../components/TopicPreviewModal";
-import { useState } from "react";
+import TopicListItem from "./TopicListItem";
 import TopicListSkeleton from "./TopicListSkeleton";
 
 type TopicListProps = {
@@ -46,47 +42,34 @@ const TopicList = (props: TopicListProps) => {
 
   const history = useHistory();
 
-  const normalizeAvatarUrl = (url?: string | null): string | null => {
-    if (!url) return null;
-    const trimmed = url.trim();
-    if (!trimmed) return null;
-    if (trimmed.startsWith("//")) return `https:${trimmed}`;
-    if (trimmed.startsWith("https:")) return trimmed;
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-      return trimmed;
-    }
-    // If backend returns a relative path, treat it as v2ex static.
-    if (trimmed.startsWith("/")) return `https://www.v2ex.com${trimmed}`;
-    return trimmed;
-  };
-
-  const getMemberAvatarUrl = (topic: TopicType): string | null => {
-    const m: any = topic.member as any;
-    const raw =
-      topic.member?.avatarMini ??
-      m?.avatar_mini ??
-      m?.avatarMini ??
-      m?.avatar_normal ??
-      m?.avatarNormal ??
-      topic.member?.avatarLarge ??
-      m?.avatar_large ??
-      m?.avatarLarge ??
-      null;
-    return normalizeAvatarUrl(raw);
-  };
-
-  const handleRetry = () => {
-    if (!isActive) return;
-    if (!onRetry) return;
+  const handleRetry = useCallback(() => {
+    if (!isActive || !onRetry) return;
     void onRetry();
-  };
+  }, [isActive, onRetry]);
 
-  // 使用 Skeleton 代替简单的 spinner
+  const handleItemClick = useCallback(
+    (t: TopicType) => {
+      Haptics.click();
+      const search = t.title
+        ? `?title=${encodeURIComponent(t.title)}`
+        : undefined;
+      history.push({
+        pathname: `/topic/${t.id}`,
+        search,
+        state: { title: t.title },
+      });
+    },
+    [history],
+  );
+
+  const handlePress = useCallback((topic: TopicType) => {
+    setActionSheetTopic(topic);
+  }, []);
+
   if (loading && topics.length === 0) {
     return <TopicListSkeleton />;
   }
 
-  // If we have no cached data, show a full error state.
   if (error && topics.length === 0) {
     return (
       <div className="topicListSection">
@@ -117,7 +100,7 @@ const TopicList = (props: TopicListProps) => {
   return (
     <>
       <IonList inset={false} lines="full">
-        {error ? (
+        {error && (
           <IonItem lines="none" color="warning">
             <IonLabel className="ion-text-wrap">
               <IonText color="dark">加载失败：{error}</IonText>
@@ -132,93 +115,21 @@ const TopicList = (props: TopicListProps) => {
               </div>
             </IonLabel>
           </IonItem>
-        ) : null}
+        )}
         {topics.map((t) => (
-          <IonItem
+          <TopicListItem
             key={t.id}
-            button
-            detail={false}
-            className={has(t.id) ? "topic-read-later" : ""}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              Haptics.medium();
-              setActionSheetTopic(t);
-            }}
-            onClick={() => {
-              Haptics.click();
-              const search = t.title
-                ? `?title=${encodeURIComponent(t.title)}`
-                : undefined;
-
-              history.push({
-                pathname: `/topic/${t.id}`,
-                search,
-                state: {
-                  title: t.title,
-                },
-              });
-            }}
-          >
-            <IonAvatar className="topicListAvatar" slot="start">
-              {(() => {
-                const avatarUrl = getMemberAvatarUrl(t);
-                if (avatarUrl) {
-                  return (
-                    <IonImg
-                      src={avatarUrl}
-                      alt={
-                        t.member?.username
-                          ? `${t.member.username} avatar`
-                          : "avatar"
-                      }
-                    />
-                  );
-                }
-                const initial = t.member?.username?.slice(0, 1)?.toUpperCase();
-                return (
-                  <div className="topicListAvatarFallback">
-                    <span>{initial ?? "?"}</span>
-                  </div>
-                );
-              })()}
-            </IonAvatar>
-            <IonLabel className="ion-text-wrap">
-              <div className="topicListTitle">
-                {String(t.title)}
-                {/* Temporarily remove icon to debug React Error 310 */}
-                {has(t.id) && (
-                  <span
-                    style={{
-                      marginLeft: "6px",
-                      fontSize: "0.8em",
-                      color: "orange",
-                    }}
-                  >
-                    ★
-                  </span>
-                )}
-              </div>
-              <div className="topicListMeta">
-                {t.member?.username ? (
-                  <IonText color="medium">@{t.member.username}</IonText>
-                ) : null}
-                {t.node?.title || t.node?.name ? (
-                  <IonBadge color="light">
-                    {String(t.node?.title ?? t.node?.name ?? "")}
-                  </IonBadge>
-                ) : null}
-                {typeof t.replies === "number" ? (
-                  <IonText color="medium">💬 {t.replies}</IonText>
-                ) : null}
-              </div>
-            </IonLabel>
-          </IonItem>
+            topic={t}
+            isReadLater={has(t.id)}
+            onPress={handlePress}
+            onClick={handleItemClick}
+          />
         ))}
-        {loading ? (
+        {loading && (
           <div className="topicListBottomLoading">
             <IonSpinner name="crescent" />
           </div>
-        ) : null}
+        )}
       </IonList>
       <div className="topicListBottomSpacer" aria-hidden="true" />
 
