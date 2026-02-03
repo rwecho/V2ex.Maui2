@@ -28,7 +28,9 @@ const TopicListItem = memo(
     useEffect(() => {
       if (!elRef.current) return;
 
-      const mc = new Hammer(elRef.current);
+      const mc = new Hammer(elRef.current, {
+        touchAction: "auto",
+      });
       mc.get("press").set({ time: 500 });
 
       mc.on("press", () => {
