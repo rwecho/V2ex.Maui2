@@ -9,12 +9,15 @@ import {
   IonSkeletonText,
   IonSpinner,
   IonText,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
   IonIcon,
+  IonActionSheet,
 } from "@ionic/react";
-import { bookmarkOutline, bookmark } from "ionicons/icons";
+import {
+  bookmarkOutline,
+  bookmark,
+  documentTextOutline,
+  closeOutline,
+} from "ionicons/icons";
 import { useHistory } from "react-router";
 import type { TopicType } from "../../schemas/topicSchema";
 import "./TopicList.css";
@@ -22,6 +25,7 @@ import { Haptics } from "../../utils/haptics";
 import { useReadLaterStore } from "../../store/readLaterStore";
 import { TopicPreviewModal } from "../../components/TopicPreviewModal";
 import { useState } from "react";
+import TopicListSkeleton from "./TopicListSkeleton";
 
 type TopicListProps = {
   topics: TopicType[];
@@ -32,35 +36,13 @@ type TopicListProps = {
   emptyText?: string;
 };
 
-// Skeleton 加载占位组件
-const TopicListSkeleton = () => {
-  return (
-    <IonList inset={false} lines="full">
-      {[...Array(20)].map((_, index) => (
-        <IonItem key={index}>
-          <IonAvatar className="topicListAvatar" slot="start">
-            <IonSkeletonText animated style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
-          </IonAvatar>
-          <IonLabel>
-            <div className="topicListTitle">
-              <IonSkeletonText animated style={{ width: '90%', height: '16px' }} />
-            </div>
-            <div className="topicListMeta" style={{ marginTop: '8px' }}>
-              <IonSkeletonText animated style={{ width: '60px', height: '12px', display: 'inline-block' }} />
-              <IonSkeletonText animated style={{ width: '40px', height: '18px', display: 'inline-block', marginLeft: '8px', borderRadius: '4px' }} />
-              <IonSkeletonText animated style={{ width: '30px', height: '12px', display: 'inline-block', marginLeft: '8px' }} />
-            </div>
-          </IonLabel>
-        </IonItem>
-      ))}
-    </IonList>
-  );
-};
-
 const TopicList = (props: TopicListProps) => {
   const { topics, loading, error, isActive, onRetry, emptyText } = props;
   const { add, remove, has } = useReadLaterStore();
   const [previewTopic, setPreviewTopic] = useState<TopicType | null>(null);
+  const [actionSheetTopic, setActionSheetTopic] = useState<TopicType | null>(
+    null,
+  );
 
   const history = useHistory();
 
@@ -152,16 +134,17 @@ const TopicList = (props: TopicListProps) => {
           </IonItem>
         ) : null}
         {topics.map((t) => (
-          <IonItemSliding key={t.id} id={`sliding_${t.id}`}>
-            <IonItem
-              button
-              detail={false}
-              onContextMenu={(e) => {
-                  e.preventDefault();
-                  Haptics.medium();
-                  setPreviewTopic(t);
-              }}
-              onClick={() => {
+          <IonItem
+            key={t.id}
+            button
+            detail={false}
+            className={has(t.id) ? "topic-read-later" : ""}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              Haptics.medium();
+              setActionSheetTopic(t);
+            }}
+            onClick={() => {
               Haptics.click();
               const search = t.title
                 ? `?title=${encodeURIComponent(t.title)}`
@@ -200,14 +183,28 @@ const TopicList = (props: TopicListProps) => {
               })()}
             </IonAvatar>
             <IonLabel className="ion-text-wrap">
-              <div className="topicListTitle">{t.title}</div>
+              <div className="topicListTitle">
+                {String(t.title)}
+                {/* Temporarily remove icon to debug React Error 310 */}
+                {has(t.id) && (
+                  <span
+                    style={{
+                      marginLeft: "6px",
+                      fontSize: "0.8em",
+                      color: "orange",
+                    }}
+                  >
+                    ★
+                  </span>
+                )}
+              </div>
               <div className="topicListMeta">
                 {t.member?.username ? (
                   <IonText color="medium">@{t.member.username}</IonText>
                 ) : null}
                 {t.node?.title || t.node?.name ? (
                   <IonBadge color="light">
-                    {t.node?.title ?? t.node?.name}
+                    {String(t.node?.title ?? t.node?.name ?? "")}
                   </IonBadge>
                 ) : null}
                 {typeof t.replies === "number" ? (
@@ -216,24 +213,6 @@ const TopicList = (props: TopicListProps) => {
               </div>
             </IonLabel>
           </IonItem>
-          <IonItemOptions side="end">
-              <IonItemOption
-                color={has(t.id) ? "warning" : "primary"}
-                onClick={() => {
-                   if (has(t.id)) {
-                       remove(t.id);
-                   } else {
-                       add(t);
-                   }
-                   // Close sliding item
-                   const slidingItem = document.getElementById(`sliding_${t.id}`) as any;
-                   if (slidingItem) slidingItem.close();
-                }}
-              >
-                  <IonIcon slot="icon-only" icon={has(t.id) ? bookmark : bookmarkOutline} />
-              </IonItemOption>
-          </IonItemOptions>
-          </IonItemSliding>
         ))}
         {loading ? (
           <div className="topicListBottomLoading">
@@ -242,12 +221,45 @@ const TopicList = (props: TopicListProps) => {
         ) : null}
       </IonList>
       <div className="topicListBottomSpacer" aria-hidden="true" />
-      
+
       <TopicPreviewModal
         isOpen={!!previewTopic}
         onClose={() => setPreviewTopic(null)}
         topic={previewTopic}
       />
+
+      {actionSheetTopic && (
+        <IonActionSheet
+          isOpen={!!actionSheetTopic}
+          onDidDismiss={() => setActionSheetTopic(null)}
+          header={String(actionSheetTopic.title)}
+          buttons={[
+            {
+              text: has(actionSheetTopic.id) ? "移除稍后阅读" : "稍后阅读",
+              icon: has(actionSheetTopic.id) ? bookmarkOutline : bookmark,
+              handler: () => {
+                if (has(actionSheetTopic.id)) {
+                  remove(actionSheetTopic.id);
+                } else {
+                  add(actionSheetTopic);
+                }
+              },
+            },
+            {
+              text: "预览帖子",
+              icon: documentTextOutline,
+              handler: () => {
+                setPreviewTopic(actionSheetTopic);
+              },
+            },
+            {
+              text: "取消",
+              icon: closeOutline,
+              role: "cancel",
+            },
+          ]}
+        />
+      )}
     </>
   );
 };
