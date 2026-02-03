@@ -44,6 +44,7 @@ import TestPage from "./pages/Test";
 import HistoryPage from "./pages/History";
 import SettingsPage from "./pages/Settings";
 import ReadLaterPage from "./pages/ReadLater";
+import NotificationsPage from "./pages/Notifications";
 import { initFontSize } from "./theme/fontSize";
 import { useFontSizeStore } from "./store/fontSizeStore";
 import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
@@ -183,6 +184,7 @@ const App: React.FC = () => {
               <Route exact path="/history" component={HistoryPage} />
               <Route exact path="/settings" component={SettingsPage} />
               <Route exact path="/read-later" component={ReadLaterPage} />
+              <Route exact path="/notifications" component={NotificationsPage} />
               <Route exact path="/login" component={LoginPage} />
               <Route component={NotFoundPage} />
             </IonRouterOutlet>

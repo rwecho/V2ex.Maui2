@@ -4,13 +4,11 @@ import {
   MemberSchema,
   NodeInfoListSchema,
   NodeInfoSchema,
-  NotificationSchema,
   SearchResultSchema,
   TopicListSchema,
   type DailyInfoType,
   type MemberType,
   type NodeInfoType,
-  type NotificationType,
   type SearchResultType,
   type TopicType,
   type CurrentUserType,
@@ -25,6 +23,9 @@ import {
   NewsInfoSchema,
   TopicInfoSchema,
   TopicInfoType,
+  NotificationItemSchema,
+  NotificationInfoType,
+  NotificationInfoSchema,
 } from "../schemas/topicSchema";
 import { IV2exApiService, HistoryItem } from "./IV2exApiService";
 import { err, ok, toErrorMessage, type Result } from "./result";
@@ -439,14 +440,21 @@ export class HttpApiService implements IV2exApiService {
 
   async getNotifications(
     page: number = 1,
-  ): Promise<Result<NotificationType[]>> {
+  ): Promise<Result<NotificationInfoType>> {
     const res = await this.fetchApi(`/account/notifications?page=${page}`);
     if (res.error) return err(res.error);
-    return this.parseOrError(
+    const listRes = this.parseOrError(
       "NotificationList",
-      z.array(NotificationSchema),
+      NotificationInfoSchema,
       res.data,
     );
+    if (listRes.error) return err(listRes.error);
+    return ok({
+      feed: listRes.data?.feed,
+      currentPage: listRes.data?.currentPage || 1,
+      maximumPage: listRes.data?.maximumPage || 1,
+      items: listRes.data?.items || [],
+    });
   }
 
   async getFollowing(page: number = 1): Promise<Result<TopicType[]>> {

@@ -7,19 +7,19 @@ import type {
   MemberType,
   NodeInfoType,
   TopicType,
-  NotificationType,
   DailyInfoType,
   SearchResultType,
   NodesNavInfoType,
   TagInfoType,
   CurrentUserType,
+  NotificationInfoType,
 } from "../schemas/topicSchema";
 import {
   TopicListSchema,
   NodeInfoListSchema,
   NodeInfoSchema,
   MemberSchema,
-  NotificationSchema,
+  NotificationInfoSchema,
   DailyInfoSchema,
   SearchResultSchema,
   NodesNavInfoSchema,
@@ -322,11 +322,11 @@ export class MauiApiService implements IV2exApiService {
 
   async getNotifications(
     page: number = 1,
-  ): Promise<Result<NotificationType[]>> {
+  ): Promise<Result<NotificationInfoType>> {
     return this.invoke(
       "GetNotificationsAsync",
       [page],
-      z.array(NotificationSchema),
+      NotificationInfoSchema,
     );
   }
 

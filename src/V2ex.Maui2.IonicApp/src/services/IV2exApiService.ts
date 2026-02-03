@@ -2,7 +2,7 @@ import {
   DailyInfoType,
   MemberType,
   NodeInfoType,
-  NotificationType,
+  NotificationInfoType,
   SearchResultType,
   TopicType,
   GetNodeParams,
@@ -104,7 +104,7 @@ export interface IV2exApiService {
   signInTwoStep(code: string, once: string): Promise<Result<void>>;
   getDailyInfo(): Promise<Result<DailyInfoType>>;
   checkIn(once: string): Promise<Result<void>>;
-  getNotifications(page?: number): Promise<Result<NotificationType[]>>;
+  getNotifications(page?: number): Promise<Result<NotificationInfoType>>;
   getFollowing(page?: number): Promise<Result<TopicType[]>>;
   getFavoriteTopics(page?: number): Promise<Result<TopicType[]>>;
   getFavoriteNodes(): Promise<Result<NodeInfoType[]>>;

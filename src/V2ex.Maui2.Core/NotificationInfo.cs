@@ -11,35 +11,21 @@ namespace V2ex.Maui2.Core;
 public class NotificationInfo
 {
 
-    [XPath("//div[@id='Wrapper']//div[@class='inner']//td/strong")]
+    [XPath("//input[@class='sll']", "value")]
     [SkipNodeNotFound]
-    public string? PageInfo { get; init; }
+    public string? Feed { get; init; }
 
-    public int CurrentPage
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(PageInfo) || !PageInfo.Contains("/"))
-            {
-                return 0;
-            }
-            var parts = PageInfo.Split('/');
-            return int.Parse(parts[0]);
-        }
-    }
+    [XPath("//input[@class='page_input']", "value")]
+    [SkipNodeNotFound]
+    public string? CurrentPageStr { get; init; }
 
-    public int MaximumPage
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(PageInfo) || !PageInfo.Contains("/"))
-            {
-                return 0;
-            }
-            var parts = PageInfo.Split('/');
-            return int.Parse(parts[1]);
-        }
-    }
+    [XPath("//input[@class='page_input']", "max")]
+    [SkipNodeNotFound]
+    public string? MaximumPageStr { get; init; }
+
+    public int CurrentPage => int.TryParse(CurrentPageStr, out var i) ? i : 1;
+
+    public int MaximumPage => int.TryParse(MaximumPageStr, out var i) ? i : 1;
 
     [XPath("//div[contains(@id, 'n_')]", ReturnType.OuterHtml)]
     [SkipNodeNotFound]

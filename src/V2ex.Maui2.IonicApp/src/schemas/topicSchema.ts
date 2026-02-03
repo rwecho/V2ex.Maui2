@@ -88,17 +88,31 @@ export interface GetNodeParams {
   nodeName: string;
 }
 
-export const NotificationSchema = z
+export const NotificationItemSchema = z
   .object({
-    id: z.number(),
-    member: MemberSchema.optional(),
-    topic: TopicSchema.optional(),
-    action: z.string().optional(), // reply, thank, etc.
-    content: NullishString,
-    contentRendered: NullishString,
-    created: z.number().optional(),
+    userName: z.string(),
+    userLink: z.string(),
+    avatar: z.string(),
+    topicLink: z.string(),
+    topicTitle: z.string(),
+    preTitle: NullishString,
+    postTitle: NullishString,
+    created: NullishString,
+    payload: NullishString,
   })
   .passthrough();
+
+export const NotificationInfoSchema = z
+  .object({
+    feed: NullishString,
+    currentPage: z.number(),
+    maximumPage: z.number(),
+    items: z.array(NotificationItemSchema),
+  })
+  .passthrough();
+
+export type NotificationItemType = z.infer<typeof NotificationItemSchema>;
+export type NotificationInfoType = z.infer<typeof NotificationInfoSchema>;
 
 export const DailyInfoSchema = z
   .object({
@@ -122,7 +136,6 @@ export const SearchResultSchema = z
   })
   .passthrough();
 
-export type NotificationType = z.infer<typeof NotificationSchema>;
 export type DailyInfoType = z.infer<typeof DailyInfoSchema>;
 export type SearchResultType = z.infer<typeof SearchResultSchema>;
 

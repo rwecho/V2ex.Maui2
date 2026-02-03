@@ -381,7 +381,7 @@ const HomePage = () => {
                       expand="block"
                       size="small"
                       color="danger"
-                      // routerLink="/notifications"
+                      routerLink="/notifications"
                       style={{ "--border-radius": "16px" }}
                     >
                       {user.notifications}

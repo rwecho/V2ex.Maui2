@@ -14,17 +14,24 @@ export const normalizeAvatarUrl = (url?: string | null): string | null => {
   return trimmed;
 };
 
-export const getMemberAvatarUrl = (topic: TopicType): string | null => {
-  const m: any = topic.member as any;
+// Helper to get avatar from a member object (compatible with TopicType.member or NotificationType.member)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getMemberAvatar = (member: any): string | null => {
+  if (!member) return null;
+  const m = member;
   const raw =
-    topic.member?.avatarMini ??
-    m?.avatar_mini ??
-    m?.avatarMini ??
-    m?.avatar_normal ??
-    m?.avatarNormal ??
-    topic.member?.avatarLarge ??
-    m?.avatar_large ??
-    m?.avatarLarge ??
+    m.avatarMini ??
+    m.avatar_mini ??
+    m.avatarMini ??
+    m.avatar_normal ??
+    m.avatarNormal ??
+    m.avatarLarge ??
+    m.avatar_large ??
+    m.avatarLarge ??
     null;
   return normalizeAvatarUrl(raw);
+};
+
+export const getMemberAvatarUrl = (topic: TopicType): string | null => {
+  return getMemberAvatar(topic.member);
 };
