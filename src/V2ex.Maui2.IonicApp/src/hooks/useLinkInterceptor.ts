@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 export interface LinkHandlerOptions {
   onExternalLink?: (url: string) => boolean;
-  onInternalLink?: (path: string, href: string) => boolean;
+  onInternalLink?: (path: string, href: string, linkText: string, clickedElement: HTMLElement) => boolean;
 }
 
 export const useLinkInterceptor = (options: LinkHandlerOptions = {}) => {
@@ -23,10 +23,11 @@ export const useLinkInterceptor = (options: LinkHandlerOptions = {}) => {
       event.stopPropagation();
 
       const isInternalLink = isV2exInternalLink(href);
+      const linkText = link.textContent || "";
 
       if (isInternalLink) {
         const path = extractInternalPath(href);
-        const handled = options.onInternalLink?.(path, href);
+        const handled = options.onInternalLink?.(path, href, linkText, link);
 
         if (handled !== true) {
           history.push(path);

@@ -8,6 +8,7 @@ export const useTopicDetail = (id: string, initialTitle?: string) => {
   const logAnalytics = usePageAnalytics();
 
   const fetchTopicInfo = useTopicStore(useShallow((s) => s.fetchTopicInfo));
+  const fetchNextPage = useTopicStore(useShallow((s) => s.fetchNextPage));
   const topicInfoById = useTopicStore(useShallow((s) => s.topicInfoById));
   const topicInfoLoadingById = useTopicStore(
     useShallow((s) => s.topicInfoLoadingById),
@@ -36,6 +37,14 @@ export const useTopicDetail = (id: string, initialTitle?: string) => {
     if (parsedTopicId == null) return null;
     return topicInfoErrorById[String(parsedTopicId)] ?? null;
   }, [parsedTopicId, topicInfoErrorById]);
+
+  // Check if there are more pages to load from the server
+  const hasMorePages = useMemo(() => {
+    if (!topicInfo) return false;
+    const currentPage = topicInfo.currentPage ?? 1;
+    const maximumPage = topicInfo.maximumPage ?? 1;
+    return currentPage < maximumPage;
+  }, [topicInfo]);
 
   useEffect(() => {
     if (parsedTopicId == null) return;
@@ -70,13 +79,29 @@ export const useTopicDetail = (id: string, initialTitle?: string) => {
 
   const handleInfinite = useCallback(async () => {
     const replyCount = topicInfo?.replies?.length ?? 0;
-    const nextCount = Math.min(visibleCount + 30, replyCount);
-    setVisibleCount(nextCount);
-    void logAnalytics("load_more_replies", {
-      topic_id: parsedTopicId ?? undefined,
-      visible_count: nextCount,
-    });
-  }, [topicInfo?.replies?.length, visibleCount, parsedTopicId, logAnalytics]);
+    
+    // If we've shown all loaded replies and there are more pages, fetch next page
+    if (visibleCount >= replyCount && hasMorePages && parsedTopicId != null) {
+      const fetched = await fetchNextPage(parsedTopicId);
+      if (fetched) {
+        // After fetching, increase visible count to show new replies
+        const newReplyCount = useTopicStore.getState().topicInfoById[String(parsedTopicId)]?.replies?.length ?? 0;
+        setVisibleCount(Math.min(visibleCount + 30, newReplyCount));
+      }
+      void logAnalytics("load_next_page", {
+        topic_id: parsedTopicId ?? undefined,
+        visible_count: visibleCount,
+      });
+    } else {
+      // Otherwise just increase visible count for already loaded replies
+      const nextCount = Math.min(visibleCount + 30, replyCount);
+      setVisibleCount(nextCount);
+      void logAnalytics("load_more_replies", {
+        topic_id: parsedTopicId ?? undefined,
+        visible_count: nextCount,
+      });
+    }
+  }, [topicInfo?.replies?.length, visibleCount, parsedTopicId, hasMorePages, fetchNextPage, logAnalytics]);
 
   const removeReply = useTopicStore(useShallow((s) => s.removeReply));
   const thankReply = useTopicStore(useShallow((s) => s.thankReply));
@@ -88,6 +113,7 @@ export const useTopicDetail = (id: string, initialTitle?: string) => {
     error,
     headerTitle,
     visibleCount,
+    hasMorePages,
     handleRefresh,
     handleInfinite,
     removeReply,

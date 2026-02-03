@@ -81,6 +81,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     error,
     headerTitle,
     visibleCount,
+    hasMorePages,
     handleRefresh: handleRefreshLogic,
     handleInfinite: handleInfiniteLogic,
     removeReply,
@@ -231,18 +232,44 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       debugger;
       return false;
     },
-    onInternalLink: (path, href) => {
+    onInternalLink: (path, href, linkText, clickedElement) => {
       const usernameMatch = href.match(/\/member\/([a-zA-Z0-9_-]+)/);
       if (usernameMatch) {
         const username = usernameMatch[1];
         const replies = topicInfo?.replies ?? [];
-        const userReplies = replies.filter(
-          (reply) => reply.userName === username,
-        );
-        if (userReplies.length > 0) {
-          const lastReply = userReplies[userReplies.length - 1];
+        
+        // Check if there's a floor number in the link text (e.g., "@username #33")
+        // The link text might be just the username, so check the full text around it
+        const parentText = clickedElement?.parentElement?.textContent || linkText || "";
+        const floorMatch = parentText.match(/@[\w-]+\s*#(\d+)/);
+        
+        let targetReply = null;
+        
+        if (floorMatch) {
+          // If floor number is specified, navigate to that floor
+          const targetFloor = parseInt(floorMatch[1], 10);
+          targetReply = replies.find((r) => r.floor === targetFloor);
+        } else {
+          // Otherwise, find the current floor we're viewing from
+          const currentReplyElement = clickedElement?.closest("[data-reply-id]");
+          const currentReplyId = currentReplyElement?.getAttribute("data-reply-id");
+          const currentReply = replies.find((r) => String(r.id) === currentReplyId);
+          const currentFloor = currentReply?.floor ?? Infinity;
+          
+          // Find the user's replies that appear BEFORE the current floor
+          const userRepliesBefore = replies.filter(
+            (reply) => reply.userName === username && reply.floor < currentFloor
+          );
+          
+          // Get the most recent one (closest to current floor)
+          if (userRepliesBefore.length > 0) {
+            targetReply = userRepliesBefore[userRepliesBefore.length - 1];
+          }
+        }
+        
+        if (targetReply) {
           const replyElement = document.querySelector(
-            `[data-reply-id="${lastReply.id}"]`,
+            `[data-reply-id="${targetReply.id}"]`,
           );
           if (replyElement) {
             replyElement.scrollIntoView({
@@ -466,7 +493,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                   <IonInfiniteScroll
                     threshold="160px"
                     onIonInfinite={onInfinite}
-                    disabled={visibleCount >= filteredReplies.length}
+                    disabled={visibleCount >= filteredReplies.length && !hasMorePages}
                   >
                     <IonInfiniteScrollContent
                       loadingSpinner="crescent"

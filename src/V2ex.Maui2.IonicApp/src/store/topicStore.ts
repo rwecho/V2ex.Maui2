@@ -21,6 +21,7 @@ interface TopicActions {
     topicId: number,
     options?: { force?: boolean },
   ) => Promise<void>;
+  fetchNextPage: (topicId: number) => Promise<boolean>;
   clearTopicInfo: (topicId: number) => void;
   updateTopicInfo: (topicId: number, topicInfo: TopicInfoType) => void;
   removeReply: (topicId: number, replyId: string) => void;
@@ -249,6 +250,58 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
         [idKey]: false,
       },
     });
+  },
+
+  fetchNextPage: async (topicId: number): Promise<boolean> => {
+    const idKey = String(topicId);
+    const topicInfo = get().topicInfoById[idKey];
+    if (!topicInfo) return false;
+
+    const currentPage = topicInfo.currentPage ?? 1;
+    const maximumPage = topicInfo.maximumPage ?? 1;
+
+    // Already loaded all pages
+    if (currentPage >= maximumPage) return false;
+
+    // Don't fetch if already loading
+    if (get().topicInfoLoadingById[idKey]) return false;
+
+    set({
+      topicInfoLoadingById: {
+        ...get().topicInfoLoadingById,
+        [idKey]: true,
+      },
+    });
+
+    const nextPage = currentPage + 1;
+    const res = await apiService.getTopicDetail({ topicId, page: nextPage });
+
+    if (res.error !== null || !res.data) {
+      set({
+        topicInfoLoadingById: {
+          ...get().topicInfoLoadingById,
+          [idKey]: false,
+        },
+      });
+      return false;
+    }
+
+    // Merge replies from new page
+    const newTopicInfo = {
+      ...topicInfo,
+      replies: [...topicInfo.replies, ...res.data.replies],
+      currentPage: nextPage,
+    };
+
+    set({
+      topicInfoById: { ...get().topicInfoById, [idKey]: newTopicInfo },
+      topicInfoLoadingById: {
+        ...get().topicInfoLoadingById,
+        [idKey]: false,
+      },
+    });
+
+    return true;
   },
 
   clearTopicInfo: (topicId: number) => {
