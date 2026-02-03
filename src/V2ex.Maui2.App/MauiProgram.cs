@@ -68,11 +68,12 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ApiService>();
 
 #if IOS
-// Use custom handler to remove keyboard accessory bar
-		// builder.ConfigureMauiHandlers(handlers =>
-        // {
-        //     handlers.AddHandler<Microsoft.Maui.Controls.HybridWebView, V2ex.Maui2.App.Platforms.iOS.CustomHybridWebViewHandler>();
-        // });
+		// Use custom handler to remove keyboard accessory bar in WKWebView.
+		// (Implemented by Platforms/iOS/NoInputAccessoryWebView.cs overriding InputAccessoryView => null)
+		builder.ConfigureMauiHandlers(handlers =>
+		{
+			handlers.AddHandler<Microsoft.Maui.Controls.HybridWebView, V2ex.Maui2.App.Platforms.iOS.CustomHybridWebViewHandler>();
+		});
 #endif
 
 #if DEBUG
