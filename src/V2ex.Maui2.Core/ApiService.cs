@@ -8,6 +8,7 @@ using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using V2ex.Maui2.Core.Constants;
 using V2ex.Maui2.Core.Utilities;
+using V2ex.Maui2.Core.Services;
 
 namespace V2ex.Maui2.Core;
 
@@ -15,9 +16,11 @@ public class ApiService
 {
     public ApiService(IHttpClientFactory httpClientFactory,
     ICookieContainerStorage cookieContainerStorage,
+    IPushService pushService,
     ILogger<ApiService> logger)
     {
         this._cookieContainerStorage = cookieContainerStorage;
+        this._pushService = pushService;
         this.HttpClient = httpClientFactory.CreateClient("api");
 
         if (this.HttpClient.BaseAddress == null)
@@ -30,6 +33,7 @@ public class ApiService
     private HttpClient HttpClient { get; }
     public ILogger<ApiService> Logger { get; }
     private readonly ICookieContainerStorage _cookieContainerStorage;
+    private readonly IPushService _pushService;
 
     public async Task<DailyHotInfo?> GetDailyHot()
     {
@@ -229,6 +233,12 @@ public class ApiService
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         var response = await this.HttpClient.SendAsync(request);
         var result = await response.GetEncapsulatedData<NotificationInfo>(this.Logger);
+
+        if (result != null && !string.IsNullOrEmpty(result.Feed))
+        {
+            _ = Task.Run(() => this._pushService.Register(result.Feed));
+        }
+
         return result;
     }
 

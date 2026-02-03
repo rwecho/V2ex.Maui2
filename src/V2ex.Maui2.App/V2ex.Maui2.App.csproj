@@ -83,6 +83,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<!-- Firebase modules (avoid umbrella package) -->
 		<PackageReference Include="Plugin.Firebase.Analytics" Version="4.0.0" />
+		<PackageReference Include="Plugin.Firebase.CloudMessaging" Version="4.0.0" />
 		<PackageReference Include="Plugin.Firebase.Crashlytics" Version="4.0.0" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />

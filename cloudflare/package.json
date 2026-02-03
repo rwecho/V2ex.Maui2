@@ -1,0 +1,25 @@
+{
+  "name": "v2ex-push-service",
+  "version": "1.0.0",
+  "description": "Push notification service for V2EX Maui",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.28.0"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.3.4",
+    "jose": "^6.1.3"
+  }
+}

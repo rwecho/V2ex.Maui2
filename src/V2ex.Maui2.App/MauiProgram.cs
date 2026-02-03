@@ -5,6 +5,7 @@ using V2ex.Maui2.App.Services;
 using CommunityToolkit.Maui;
 using V2ex.Maui2.App.Utilities;
 using V2ex.Maui2.Core;
+using V2ex.Maui2.Core.Services;
 using System.Net;
 
 namespace V2ex.Maui2.App;
@@ -66,6 +67,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<MauiBridge>();
 
 		builder.Services.AddSingleton<ApiService>();
+		builder.Services.AddSingleton<IPushService, PushService>();
 
 #if IOS
 		// Use custom handler to remove keyboard accessory bar in WKWebView.
