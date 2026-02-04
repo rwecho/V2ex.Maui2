@@ -72,7 +72,7 @@ namespace V2ex.Maui2.App.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error initializing push service.");
+                _logger.LogError(ex, $"Error initializing push service. Message: {ex.Message}, Inner: {ex.InnerException?.Message}");
             }
         }
     }

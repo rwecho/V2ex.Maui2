@@ -116,6 +116,7 @@
 	</PropertyGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-ios'))">
+		<CodesignEntitlements>Platforms\iOS\Entitlements.plist</CodesignEntitlements>
 		<BundleResource Include="Platforms\iOS\GoogleService-Info.plist" Link="GoogleService-Info.plist" />
 	</ItemGroup>
 
