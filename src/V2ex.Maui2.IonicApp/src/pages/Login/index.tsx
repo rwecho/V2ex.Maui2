@@ -13,6 +13,7 @@ import {
   IonImg,
   IonButton,
   IonText,
+  IonSkeletonText,
 } from "@ionic/react";
 import { useCallback, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
@@ -216,88 +217,141 @@ const LoginPage = () => {
             </h2>
           </div>
 
-          <IonItem className="rounded-item" lines="full">
-            <IonInput
-              label="用户名"
-              labelPlacement="floating"
-              // placeholder="请输入 V2EX 用户名"
-              placeholder={formInfo?.usernameFieldName}
-              value={username}
-              onIonInput={(e) => setUsername(e.detail.value ?? "")}
-              autocomplete="username"
-              disabled={isLoading}
-              clearInput
-            />
-          </IonItem>
-
-          <IonItem className="rounded-item" lines="full">
-            <IonInput
-              label="密码"
-              labelPlacement="floating"
-              type="password"
-              // placeholder="请输入密码"
-              placeholder={formInfo?.passwordFieldName}
-              value={password}
-              onIonInput={(e) => setPassword(e.detail.value ?? "")}
-              autocomplete="current-password"
-              disabled={isLoading}
-              clearInput
-            />
-          </IonItem>
-
-          <IonItem
-            className="rounded-item"
-            lines="full"
-            style={{ marginTop: "8px" }}
-          >
-            <IonInput
-              label="验证码"
-              labelPlacement="floating"
-              placeholder={formInfo?.captchaFieldName}
-              value={captchaCode}
-              onIonInput={(e) => setCaptchaCode(e.detail.value ?? "")}
-              disabled={isLoading || isLoadingCaptcha}
-            />
-          </IonItem>
-
-          <div
-            onClick={handleRefreshCaptcha}
-            style={{
-              marginTop: "12px",
-              width: "100%",
-            }}
-          >
-            {isLoadingCaptcha ? (
-              <IonSpinner name="dots" color="medium" />
-            ) : formInfo?.captchaImage ? (
-              <img
-                src={`data:image/png;base64,${formInfo.captchaImage}`}
-                alt="captcha"
-                style={{ width: "100%", objectFit: "contain" }}
-              />
-            ) : (
-              <span
-                style={{ fontSize: "12px", color: "var(--ion-color-medium)" }}
+          {!formInfo ? (
+            <>
+              {[1, 2, 3].map((i) => (
+                <IonItem
+                  key={i}
+                  className="rounded-item"
+                  lines="full"
+                  style={{ marginBottom: "12px" }}
+                >
+                  <div style={{ width: "100%", padding: "12px 0" }}>
+                    <IonSkeletonText
+                      animated
+                      style={{ width: "30%", height: "16px" }}
+                    />
+                    <IonSkeletonText
+                      animated
+                      style={{
+                        width: "100%",
+                        height: "24px",
+                        marginTop: "8px",
+                      }}
+                    />
+                  </div>
+                </IonItem>
+              ))}
+              <div
+                style={{
+                  marginTop: "12px",
+                  width: "100%",
+                  height: "50px",
+                }}
               >
-                点击加载验证码
-              </span>
-            )}
-          </div>
+                <IonSkeletonText
+                  animated
+                  style={{ width: "100%", height: "100%", borderRadius: "8px" }}
+                />
+              </div>
+              <div style={{ marginTop: "32px" }}>
+                <IonSkeletonText
+                  animated
+                  style={{
+                    width: "100%",
+                    height: "48px",
+                    borderRadius: "24px",
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <IonItem className="rounded-item" lines="full">
+                <IonInput
+                  label="用户名"
+                  labelPlacement="floating"
+                  placeholder="请输入 V2EX 用户名"
+                  value={username}
+                  onIonInput={(e) => setUsername(e.detail.value ?? "")}
+                  autocomplete="username"
+                  disabled={isLoading}
+                  clearInput
+                />
+              </IonItem>
 
-          <IonButton
-            expand="block"
-            onClick={handleLogin}
-            disabled={
-              isLoading ||
-              !username.trim() ||
-              !password.trim() ||
-              !captchaCode.trim()
-            }
-            style={{ marginTop: "32px", "--border-radius": "8px" }}
-            shape="round"
-          >
-            {isLoading ? <IonSpinner name="crescent" /> : "登录"}
-          </IonButton>
+              <IonItem className="rounded-item" lines="full">
+                <IonInput
+                  label="密码"
+                  labelPlacement="floating"
+                  type="password"
+                  placeholder="请输入密码"
+                  value={password}
+                  onIonInput={(e) => setPassword(e.detail.value ?? "")}
+                  autocomplete="current-password"
+                  disabled={isLoading}
+                  clearInput
+                />
+              </IonItem>
+
+              <IonItem
+                className="rounded-item"
+                lines="full"
+                style={{ marginTop: "8px" }}
+              >
+                <IonInput
+                  label="验证码"
+                  labelPlacement="floating"
+                  placeholder="请输入验证码"
+                  value={captchaCode}
+                  onIonInput={(e) => setCaptchaCode(e.detail.value ?? "")}
+                  disabled={isLoading || isLoadingCaptcha}
+                />
+              </IonItem>
+
+              <div
+                onClick={handleRefreshCaptcha}
+                style={{
+                  marginTop: "12px",
+                  width: "100%",
+                }}
+              >
+                {isLoadingCaptcha ? (
+                  <IonSpinner name="dots" color="medium" />
+                ) : formInfo?.captchaImage ? (
+                  <img
+                    src={`data:image/png;base64,${formInfo.captchaImage}`}
+                    alt="captcha"
+                    style={{ width: "100%", objectFit: "contain" }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--ion-color-medium)",
+                    }}
+                  >
+                    点击加载验证码
+                  </span>
+                )}
+              </div>
+
+              <IonButton
+                expand="block"
+                onClick={handleLogin}
+                disabled={
+                  isLoading ||
+                  !username.trim() ||
+                  !password.trim() ||
+                  !captchaCode.trim()
+                }
+                style={{ marginTop: "32px", "--border-radius": "8px" }}
+                shape="round"
+              >
+                {isLoading ? <IonSpinner name="crescent" /> : "登录"}
+              </IonButton>
+            </>
+          )}
 
           <IonText
             color="medium"
@@ -331,9 +385,7 @@ const LoginPage = () => {
           </IonText>
         </div>
 
-
-          {/* Toast 移除 */}
-        
+        {/* Toast 移除 */}
       </IonContent>
     </IonPage>
   );

@@ -1,5 +1,6 @@
 using V2ex.Maui2.Api.Services;
 using V2ex.Maui2.Core;
+using V2ex.Maui2.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,7 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<ICookieContainerStorage, CookieContainerStorage>();
+builder.Services.AddSingleton<IPushService, PushService>();
 
 builder.Services.AddEndpointsApiExplorer();
 

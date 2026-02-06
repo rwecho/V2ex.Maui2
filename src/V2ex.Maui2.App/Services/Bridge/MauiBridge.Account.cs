@@ -14,12 +14,9 @@ public partial class MauiBridge
 
     public async Task<string> GetCaptchaImageAsync(string once)
     {
-        return await ExecuteSafeAsync(async () => {
-            // We need full parameters to get image URL, but legacy only passed 'once'.
-            // We try to re-fetch parameters to get the URL. This is overhead but safe.
-            var formInfo = await apiService.GetLoginParameters();
-            
-            var imageData = await apiService.GetCaptchaImage(formInfo.Once);
+        return await ExecuteSafeAsync(async () =>
+        {
+            var imageData = await apiService.GetCaptchaImage(once);
             var base64Image = Convert.ToBase64String(imageData);
 
             return new
@@ -33,7 +30,8 @@ public partial class MauiBridge
 
     public async Task<string> SignInAsync(string username, string password, string usernameFieldName, string passwordFieldName, string captchaFieldName, string once, string captchaCode)
     {
-        return await ExecuteSafeAsync(async () => {
+        return await ExecuteSafeAsync(async () =>
+        {
             var result = await apiService.Login(
                  usernameFieldName, passwordFieldName, captchaFieldName, once, username, password, captchaCode);
             return new
@@ -48,7 +46,8 @@ public partial class MauiBridge
 
     public Task<string> SignOutAsync()
     {
-        return ExecuteSafeAsync(() => {
+        return ExecuteSafeAsync(() =>
+        {
             apiService.SignOut();
             return Task.FromResult(new
             {
@@ -63,31 +62,33 @@ public partial class MauiBridge
         // Custom error handling to return isLoggedIn=false instead of error object
         try
         {
-             return await ExecuteSafeAsync(async () => {
+            return await ExecuteSafeAsync(async () =>
+            {
                 var daily = await apiService.GetDailyInfo();
                 return new
                 {
                     success = true,
                     isLoggedIn = daily?.CurrentUser != null
                 };
-             });
+            });
         }
         catch
         {
-             return JsonSerializer.Serialize(new { success = true, isLoggedIn = false }, _jsonOptions);
+            return JsonSerializer.Serialize(new { success = true, isLoggedIn = false }, _jsonOptions);
         }
     }
 
     public async Task<string> GetCurrentUserAsync()
     {
-         return await ExecuteSafeAsync(async () => {
-             var daily = await apiService.GetDailyInfo();
-             if (daily?.CurrentUser != null)
-             {
-                 return new { success = true, user = daily.CurrentUser };
-             }
-             throw new Exception("Not logged in");
-         });
+        return await ExecuteSafeAsync(async () =>
+        {
+            var daily = await apiService.GetDailyInfo();
+            if (daily?.CurrentUser != null)
+            {
+                return new { success = true, user = daily.CurrentUser };
+            }
+            throw new Exception("Not logged in");
+        });
     }
 
     public Task<string> SignInTwoStepAsync(string code, string once)
