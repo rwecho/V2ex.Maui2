@@ -122,7 +122,7 @@ jobs:
           packageName: "tech.zb.v2ex.maui.app"
           releaseFiles: "src/V2ex.Maui2.App/bin/Release/net10.0-android/tech.zb.v2ex.maui.app-Signed.aab"
           track: "internal"
-          changesNotSentForReview: true
+          # changesNotSentForReview: true
 
   # iOS 构建
   build-ios:
