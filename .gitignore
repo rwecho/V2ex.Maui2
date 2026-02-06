@@ -30,6 +30,7 @@
 # Temp
 *.tmp
 .vs/
+preferences.json
 **/Raw/wwwroot/assets/
 **/Raw/wwwroot/index.html
 **/Raw/wwwroot/favicon.png
