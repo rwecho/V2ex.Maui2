@@ -523,6 +523,18 @@ export class HttpApiService implements IV2exApiService {
     return ok(undefined);
   }
 
+  async reportReply(replyId: string): Promise<Result<void>> {
+    const subject = encodeURIComponent(`[Report] Reply #${replyId}`);
+    const body = encodeURIComponent(
+      `I would like to report the reply #${replyId} due to inappropriate content.\n`,
+    );
+    window.open(
+      `mailto:report@v2ex.maui?subject=${subject}&body=${body}`,
+      "_blank",
+    );
+    return ok(undefined);
+  }
+
   // --- Native / UI Methods ---
   async getSystemInfo(): Promise<
     Result<{

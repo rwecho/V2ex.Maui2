@@ -117,6 +117,8 @@
 
 	<PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
 		<CodesignEntitlements>Platforms\iOS\Entitlements.plist</CodesignEntitlements>
+		<CodesignProvision>v2ex_maui2</CodesignProvision>
+		<APPLE_SIGNING_IDENTITY>iPhone Distribution: Zhenwei Ruan (2VA9TC6SG4)</APPLE_SIGNING_IDENTITY>
 	</PropertyGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-ios'))">

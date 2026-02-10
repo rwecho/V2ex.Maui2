@@ -35,6 +35,13 @@ const SettingsPage: React.FC = () => {
       </IonHeader>
       <IonContent>
         <IonList inset>
+          <IonItem button routerLink="/blocked-users" detail>
+            <IonLabel>
+              <h2>屏蔽用户管理</h2>
+              <p>查看和移除已屏蔽的用户</p>
+            </IonLabel>
+          </IonItem>
+
           <IonItem lines="none">
             <IonLabel>
               <h2>字体大小</h2>

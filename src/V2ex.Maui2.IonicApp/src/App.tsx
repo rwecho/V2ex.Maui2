@@ -43,6 +43,7 @@ import { initColorMode } from "./theme/colorMode";
 import TestPage from "./pages/Test";
 import HistoryPage from "./pages/History";
 import SettingsPage from "./pages/Settings";
+import BlockedUsersPage from "./pages/BlockedUsers";
 import ReadLaterPage from "./pages/ReadLater";
 import NotificationsPage from "./pages/Notifications";
 import { initFontSize } from "./theme/fontSize";
@@ -164,6 +165,7 @@ const App: React.FC = () => {
               <Route exact path="/t/:id" component={TopicPage} />
               <Route exact path="/login" component={LoginPage} />
               <Route exact path="/settings" component={SettingsPage} />
+              <Route exact path="/blocked-users" component={BlockedUsersPage} />
               <Route exact path="/read-later" component={ReadLaterPage} />
               <Route exact path="/" render={() => <Redirect to="/home" />} />
               <Route component={NotFoundPage} />
@@ -183,6 +185,7 @@ const App: React.FC = () => {
               <Route exact path="/topic/:id" component={TopicPage} />
               <Route exact path="/history" component={HistoryPage} />
               <Route exact path="/settings" component={SettingsPage} />
+              <Route exact path="/blocked-users" component={BlockedUsersPage} />
               <Route exact path="/read-later" component={ReadLaterPage} />
               <Route exact path="/notifications" component={NotificationsPage} />
               <Route exact path="/login" component={LoginPage} />

@@ -362,6 +362,17 @@ const LoginPage = () => {
               登录即表示您同意 V2EX 的
               <IonText color="primary">
                 <a
+                  href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: "none", margin: "0 4px" }}
+                >
+                  用户协议 (EULA)
+                </a>
+              </IonText>
+              、
+              <IonText color="primary">
+                <a
                   href="https://www.v2ex.com/about"
                   target="_blank"
                   rel="noopener noreferrer"

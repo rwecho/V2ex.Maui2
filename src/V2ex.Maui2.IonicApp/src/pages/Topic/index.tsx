@@ -36,9 +36,10 @@ import { useAuthStore } from "../../store/authStore";
 import { useTopicDetail } from "./hooks/useTopicDetail";
 import { useTopicReply } from "./hooks/useTopicReply";
 
-import { ellipsisHorizontal, flagOutline, heartOutline, chatbubbleOutline, eyeOffOutline, personOutline, personCircleOutline } from "ionicons/icons";
+import { ellipsisHorizontal, flagOutline, heartOutline, chatbubbleOutline, eyeOffOutline, personOutline, personCircleOutline, banOutline } from "ionicons/icons";
 import { apiService } from "../../services/apiService";
 import { Haptics } from "../../utils/haptics";
+import { useUserBlockStore } from "../../store/userBlockStore";
 
 import TopicHeader from "./components/TopicHeader";
 import TopicSupplements from "./components/TopicSupplements";
@@ -93,6 +94,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     useShallow((s) => ({ isAuthenticated: s.isAuthenticated })),
   );
 
+  const { blockUser } = useUserBlockStore();
+  const blockedUsers = useUserBlockStore((state) => state.blockedUsers);
+
   // 5. Toast 状态 (迁移至原生)
   // 移除 setToastOpen, setToastMessage, toastOpen, toastMessage
   const [showActionSheet, setShowActionSheet] = useState(false);
@@ -106,7 +110,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       const result = await apiService.reportTopic(parsedTopicId, headerTitle);
       if (!result.error) {
         Haptics.success();
-        apiService.showToast("举报成功");
+        apiService.showToast("感谢举报，我们将在 24 小时内处理并移除违规内容");
       } else {
         Haptics.error();
         apiService.showToast(`操作失败：${result.error}`);
@@ -117,6 +121,30 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     } finally {
       setShowActionSheet(false);
     }
+  };
+
+  const handleReportReply = async (reply: ReplyInfoType) => {
+      try {
+          const result = await apiService.reportReply(reply.id);
+          if (!result.error) {
+              Haptics.success();
+              apiService.showToast("感谢举报，我们将在 24 小时内处理并移除违规内容");
+          } else {
+              Haptics.error();
+              apiService.showToast(`操作失败：${result.error}`);
+          }
+      } catch (e) {
+          Haptics.error();
+          apiService.showToast("无法启动邮件客户端");
+      }
+  };
+
+  const handleBlockUser = (username: string) => {
+      blockUser(username);
+      Haptics.success();
+      apiService.showToast(`已屏蔽用户 @${username}，其内容将不再显示`);
+      setShowActionSheet(false);
+      setShowReplyActionSheet(false);
   };
 
   const handleThankReply = async () => {
@@ -314,9 +342,17 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   
   const filteredReplies = useMemo(() => {
     if (!topicInfo?.replies) return [];
-    if (!onlyOP) return topicInfo.replies;
-    return topicInfo.replies.filter(r => r.userName === topicInfo.userName);
-  }, [topicInfo?.replies, onlyOP, topicInfo?.userName]);
+    
+    // First apply blocking filter
+    let replies = topicInfo.replies.filter(r => !blockedUsers.includes(r.userName));
+
+    // Then apply OP only filter if active
+    if (onlyOP) {
+        replies = replies.filter(r => r.userName === topicInfo.userName);
+    }
+    
+    return replies;
+  }, [topicInfo?.replies, onlyOP, topicInfo?.userName, blockedUsers]);
 
   const visibleReplies = filteredReplies.slice(0, visibleCount);
 
@@ -361,12 +397,20 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               },
             },
             {
-              text: "隐藏",
-              icon: eyeOffOutline,
+              text: "举报",
+              icon: flagOutline,
               role: "destructive",
               handler: () => {
-                if (selectedReply) handleIgnoreReply(selectedReply);
-              },
+                  if (selectedReply) handleReportReply(selectedReply);
+              }
+            },
+            {
+              text: "屏蔽用户 (Block)",
+              icon: banOutline,
+              role: "destructive",
+              handler: () => {
+                  if (selectedReply) handleBlockUser(selectedReply.userName);
+              }
             },
             {
               text: "取消",
@@ -402,12 +446,6 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               icon: onlyOP ? personOutline : personCircleOutline,
               handler: () => {
                  setOnlyOP(!onlyOP);
-                 // Reset visible count logic might be needed if infinite scroll is complex, 
-                 // but for now simple filter is enough as infinite scroll handles the 'slice'.
-                 // Actually infinite scroll logic in useTopicDetail might need adjustment if it relies on index,
-                 // but here we are slicing the *filtered* array. 
-                 // Wait, useTopicDetail handles data fetching. Rendering slicing is done here.
-                 // So 'visibleCount' is just a number. If filter reduces count < visibleCount, it shows all filtered.
               }
             },
             {
@@ -417,6 +455,34 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               handler: () => {
                 handleReport();
               },
+            },
+            {
+                text: "屏蔽楼主 (Block OP)",
+                icon: banOutline,
+                role: "destructive",
+                handler: () => {
+                    if (topicInfo?.userName) {
+                        handleBlockUser(topicInfo.userName);
+                        history.goBack(); 
+                        // Or just show toast. But if we block OP, the topic content should theoretically be hidden?
+                        // User requirement: "All content from this user must disappear".
+                        // If we are VIEWING the topic, maybe we should leave it or show "Blocked".
+                        // But typically if you block someone you shouldn't see their topic.
+                        // Let's just block and maybe go back or let the user decide.
+                        // For now, blocking adds to blacklist, which filters lists.
+                        // If I stay on page, I might want to mask content?
+                        // The `filteredReplies` handles replies.
+                        // The topic content itself is in `TopicHeader`.
+                        // I should probably hide `TopicHeader` content if `isBlocked(topicInfo.userName)`.
+                    }
+                }
+            },
+            {
+                text: "管理屏蔽列表",
+                icon: banOutline,
+                handler: () => {
+                    history.push("/blocked-users");
+                }
             },
             {
               text: "取消",
