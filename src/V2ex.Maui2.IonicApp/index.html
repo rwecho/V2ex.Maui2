@@ -29,7 +29,8 @@
     <script src="/src/hybridwebview.ts" type="module"></script>
 
     <script>
-      function checkWebViewHealth() {
+      function checkWebViewHealth(s) {
+        console.log("Checking WebView health with input:", s);
         try {
           if (!document || !document.body) return "NO_BODY";
           if (document.body.innerHTML.length < 100) return "EMPTY_PAGE";
@@ -44,9 +45,26 @@
         }
       }
 
-      function globalInit(data) {
-        console.log("Global init with data:", data);
-        window.initData = JSON.parse(data);
+      async function globalInit(data) {
+        const decodedData = atob(data);
+        const jsonData = JSON.parse(decodedData);
+        window.initData = jsonData;
+        return "INIT_SUCCESS";
+      }
+
+      async function EvaluateMeWithParamsAndAsyncReturn(s1, s2) {
+        const response = await fetch("/asyncdata.txt");
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+        var jsonData = await response.json();
+
+        jsonData[s1] = s2;
+
+        const msg = "JSON data is available: " + JSON.stringify(jsonData);
+        window.HybridWebView.SendRawMessage(msg);
+
+        return jsonData;
       }
     </script>
   </body>

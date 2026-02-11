@@ -5,6 +5,7 @@ using System.Text.Json;
 using V2ex.Maui2.App.Services.Bridge;
 using HtmlAgilityPack;
 using System.Text.Json.Serialization;
+using System.Text;
 
 namespace V2ex.Maui2.App;
 
@@ -467,16 +468,6 @@ public partial class MainPage : ContentPage
     private async void OnHybridWebViewLoaded(object sender, EventArgs e)
     {
         _logger.LogInformation("HybridWebView loaded event fired.");
-
-        MainThread.BeginInvokeOnMainThread(async () =>
-        {
-            var data = new Dictionary<string, string>
-            {
-                { "platform", DeviceInfo.Platform == DevicePlatform.Android ? "android" : "ios" }
-            };
-            await hybridWebView.InvokeJavaScriptAsync("globalInit", [JsonSerializer.Serialize(data)]);
-        });
-
     }
 
     /// <summary>
@@ -491,8 +482,17 @@ public partial class MainPage : ContentPage
         _splashTimeoutCts = null;
 
         // 隐藏 Splash Screen
-        MainThread.BeginInvokeOnMainThread(() =>
+        MainThread.BeginInvokeOnMainThread(async () =>
         {
+            var data = new Dictionary<string, string>
+            {
+                { "platform", DeviceInfo.Platform == DevicePlatform.Android ? "android" : "ios" }
+            };
+            var result = await hybridWebView.InvokeJavaScriptAsync<string>(
+                          "globalInit",
+                          HybridJSContext.Default.String,
+                          [Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data)))],
+                          [HybridJSContext.Default.String]);
             HideSplashScreen();
         });
     }
