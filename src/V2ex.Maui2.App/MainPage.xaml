@@ -17,6 +17,7 @@
             <HybridWebView x:Name="hybridWebView"
                            HybridRoot="wwwroot"
                            DefaultFile="index.html"
+                           Loaded="OnHybridWebViewLoaded"
                            RawMessageReceived="OnHybridWebViewRawMessageReceived"/>
         </Grid>
 

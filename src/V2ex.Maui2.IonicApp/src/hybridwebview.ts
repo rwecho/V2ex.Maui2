@@ -183,17 +183,25 @@ declare global {
     const message = JSON.stringify(body);
     // send the request to .NET
     const requestUrl = `/__hwvInvokeDotNet`;
+
+    const headers = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Maui-Invoke-Token": "HybridWebView",
+    } as Record<string, string>;
+
+    if ((window as any).globalData.platform === "android") {
+      // Android's WebView does not allow setting custom headers or the request body when using fetch.
+      // To work around this, we include the message in a custom header and the server will read it from there.
+      headers["X-Maui-Request-Body"] = message;
+    }
+
     const rawResponse = await fetch(requestUrl, {
       method: "POST",
       // iOS (WKWebView) does not allow setting certain headers (e.g., Origin/Referer).
       // MAUI validates the request using Origin/Referer, so we force an origin-only referrer.
       referrerPolicy: "origin",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-Maui-Invoke-Token": "HybridWebView",
-        // "X-Maui-Request-Body": message, // Some platforms (Android) do not expose the POST body
-      },
+      headers: headers,
       body: message,
     });
     const response = await rawResponse.json();

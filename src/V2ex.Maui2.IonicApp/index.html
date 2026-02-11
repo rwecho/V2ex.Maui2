@@ -43,6 +43,11 @@
           return "ERROR:" + e.message;
         }
       }
+
+      function globalInit(data) {
+        console.log("Global init with data:", data);
+        window.initData = JSON.parse(data);
+      }
     </script>
   </body>
 </html>

@@ -464,6 +464,21 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private async void OnHybridWebViewLoaded(object sender, EventArgs e)
+    {
+        _logger.LogInformation("HybridWebView loaded event fired.");
+
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            var data = new Dictionary<string, string>
+            {
+                { "platform", DeviceInfo.Platform == DevicePlatform.Android ? "android" : "ios" }
+            };
+            await hybridWebView.InvokeJavaScriptAsync("globalInit", [JsonSerializer.Serialize(data)]);
+        });
+
+    }
+
     /// <summary>
     /// 处理前端发送的 appReady 消息
     /// </summary>
