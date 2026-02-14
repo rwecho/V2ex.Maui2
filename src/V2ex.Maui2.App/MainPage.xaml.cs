@@ -446,6 +446,10 @@ public partial class MainPage : ContentPage
 
             switch (messageType)
             {
+                case "appInit":
+                    HandleAppInit();
+                    break;
+
                 case "appReady":
                     HandleAppReady();
                     break;
@@ -471,6 +475,34 @@ public partial class MainPage : ContentPage
     }
 
     /// <summary>
+    /// 处理前端发送的 appInit 消息，通常包含平台信息等初始化数据
+    /// 在收到 appInit 后，前端会等待 initData 消息来完成初始化
+    /// </summary>
+    private void HandleAppInit()
+    {
+        _logger.LogInformation("Received appInit message from frontend.");
+        MainThread.BeginInvokeOnMainThread(() =>
+       {
+           try
+           {
+               var initData = new
+               {
+                   type = "initData",
+                   payload = new
+                   {
+                       platform = DeviceInfo.Platform == DevicePlatform.Android ? "android" : "ios"
+                   }
+               };
+               hybridWebView.SendRawMessage(JsonSerializer.Serialize(initData));
+           }
+           catch (Exception ex)
+           {
+               _logger.LogError(ex, "Failed to send initData");
+           }
+       });
+    }
+
+    /// <summary>
     /// 处理前端发送的 appReady 消息
     /// </summary>
     private void HandleAppReady()
@@ -482,17 +514,8 @@ public partial class MainPage : ContentPage
         _splashTimeoutCts = null;
 
         // 隐藏 Splash Screen
-        MainThread.BeginInvokeOnMainThread(async () =>
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            var data = new Dictionary<string, string>
-            {
-                { "platform", DeviceInfo.Platform == DevicePlatform.Android ? "android" : "ios" }
-            };
-            var result = await hybridWebView.InvokeJavaScriptAsync<string>(
-                          "globalInit",
-                          HybridJSContext.Default.String,
-                          [Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data)))],
-                          [HybridJSContext.Default.String]);
             HideSplashScreen();
         });
     }

@@ -71,10 +71,17 @@ const isTestEnv =
   typeof import.meta.env !== "undefined" &&
   import.meta.env.MODE === "test";
 
-const App: React.FC = () => {
+const App: React.FC<{ initialData?: any }> = ({ initialData }) => {
   const [fatalError, setFatalError] = useState<CapturedError | null>(null);
 
   const { fontSize } = useFontSizeStore();
+
+  useEffect(() => {
+    if (initialData?.platform) {
+      (window as any).platform = initialData.platform;
+      console.log("Platform set from initialData:", initialData.platform);
+    }
+  }, [initialData]);
 
   useEffect(() => {
     initColorMode();
@@ -187,7 +194,11 @@ const App: React.FC = () => {
               <Route exact path="/settings" component={SettingsPage} />
               <Route exact path="/blocked-users" component={BlockedUsersPage} />
               <Route exact path="/read-later" component={ReadLaterPage} />
-              <Route exact path="/notifications" component={NotificationsPage} />
+              <Route
+                exact
+                path="/notifications"
+                component={NotificationsPage}
+              />
               <Route exact path="/login" component={LoginPage} />
               <Route component={NotFoundPage} />
             </IonRouterOutlet>

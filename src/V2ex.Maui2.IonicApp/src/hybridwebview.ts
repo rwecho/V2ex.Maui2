@@ -190,7 +190,9 @@ declare global {
       "X-Maui-Invoke-Token": "HybridWebView",
     } as Record<string, string>;
 
-    if ((window as any).globalData.platform === "android") {
+    console.debug("initData.platform:", (window as any).initData?.platform);
+
+    if ((window as any).initData?.platform === "android") {
       // Android's WebView does not allow setting custom headers or the request body when using fetch.
       // To work around this, we include the message in a custom header and the server will read it from there.
       headers["X-Maui-Request-Body"] = message;

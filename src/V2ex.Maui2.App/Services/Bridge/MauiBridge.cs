@@ -239,9 +239,9 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
             var networkAccess = Microsoft.Maui.Networking.Connectivity.Current.NetworkAccess;
             var isConnected = networkAccess == Microsoft.Maui.Networking.NetworkAccess.Internet;
             var networkType = networkAccess.ToString();
-            
+
             logger.LogInformation("Bridge: 获取网络状态 - IsConnected: {IsConnected}, Type: {Type}", isConnected, networkType);
-            
+
             return Task.FromResult(new
             {
                 isConnected,
@@ -259,9 +259,9 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
         return ExecuteSafeAsync(() =>
         {
             var fromCache = V2ex.Maui2.Core.ApiHttpClientHandler.LastResponseFromCache;
-            
+
             logger.LogDebug("Bridge: 获取缓存状态 - FromCache: {FromCache}", fromCache);
-            
+
             return Task.FromResult(new
             {
                 fromCache
@@ -276,11 +276,11 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
     /// <returns>操作结果</returns>
     public Task<string> DeleteLogFileAsync(string fileName)
     {
-        return ExecuteSafeAsync(() => 
+        return ExecuteSafeAsync(() =>
         {
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                 throw new ArgumentException("Invalid fileName");
+                throw new ArgumentException("Invalid fileName");
             }
 
             var safeFileName = Path.GetFileName(fileName);
@@ -288,12 +288,12 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
 
             if (!File.Exists(filePath))
             {
-                 throw new FileNotFoundException("File not found");
+                throw new FileNotFoundException("File not found");
             }
 
             logger.LogInformation("Bridge: 删除日志文件 {FileName}", fileName);
             File.Delete(filePath);
-            
+
             return Task.FromResult(new { success = true, message = "File deleted successfully" });
         });
     }
@@ -375,17 +375,18 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
             {
                 try
                 {
-                    var photo = await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions
+                    var photos = await MediaPicker.Default.PickPhotosAsync(new MediaPickerOptions
                     {
                         Title = "选择图片"
                     });
 
-                    if (photo == null)
+                    if (photos == null || !photos.Any())
                     {
                         return new { cancelled = true };
                     }
 
                     // 读取图片并转换为 Base64
+                    var photo = photos.First();
                     using var stream = await photo.OpenReadAsync();
                     using var memoryStream = new MemoryStream();
                     await stream.CopyToAsync(memoryStream);
