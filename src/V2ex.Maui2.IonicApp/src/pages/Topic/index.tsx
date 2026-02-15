@@ -382,6 +382,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           onDidDismiss={() => setShowReplyActionSheet(false)}
           header={`回复由 @${selectedReply?.userName} 发布`}
           buttons={[
+            ...(isAuthenticated ? [
             {
               text: "回复",
               icon: chatbubbleOutline,
@@ -411,7 +412,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               handler: () => {
                   if (selectedReply) handleBlockUser(selectedReply.userName);
               }
-            },
+            }] : []),
             {
               text: "取消",
               role: "cancel",
@@ -448,6 +449,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                  setOnlyOP(!onlyOP);
               }
             },
+            ...(isAuthenticated ? [
             {
               text: "举报此主题",
               icon: flagOutline,
@@ -483,7 +485,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                 handler: () => {
                     history.push("/blocked-users");
                 }
-            },
+            }] : []),
             {
               text: "取消",
               role: "cancel",

@@ -21,6 +21,7 @@ import "./TopicList.css";
 import { Haptics } from "../../utils/haptics";
 import { useReadLaterStore } from "../../store/readLaterStore";
 import { useUserBlockStore } from "../../store/userBlockStore";
+import { useAuthStore } from "../../store/authStore";
 import { TopicPreviewModal } from "../../components/TopicPreviewModal";
 import TopicListItem from "./TopicListItem";
 import TopicListSkeleton from "./TopicListSkeleton";
@@ -177,7 +178,7 @@ const TopicList = (props: TopicListProps) => {
                 setPreviewTopic(actionSheetTopic);
               },
             },
-            {
+            ...(useAuthStore.getState().isAuthenticated ? [{
               text: "屏蔽用户 (Block User)",
               icon: banOutline,
               role: "destructive",
@@ -186,7 +187,7 @@ const TopicList = (props: TopicListProps) => {
                   handleBlockUser(actionSheetTopic.member.username);
                 }
               }
-            },
+            }] : []),
             {
               text: "取消",
               icon: closeOutline,

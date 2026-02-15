@@ -26,6 +26,7 @@ import {
   NotificationInfoType,
   NotificationItemType,
 } from "../../schemas/topicSchema";
+import { useAuthStore } from "../../store/authStore";
 import "./Notifications.css";
 
 const NotificationsPage: React.FC = () => {
@@ -72,7 +73,12 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
+
   useIonViewWillEnter(() => {
+    if (!useAuthStore.getState().isAuthenticated) {
+        history.replace("/login");
+        return;
+    }
     // Initial load, reset to page 1
     void fetchNotifications(1, false);
   });
