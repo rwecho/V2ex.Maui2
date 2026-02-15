@@ -152,8 +152,58 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
     {
         return ExecuteSafeVoidAsync(() =>
         {
-            CrossFirebaseAnalytics.Current.LogEvent(eventName!, parameters);
-            logger.LogInformation("Analytics event sent via bridge: {Event}", eventName);
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                return Task.CompletedTask;
+            }
+
+            // Sanitize parameters for Firebase
+            // Firebase Analytics on Android typically expects String, Long, or Double in the Bundle.
+            // Complex objects or nulls can cause crash in DictionaryExtensions.ToBundle.
+            Dictionary<string, string>? safeParams = null;
+            if (parameters != null && parameters.Count > 0)
+            {
+                safeParams = new Dictionary<string, string>();
+                foreach (var kvp in parameters)
+                {
+                    if (string.IsNullOrWhiteSpace(kvp.Key) || kvp.Value == null)
+                        continue;
+
+                    // Convert everything to string to be safe, or handle primitives specifically if needed.
+                    // For simplicity and safety, we convert to string. 
+                    // Getting exact numeric types from `object` via System.Text.Json deserialization can be tricky (JsonElement).
+                    
+                    if (kvp.Value is JsonElement jsonElement)
+                    {
+                        // Handle JsonElement specifically if it comes from System.Text.Json
+                        safeParams[kvp.Key] = jsonElement.ToString();
+                    }
+                    else
+                    {
+                         safeParams[kvp.Key] = kvp.Value.ToString() ?? "";
+                    }
+                }
+            }
+
+            // The plugin might have overloads, but let's see. 
+            // CrossFirebaseAnalytics.Current.LogEvent takes (string, IDictionary<string, string>?) or (string, IDictionary<string, object>?)
+            // The crash trace says: `DictionaryExtensions.ToBundle(IDictionary2 dictionary)`
+            // If we pass `Dictionary<string, string>`, it should be safe.
+            try
+            {
+                 var finalParams = safeParams != null 
+                    ? safeParams.ToDictionary(k => k.Key, v => (object)v.Value) 
+                    : new Dictionary<string, object>();
+                    
+                CrossFirebaseAnalytics.Current.LogEvent(eventName, finalParams);
+                logger.LogInformation("Analytics event sent via bridge: {Event}", eventName);
+            }
+            catch (Exception ex)
+            {
+                // Swallow analytics errors to prevent app crash
+                logger.LogWarning(ex, "Failed to log firebase event: {Event}", eventName);
+            }
+            
             return Task.CompletedTask;
         });
     }
