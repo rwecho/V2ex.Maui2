@@ -530,19 +530,24 @@ public partial class MainPage : ContentPage
                 NativeStatusBarStyle = StatusBarStyle.LightContent;
                 BackgroundColor = Color.FromArgb("#0b0b0d");
                 splashScreen.BackgroundColor = Color.FromArgb("#0b0b0d");
-
 #if ANDROID
                 if (Platform.CurrentActivity?.Window != null)
                 {
                     Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#0b0b0d"));
+                    // Force Status Bar Color too, just in case StatusBarBehavior is slow/failing
+                    Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#0b0b0d"));
 
-                    // API 27+ only. Dark background -> Light items
+                    // API 30+ way to control system bars
+                    // But WindowCompat works for older too (API 16+)
                     if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
                     {
                         var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
                         if (controller != null)
                         {
+                            // AppearanceLightNavigationBars = false -> Dark Mode (Light Icons)
                             controller.AppearanceLightNavigationBars = false;
+                            // AppearanceLightStatusBars = false -> Dark Mode (Light Icons)
+                            controller.AppearanceLightStatusBars = false;
                         }
                     }
                 }
@@ -559,6 +564,8 @@ public partial class MainPage : ContentPage
                 if (Platform.CurrentActivity?.Window != null)
                 {
                     Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#ffffff"));
+                    // Force Status Bar Color too
+                    Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#f3f4f6"));
 
                     // Light background -> Dark items
                     if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
@@ -566,12 +573,16 @@ public partial class MainPage : ContentPage
                         var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
                          if (controller != null)
                         {
+                            // AppearanceLightNavigationBars = true -> Light Mode (Dark Icons)
                             controller.AppearanceLightNavigationBars = true;
+                            // AppearanceLightStatusBars = true -> Light Mode (Dark Icons)
+                            controller.AppearanceLightStatusBars = true;
                         }
                     }
                 }
 #endif
             }
+
         });
     }
 
