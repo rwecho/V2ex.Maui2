@@ -530,6 +530,23 @@ public partial class MainPage : ContentPage
                 NativeStatusBarStyle = StatusBarStyle.LightContent;
                 BackgroundColor = Color.FromArgb("#0b0b0d");
                 splashScreen.BackgroundColor = Color.FromArgb("#0b0b0d");
+
+#if ANDROID
+                if (Platform.CurrentActivity?.Window != null)
+                {
+                    Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#0b0b0d"));
+
+                    // API 27+ only. Dark background -> Light items
+                    if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
+                    {
+                        var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
+                        if (controller != null)
+                        {
+                            controller.AppearanceLightNavigationBars = false;
+                        }
+                    }
+                }
+#endif
             }
             else
             {
@@ -537,6 +554,23 @@ public partial class MainPage : ContentPage
                 NativeStatusBarStyle = StatusBarStyle.DarkContent;
                 BackgroundColor = Color.FromArgb("#ffffff");
                 splashScreen.BackgroundColor = Color.FromArgb("#ffffff");
+
+#if ANDROID
+                if (Platform.CurrentActivity?.Window != null)
+                {
+                    Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#ffffff"));
+
+                    // Light background -> Dark items
+                    if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
+                    {
+                        var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
+                         if (controller != null)
+                        {
+                            controller.AppearanceLightNavigationBars = true;
+                        }
+                    }
+                }
+#endif
             }
         });
     }
