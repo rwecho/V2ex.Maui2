@@ -11,6 +11,13 @@ public class MainActivity : MauiAppCompatActivity
     protected override void OnCreate(Bundle savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        
+        // Android 15 (API 35) Edge-to-Edge
+        // Only enable for Android 15+ as requested
+        if (Build.VERSION.SdkInt >= (BuildVersionCodes)35 && Window != null)
+        {
+            AndroidX.Core.View.WindowCompat.SetDecorFitsSystemWindows(Window, false);
+        }
 
         // 初始化 Firebase
         try

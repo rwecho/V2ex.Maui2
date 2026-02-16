@@ -533,28 +533,32 @@ public partial class MainPage : ContentPage
 #if ANDROID
                 if (Platform.CurrentActivity?.Window != null)
                 {
-                    Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#0b0b0d"));
-                    // Force Status Bar Color too, just in case StatusBarBehavior is slow/failing
-                    Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#0b0b0d"));
-
-                    // API 30+ way to control system bars
-                    // But WindowCompat works for older too (API 16+)
-                    if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
+                    if (Android.OS.Build.VERSION.SdkInt >= (Android.OS.BuildVersionCodes)35)
                     {
-                        var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
-                        if (controller != null)
-                        {
-                            // AppearanceLightNavigationBars = false -> Dark Mode (Light Icons)
-                            controller.AppearanceLightNavigationBars = false;
-                            // AppearanceLightStatusBars = false -> Dark Mode (Light Icons)
-                            controller.AppearanceLightStatusBars = false;
-                        }
+                        // Android 15+: Transparent
+                        Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
+                        Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
+                    }
+                    else
+                    {
+                        // < Android 15: Solid Dark
+                        Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#0b0b0d"));
+                        Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#0b0b0d"));
+                    }
+
+                    // System Bar Icons (Works API 30+, compat for older)
+                    var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
+                    if (controller != null)
+                    {
+                        controller.AppearanceLightNavigationBars = false; // Light Icons
+                        controller.AppearanceLightStatusBars = false;     // Light Icons
                     }
                 }
 #endif
             }
             else
             {
+                // Light Mode
                 NativeStatusBarColor = Color.FromArgb("#f3f4f6");
                 NativeStatusBarStyle = StatusBarStyle.DarkContent;
                 BackgroundColor = Color.FromArgb("#ffffff");
@@ -563,21 +567,25 @@ public partial class MainPage : ContentPage
 #if ANDROID
                 if (Platform.CurrentActivity?.Window != null)
                 {
-                    Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#ffffff"));
-                    // Force Status Bar Color too
-                    Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#f3f4f6"));
-
-                    // Light background -> Dark items
-                    if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
+                    if (Android.OS.Build.VERSION.SdkInt >= (Android.OS.BuildVersionCodes)35)
                     {
-                        var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
-                         if (controller != null)
-                        {
-                            // AppearanceLightNavigationBars = true -> Light Mode (Dark Icons)
-                            controller.AppearanceLightNavigationBars = true;
-                            // AppearanceLightStatusBars = true -> Light Mode (Dark Icons)
-                            controller.AppearanceLightStatusBars = true;
-                        }
+                         // Android 15+: Transparent
+                        Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
+                        Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
+                    }
+                    else
+                    {
+                        // < Android 15: Solid Light
+                        Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#ffffff"));
+                        Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#f3f4f6")); 
+                    }
+
+                    // System Bar Icons
+                    var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(Platform.CurrentActivity.Window, Platform.CurrentActivity.Window.DecorView);
+                    if (controller != null)
+                    {
+                        controller.AppearanceLightNavigationBars = true; // Dark Icons
+                        controller.AppearanceLightStatusBars = true;     // Dark Icons
                     }
                 }
 #endif
