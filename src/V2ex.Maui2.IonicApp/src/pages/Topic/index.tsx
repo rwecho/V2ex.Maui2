@@ -36,7 +36,16 @@ import { useAuthStore } from "../../store/authStore";
 import { useTopicDetail } from "./hooks/useTopicDetail";
 import { useTopicReply } from "./hooks/useTopicReply";
 
-import { ellipsisHorizontal, flagOutline, heartOutline, chatbubbleOutline, eyeOffOutline, personOutline, personCircleOutline, banOutline } from "ionicons/icons";
+import {
+  ellipsisHorizontal,
+  flagOutline,
+  heartOutline,
+  chatbubbleOutline,
+  eyeOffOutline,
+  personOutline,
+  personCircleOutline,
+  banOutline,
+} from "ionicons/icons";
 import { apiService } from "../../services/apiService";
 import { Haptics } from "../../utils/haptics";
 import { useUserBlockStore } from "../../store/userBlockStore";
@@ -82,6 +91,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     error,
     headerTitle,
     visibleCount,
+    totalReplyCount,
     hasMorePages,
     handleRefresh: handleRefreshLogic,
     handleInfinite: handleInfiniteLogic,
@@ -101,7 +111,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   // 移除 setToastOpen, setToastMessage, toastOpen, toastMessage
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showReplyActionSheet, setShowReplyActionSheet] = useState(false);
-  const [selectedReply, setSelectedReply] = useState<ReplyInfoType | null>(null);
+  const [selectedReply, setSelectedReply] = useState<ReplyInfoType | null>(
+    null,
+  );
   const [showThankAlert, setShowThankAlert] = useState(false);
 
   const handleReport = async () => {
@@ -124,33 +136,36 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   };
 
   const handleReportReply = async (reply: ReplyInfoType) => {
-      try {
-          const result = await apiService.reportReply(reply.id);
-          if (!result.error) {
-              Haptics.success();
-              apiService.showToast("感谢举报，我们将在 24 小时内处理并移除违规内容");
-          } else {
-              Haptics.error();
-              apiService.showToast(`操作失败：${result.error}`);
-          }
-      } catch (e) {
-          Haptics.error();
-          apiService.showToast("无法启动邮件客户端");
+    try {
+      const result = await apiService.reportReply(reply.id);
+      if (!result.error) {
+        Haptics.success();
+        apiService.showToast("感谢举报，我们将在 24 小时内处理并移除违规内容");
+      } else {
+        Haptics.error();
+        apiService.showToast(`操作失败：${result.error}`);
       }
+    } catch (e) {
+      Haptics.error();
+      apiService.showToast("无法启动邮件客户端");
+    }
   };
 
   const handleBlockUser = (username: string) => {
-      blockUser(username);
-      Haptics.success();
-      apiService.showToast(`已屏蔽用户 @${username}，其内容将不再显示`);
-      setShowActionSheet(false);
-      setShowReplyActionSheet(false);
+    blockUser(username);
+    Haptics.success();
+    apiService.showToast(`已屏蔽用户 @${username}，其内容将不再显示`);
+    setShowActionSheet(false);
+    setShowReplyActionSheet(false);
   };
 
   const handleThankReply = async () => {
     if (!selectedReply || !topicInfo?.once || !parsedTopicId) return;
     try {
-      const result = await apiService.thankReply(selectedReply.id, topicInfo.once);
+      const result = await apiService.thankReply(
+        selectedReply.id,
+        topicInfo.once,
+      );
       if (!result.error) {
         Haptics.success();
         apiService.showToast("感谢成功");
@@ -265,36 +280,42 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
       if (usernameMatch) {
         const username = usernameMatch[1];
         const replies = topicInfo?.replies ?? [];
-        
+
         // Check if there's a floor number in the link text (e.g., "@username #33")
         // The link text might be just the username, so check the full text around it
-        const parentText = clickedElement?.parentElement?.textContent || linkText || "";
+        const parentText =
+          clickedElement?.parentElement?.textContent || linkText || "";
         const floorMatch = parentText.match(/@[\w-]+\s*#(\d+)/);
-        
+
         let targetReply = null;
-        
+
         if (floorMatch) {
           // If floor number is specified, navigate to that floor
           const targetFloor = parseInt(floorMatch[1], 10);
           targetReply = replies.find((r) => r.floor === targetFloor);
         } else {
           // Otherwise, find the current floor we're viewing from
-          const currentReplyElement = clickedElement?.closest("[data-reply-id]");
-          const currentReplyId = currentReplyElement?.getAttribute("data-reply-id");
-          const currentReply = replies.find((r) => String(r.id) === currentReplyId);
+          const currentReplyElement =
+            clickedElement?.closest("[data-reply-id]");
+          const currentReplyId =
+            currentReplyElement?.getAttribute("data-reply-id");
+          const currentReply = replies.find(
+            (r) => String(r.id) === currentReplyId,
+          );
           const currentFloor = currentReply?.floor ?? Infinity;
-          
+
           // Find the user's replies that appear BEFORE the current floor
           const userRepliesBefore = replies.filter(
-            (reply) => reply.userName === username && reply.floor < currentFloor
+            (reply) =>
+              reply.userName === username && reply.floor < currentFloor,
           );
-          
+
           // Get the most recent one (closest to current floor)
           if (userRepliesBefore.length > 0) {
             targetReply = userRepliesBefore[userRepliesBefore.length - 1];
           }
         }
-        
+
         if (targetReply) {
           const replyElement = document.querySelector(
             `[data-reply-id="${targetReply.id}"]`,
@@ -329,7 +350,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
     const refreshError = await handleRefreshLogic();
     Haptics.light();
     event.detail.complete();
-    apiService.showToast(refreshError ? `刷新失败：${refreshError}` : "刷新成功");
+    apiService.showToast(
+      refreshError ? `刷新失败：${refreshError}` : "刷新成功",
+    );
   };
 
   const onInfinite = async (event: CustomEvent<void>) => {
@@ -339,18 +362,20 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
   };
 
   const replyCount = topicInfo?.replies?.length ?? 0;
-  
+
   const filteredReplies = useMemo(() => {
     if (!topicInfo?.replies) return [];
-    
+
     // First apply blocking filter
-    let replies = topicInfo.replies.filter(r => !blockedUsers.includes(r.userName));
+    let replies = topicInfo.replies.filter(
+      (r) => !blockedUsers.includes(r.userName),
+    );
 
     // Then apply OP only filter if active
     if (onlyOP) {
-        replies = replies.filter(r => r.userName === topicInfo.userName);
+      replies = replies.filter((r) => r.userName === topicInfo.userName);
     }
-    
+
     return replies;
   }, [topicInfo?.replies, onlyOP, topicInfo?.userName, blockedUsers]);
 
@@ -366,10 +391,12 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
 
           <IonTitle>{headerTitle}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={() => {
-              Haptics.click();
-              setShowActionSheet(true);
-            }}>
+            <IonButton
+              onClick={() => {
+                Haptics.click();
+                setShowActionSheet(true);
+              }}
+            >
               <IonIcon icon={ellipsisHorizontal} />
             </IonButton>
           </IonButtons>
@@ -382,37 +409,41 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
           onDidDismiss={() => setShowReplyActionSheet(false)}
           header={`回复由 @${selectedReply?.userName} 发布`}
           buttons={[
-            ...(isAuthenticated ? [
-            {
-              text: "回复",
-              icon: chatbubbleOutline,
-              handler: () => {
-                if (selectedReply) handleReplyToAction(selectedReply);
-              },
-            },
-            {
-              text: "感谢",
-              icon: heartOutline,
-              handler: () => {
-                setShowThankAlert(true);
-              },
-            },
-            {
-              text: "举报",
-              icon: flagOutline,
-              role: "destructive",
-              handler: () => {
-                  if (selectedReply) handleReportReply(selectedReply);
-              }
-            },
-            {
-              text: "屏蔽用户 (Block)",
-              icon: banOutline,
-              role: "destructive",
-              handler: () => {
-                  if (selectedReply) handleBlockUser(selectedReply.userName);
-              }
-            }] : []),
+            ...(isAuthenticated
+              ? [
+                  {
+                    text: "回复",
+                    icon: chatbubbleOutline,
+                    handler: () => {
+                      if (selectedReply) handleReplyToAction(selectedReply);
+                    },
+                  },
+                  {
+                    text: "感谢",
+                    icon: heartOutline,
+                    handler: () => {
+                      setShowThankAlert(true);
+                    },
+                  },
+                  {
+                    text: "举报",
+                    icon: flagOutline,
+                    role: "destructive",
+                    handler: () => {
+                      if (selectedReply) handleReportReply(selectedReply);
+                    },
+                  },
+                  {
+                    text: "屏蔽用户 (Block)",
+                    icon: banOutline,
+                    role: "destructive",
+                    handler: () => {
+                      if (selectedReply)
+                        handleBlockUser(selectedReply.userName);
+                    },
+                  },
+                ]
+              : []),
             {
               text: "取消",
               role: "cancel",
@@ -446,26 +477,27 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               text: onlyOP ? "查看全部" : "只看楼主",
               icon: onlyOP ? personOutline : personCircleOutline,
               handler: () => {
-                 setOnlyOP(!onlyOP);
-              }
-            },
-            ...(isAuthenticated ? [
-            {
-              text: "举报此主题",
-              icon: flagOutline,
-              role: "destructive",
-              handler: () => {
-                handleReport();
+                setOnlyOP(!onlyOP);
               },
             },
-            {
-                text: "屏蔽楼主 (Block OP)",
-                icon: banOutline,
-                role: "destructive",
-                handler: () => {
-                    if (topicInfo?.userName) {
+            ...(isAuthenticated
+              ? [
+                  {
+                    text: "举报此主题",
+                    icon: flagOutline,
+                    role: "destructive",
+                    handler: () => {
+                      handleReport();
+                    },
+                  },
+                  {
+                    text: "屏蔽楼主 (Block OP)",
+                    icon: banOutline,
+                    role: "destructive",
+                    handler: () => {
+                      if (topicInfo?.userName) {
                         handleBlockUser(topicInfo.userName);
-                        history.goBack(); 
+                        history.goBack();
                         // Or just show toast. But if we block OP, the topic content should theoretically be hidden?
                         // User requirement: "All content from this user must disappear".
                         // If we are VIEWING the topic, maybe we should leave it or show "Blocked".
@@ -476,16 +508,18 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                         // The `filteredReplies` handles replies.
                         // The topic content itself is in `TopicHeader`.
                         // I should probably hide `TopicHeader` content if `isBlocked(topicInfo.userName)`.
-                    }
-                }
-            },
-            {
-                text: "管理屏蔽列表",
-                icon: banOutline,
-                handler: () => {
-                    history.push("/blocked-users");
-                }
-            }] : []),
+                      }
+                    },
+                  },
+                  {
+                    text: "管理屏蔽列表",
+                    icon: banOutline,
+                    handler: () => {
+                      history.push("/blocked-users");
+                    },
+                  },
+                ]
+              : []),
             {
               text: "取消",
               role: "cancel",
@@ -533,7 +567,7 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
               <TopicSupplements supplements={topicInfo.supplements ?? []} />
 
               <div className="replyHeader">
-                <div className="replyTitle">Replies ({replyCount})</div>
+                <div className="replyTitle">Replies ({totalReplyCount})</div>
               </div>
 
               {replyCount === 0 ? (
@@ -561,7 +595,9 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
                   <IonInfiniteScroll
                     threshold="160px"
                     onIonInfinite={onInfinite}
-                    disabled={visibleCount >= filteredReplies.length && !hasMorePages}
+                    disabled={
+                      visibleCount >= filteredReplies.length && !hasMorePages
+                    }
                   >
                     <IonInfiniteScrollContent
                       loadingSpinner="crescent"
@@ -575,7 +611,6 @@ const TopicPage: React.FC<TopicPageProps> = ({ match, location }) => {
         </div>
 
         <div className="topicPageBottomSpacer" aria-hidden="true" />
-
 
         <TopicReplyFooter
           isAuthenticated={isAuthenticated}

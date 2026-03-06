@@ -4,6 +4,26 @@ export interface Env {
   ADMIN_SECRET: string;
 }
 
+function extractTopicIdFromLink(link?: string): string | null {
+  if (!link) return null;
+  const match = link.match(/\/t\/(\d+)/);
+  return match?.[1] ?? null;
+}
+
+function buildNotificationTitleBody(item: V2exNotification): {
+  title: string;
+  body: string;
+} {
+  const author = (item.authorName || "").trim();
+  const content = (item.content || "").trim();
+  const topicTitle = (item.title || "").trim();
+
+  const title = author ? `@${author} 回复了你` : "你有新回复";
+  const rawBody = content || topicTitle || "点击查看详情";
+  const body = rawBody.length > 120 ? `${rawBody.slice(0, 120)}...` : rawBody;
+  return { title, body };
+}
+
 export default {
   async fetch(
     request: Request,
@@ -226,16 +246,21 @@ async function handleScheduled(event: ScheduledEvent, env: Env) {
       const maxTimestamp = Math.max(...newItems.map((n) => n.published));
 
       for (const item of newItems) {
+        const { title, body } = buildNotificationTitleBody(item);
+        const topicId = extractTopicIdFromLink(item.link);
+        const data: Record<string, string> = {
+          link: item.link || "",
+          notificationId: item.id || "",
+        };
+        if (topicId) {
+          data.topicId = topicId;
+        }
+
         const success = await sendPushNotification(
           fcmToken,
-          item.title,
-          newItems.length > 1
-            ? item.content.substring(0, 100) + "..."
-            : item.content,
-          {
-            link: item.link,
-            notificationId: item.id,
-          },
+          title,
+          body,
+          data,
           env.FIREBASE_SERVICE_ACCOUNT_JSON,
           env.V2EX_PUSH_KV,
         );

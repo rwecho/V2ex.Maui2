@@ -309,6 +309,7 @@ public partial class MainPage : ContentPage
             {
                 _logger.LogInformation("WebView is healthy.");
                 HideSplashScreen();
+                DispatchPendingPushNavigation();
             }
             else
             {
@@ -517,7 +518,39 @@ public partial class MainPage : ContentPage
         MainThread.BeginInvokeOnMainThread(() =>
         {
             HideSplashScreen();
+            DispatchPendingPushNavigation();
         });
+    }
+
+    private void DispatchPendingPushNavigation()
+    {
+        try
+        {
+            var topicId = Preferences.Get("push_pending_topic_id", string.Empty);
+            if (string.IsNullOrWhiteSpace(topicId))
+            {
+                return;
+            }
+
+            var link = Preferences.Get("push_pending_link", string.Empty);
+
+            var payload = new
+            {
+                type = "pushNavigate",
+                topicId,
+                link,
+            };
+
+            hybridWebView.SendRawMessage(JsonSerializer.Serialize(payload));
+            _logger.LogInformation("Dispatched pending push navigation to topic {TopicId}", topicId);
+
+            Preferences.Remove("push_pending_topic_id");
+            Preferences.Remove("push_pending_link");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to dispatch pending push navigation.");
+        }
     }
 
     private void ApplyNativeTheme(string mode)
@@ -569,7 +602,7 @@ public partial class MainPage : ContentPage
                 {
                     if (Android.OS.Build.VERSION.SdkInt >= (Android.OS.BuildVersionCodes)35)
                     {
-                         // Android 15+: Transparent
+                        // Android 15+: Transparent
                         Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
                         Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
                     }
@@ -577,7 +610,7 @@ public partial class MainPage : ContentPage
                     {
                         // < Android 15: Solid Light
                         Platform.CurrentActivity.Window.SetNavigationBarColor(Android.Graphics.Color.ParseColor("#ffffff"));
-                        Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#f3f4f6")); 
+                        Platform.CurrentActivity.Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#f3f4f6"));
                     }
 
                     // System Bar Icons

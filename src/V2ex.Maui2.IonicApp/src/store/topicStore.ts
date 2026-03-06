@@ -2,6 +2,19 @@ import { create } from "zustand";
 import { TopicType, TopicInfoType } from "../schemas/topicSchema";
 import { apiService } from "../services/apiService";
 
+const REPLIES_PER_PAGE = 100;
+
+const parseReplyTotalFromStats = (
+  replyStats?: string | null,
+): number | null => {
+  if (!replyStats) return null;
+  // 兼容类似："221 回复"、"221 条回复" 等文本
+  const match = replyStats.match(/(\d+)\s*(?:条\s*)?回复/);
+  if (!match) return null;
+  const value = Number.parseInt(match[1], 10);
+  return Number.isFinite(value) ? value : null;
+};
+
 interface TopicState {
   topicsByKey: Record<string, TopicType[]>;
   loadingByKey: Record<string, boolean>;
@@ -257,8 +270,19 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
     const topicInfo = get().topicInfoById[idKey];
     if (!topicInfo) return false;
 
-    const currentPage = topicInfo.currentPage ?? 1;
-    const maximumPage = topicInfo.maximumPage ?? 1;
+    const loadedReplies = topicInfo.replies?.length ?? 0;
+    const replyTotal =
+      parseReplyTotalFromStats(topicInfo.replyStats) ?? loadedReplies;
+
+    const currentPage =
+      topicInfo.currentPage && topicInfo.currentPage > 0
+        ? topicInfo.currentPage
+        : Math.max(1, Math.ceil(Math.max(loadedReplies, 1) / REPLIES_PER_PAGE));
+
+    const maximumPage =
+      topicInfo.maximumPage && topicInfo.maximumPage > 0
+        ? topicInfo.maximumPage
+        : Math.max(1, Math.ceil(Math.max(replyTotal, 1) / REPLIES_PER_PAGE));
 
     // Already loaded all pages
     if (currentPage >= maximumPage) return false;
@@ -291,6 +315,10 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
       ...topicInfo,
       replies: [...topicInfo.replies, ...res.data.replies],
       currentPage: nextPage,
+      maximumPage:
+        res.data.maximumPage && res.data.maximumPage > 0
+          ? res.data.maximumPage
+          : maximumPage,
     };
 
     set({
@@ -333,7 +361,9 @@ export const useTopicStore = create<TopicState & TopicActions>((set, get) => ({
 
     const newTopicInfo = {
       ...topicInfo,
-      replies: topicInfo.replies.filter((r) => String(r.id) !== String(replyId)),
+      replies: topicInfo.replies.filter(
+        (r) => String(r.id) !== String(replyId),
+      ),
     };
 
     set({

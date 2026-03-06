@@ -88,6 +88,41 @@ const App: React.FC<{ initialData?: any }> = ({ initialData }) => {
     initFontSize(fontSize);
   }, [fontSize]);
 
+  useEffect(() => {
+    const onNativeMessage = (event: Event) => {
+      try {
+        const customEvent = event as CustomEvent;
+        const raw = customEvent?.detail?.message;
+        if (!raw) return;
+
+        const data = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (!data || data.type !== "pushNavigate") return;
+
+        const topicIdFromPayload = String(data.topicId ?? "").trim();
+        const link = String(data.link ?? "");
+        const topicIdFromLink = link.match(/\/t\/(\d+)/)?.[1] ?? "";
+        const topicId = topicIdFromPayload || topicIdFromLink;
+
+        if (!topicId) return;
+
+        history.push(`/topic/${topicId}`);
+      } catch (e) {
+        console.warn(
+          "[App] Failed to handle native push navigation message",
+          e,
+        );
+      }
+    };
+
+    window.addEventListener("HybridWebViewMessageReceived", onNativeMessage);
+    return () => {
+      window.removeEventListener(
+        "HybridWebViewMessageReceived",
+        onNativeMessage,
+      );
+    };
+  }, []);
+
   // 为原生 Android 返回键提供路由状态检查
   useEffect(() => {
     // 将路由状态暴露给原生代码调用
@@ -190,6 +225,7 @@ const App: React.FC<{ initialData?: any }> = ({ initialData }) => {
               <Route path="/logs" render={() => <LogsPage />} />
               <Route path="/test" render={() => <TestPage />} />
               <Route exact path="/topic/:id" component={TopicPage} />
+              <Route exact path="/t/:id" component={TopicPage} />
               <Route exact path="/history" component={HistoryPage} />
               <Route exact path="/settings" component={SettingsPage} />
               <Route exact path="/blocked-users" component={BlockedUsersPage} />
