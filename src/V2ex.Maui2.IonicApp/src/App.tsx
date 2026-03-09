@@ -89,6 +89,7 @@ const App: React.FC<{ initialData?: any }> = ({ initialData }) => {
   }, [fontSize]);
 
   useEffect(() => {
+    // 被动监听：处理 App Resume 时原生推送过来的 pushNavigate 消息
     const onNativeMessage = (event: Event) => {
       try {
         const customEvent = event as CustomEvent;
@@ -105,6 +106,7 @@ const App: React.FC<{ initialData?: any }> = ({ initialData }) => {
 
         if (!topicId) return;
 
+        console.log("[App] Push navigate to topic (passive):", topicId);
         history.push(`/topic/${topicId}`);
       } catch (e) {
         console.warn(
@@ -115,6 +117,37 @@ const App: React.FC<{ initialData?: any }> = ({ initialData }) => {
     };
 
     window.addEventListener("HybridWebViewMessageReceived", onNativeMessage);
+
+    // 主动 pull：冷启动时 appReady 与 useEffect 之间存在时序竞态，
+    // 原生 SendRawMessage 可能在此监听器注册前已发出导致消息丢失。
+    // 通过主动查询 bridge 确保冷启动时的推送导航一定能被处理。
+    const pullPendingPushNavigation = async () => {
+      try {
+        const hwv = (window as any).HybridWebView;
+        if (!hwv?.InvokeDotNet) return;
+
+        const resultJson: string = await hwv.InvokeDotNet(
+          "GetPendingPushNavigationAsync",
+          [],
+        );
+        if (!resultJson) return;
+
+        const result =
+          typeof resultJson === "string" ? JSON.parse(resultJson) : resultJson;
+        if (!result?.hasPending || !result?.topicId) return;
+
+        const topicId = String(result.topicId).trim();
+        if (!topicId) return;
+
+        console.log("[App] Push navigate to topic (pull on mount):", topicId);
+        history.push(`/topic/${topicId}`);
+      } catch (e) {
+        console.warn("[App] Failed to pull pending push navigation", e);
+      }
+    };
+
+    pullPendingPushNavigation();
+
     return () => {
       window.removeEventListener(
         "HybridWebViewMessageReceived",

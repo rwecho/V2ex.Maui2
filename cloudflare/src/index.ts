@@ -24,6 +24,17 @@ function buildNotificationTitleBody(item: V2exNotification): {
   return { title, body };
 }
 
+function buildHotTopicTitleBody(topic: any): {
+  title: string;
+  body: string;
+} {
+  const nodeTitle = (topic?.node?.title || topic?.node?.name || "").trim();
+  const title = nodeTitle ? `🔥 ${nodeTitle}` : "🔥 V2EX 热门话题";
+  const rawBody = (topic?.title || "有新热门话题，点击查看详情").trim();
+  const body = rawBody.length > 120 ? `${rawBody.slice(0, 120)}...` : rawBody;
+  return { title, body };
+}
+
 export default {
   async fetch(
     request: Request,
@@ -326,10 +337,11 @@ async function checkHotTopics(env: Env, history: any[]) {
           const { fcmToken } = userData;
 
           if (fcmToken) {
+            const { title, body } = buildHotTopicTitleBody(topic);
             const success = await sendPushNotification(
               fcmToken,
-              "🔥 Hot: " + topic.title,
-              `Replies: ${topic.replies}`,
+              title,
+              body,
               {
                 link: topic.url,
                 topicId: String(topic.id),

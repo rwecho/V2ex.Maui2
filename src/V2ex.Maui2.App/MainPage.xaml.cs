@@ -515,15 +515,22 @@ public partial class MainPage : ContentPage
         _splashTimeoutCts = null;
 
         // 隐藏 Splash Screen
+        // 注意：冷启动时不在这里 DispatchPendingPushNavigation，
+        // 因为此时前端 App.tsx 的 useEffect 监听器可能还未注册，
+        // SendRawMessage 会丢失。改由前端 mount 后主动调用
+        // GetPendingPushNavigationAsync() bridge 来 pull pending 导航。
         MainThread.BeginInvokeOnMainThread(() =>
         {
             HideSplashScreen();
-            DispatchPendingPushNavigation();
         });
     }
 
     private void DispatchPendingPushNavigation()
     {
+        // 冷启动时，前端会在 App.tsx mount 后主动通过 GetPendingPushNavigationAsync() bridge 调用来 pull pending 导航。
+        // 这里只处理 App 从后台 Resume 的情况（WebView 已经 ready，不会再走 appReady 流程）。
+        // 如果是冷启动，此时前端刚好收到 appReady 后立即注册了 listener，
+        // 但由于 GetPendingPushNavigationAsync 已经消费了 Preferences，SendRawMessage 不会重复导航。
         try
         {
             var topicId = Preferences.Get("push_pending_topic_id", string.Empty);
