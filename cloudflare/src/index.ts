@@ -29,9 +29,13 @@ function buildHotTopicTitleBody(topic: any): {
   body: string;
 } {
   const nodeTitle = (topic?.node?.title || topic?.node?.name || "").trim();
-  const title = nodeTitle ? `🔥 ${nodeTitle}` : "🔥 V2EX 热门话题";
-  const rawBody = (topic?.title || "有新热门话题，点击查看详情").trim();
+  const titlePrefix = nodeTitle ? `[${nodeTitle}] ` : "";
+  const rawTitle = (topic?.title || "有新热门话题").trim();
+  const title = `🔥 ${titlePrefix}${rawTitle}`;
+
+  const rawBody = (topic?.content || "点击查看详情").trim();
   const body = rawBody.length > 120 ? `${rawBody.slice(0, 120)}...` : rawBody;
+
   return { title, body };
 }
 
