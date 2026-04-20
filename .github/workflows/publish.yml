@@ -73,7 +73,6 @@ jobs:
       
       - name: Install Android workload
         run: |
-          dotnet workload config --update-mode workload-set
           dotnet workload install maui android --skip-manifest-update
 
       - name: Download React build artifact
@@ -144,7 +143,6 @@ jobs:
 
       - name: Install iOS workload
         run: |
-          dotnet workload config --update-mode workload-set
           dotnet workload install maui ios --skip-manifest-update
 
       - name: Download React build artifact
