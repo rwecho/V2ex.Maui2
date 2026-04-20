@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using V2ex.Maui2.Core;
 using V2ex.Maui2.Core.Constants;
+using V2ex.Maui2.Core.Services;
 using Xunit;
 
 namespace V2ex.Maui2.Tests;
@@ -12,12 +13,14 @@ public class ApiService_General_Tests
 {
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
     private readonly Mock<ILogger<ApiService>> _mockLogger;
+    private readonly Mock<IPushService> _mockPushService;
     private readonly ApiService _apiService;
 
     public ApiService_General_Tests()
     {
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockLogger = new Mock<ILogger<ApiService>>();
+        _mockPushService = new Mock<IPushService>();
 
         var httpClient = new HttpClient
         {
@@ -27,7 +30,7 @@ public class ApiService_General_Tests
 
         _mockHttpClientFactory.Setup(x => x.CreateClient("api")).Returns(httpClient);
 
-        _apiService = new ApiService(_mockHttpClientFactory.Object, _mockLogger.Object);
+        _apiService = new ApiService(_mockHttpClientFactory.Object, Mock.Of<ICookieContainerStorage>(), _mockPushService.Object, _mockLogger.Object);
     }
 
     [Fact]

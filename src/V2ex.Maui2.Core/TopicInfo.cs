@@ -87,10 +87,10 @@ public class TopicInfo
     [SkipNodeNotFound]
     public List<SupplementInfo> Supplements { get; set; } = [];
 
-    [XPath("//div[@id='Wrapper']//div[@class='header']/a[2]")]
+    [XPath("//div[@id='Wrapper']//div[@class='header']//a[contains(@href, '/go/')]")]
     public string NodeName { get; set; } = null!;
 
-    [XPath("//div[@id='Wrapper']//div[@class='header']/a[2]", "href")]
+    [XPath("//div[@id='Wrapper']//div[@class='header']//a[contains(@href, '/go/')]", "href")]
     public string NodeLink { get; set; } = null!;
 
     [XPath("//div[@id='Wrapper']/div//div[@class='box']/div[@class='cell']/span[@class='gray']")]
