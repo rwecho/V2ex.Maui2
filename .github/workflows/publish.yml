@@ -73,7 +73,7 @@ jobs:
       
       - name: Install Android workload
         run: |
-          dotnet workload install maui-android
+          dotnet workload install maui android
 
       - name: Download React build artifact
         uses: actions/download-artifact@v7
