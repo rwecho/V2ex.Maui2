@@ -30,6 +30,7 @@
 # Temp
 *.tmp
 .vs/
+.worktrees/
 preferences.json
 **/Raw/wwwroot/assets/
 **/Raw/wwwroot/index.html
