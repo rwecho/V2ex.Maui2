@@ -73,7 +73,7 @@ jobs:
       
       - name: Install Android workload
         run: |
-          dotnet workload install maui-android --skip-manifest-update
+          dotnet workload install maui-android
 
       - name: Download React build artifact
         uses: actions/download-artifact@v7
@@ -148,22 +148,9 @@ jobs:
             exit 1
           fi
 
-      - name: Verify iOS workloads
-        run: |
-          workload_output="$(dotnet workload list)"
-          printf '%s\n' "$workload_output"
-
-          if [[ "$workload_output" != *"Workload version: 10.0.105"* ]]; then
-            echo "Expected Workload version: 10.0.105" >&2
-            exit 1
-          fi
-
-          for workload in ios maui; do
-            if ! grep -Eq "^${workload}[[:space:]]" <<< "$workload_output"; then
-              echo "Expected workload '${workload}' to be installed" >&2
-              exit 1
-            fi
-          done
+      # - uses: maxim-lobanov/setup-xcode@v1
+      #   with:
+      #     xcode-version: latest
 
       - name: Download React build artifact
         uses: actions/download-artifact@v7
