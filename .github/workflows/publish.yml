@@ -73,7 +73,7 @@ jobs:
       
       - name: Install Android workload
         run: |
-          dotnet workload install maui android --skip-manifest-update
+          dotnet workload install maui-android --skip-manifest-update
 
       - name: Download React build artifact
         uses: actions/download-artifact@v7
@@ -137,9 +137,16 @@ jobs:
         with:
           global-json-file: global.json
 
-      # - uses: maxim-lobanov/setup-xcode@v1
-      #   with:
-      #     xcode-version: latest
+      - name: Verify Xcode 26.2
+        run: |
+          xcode_version="$(xcodebuild -version)"
+          printf '%s\n' "$xcode_version"
+
+          active_xcode="$(printf '%s\n' "$xcode_version" | head -n 1)"
+          if [[ "$active_xcode" != "Xcode 26.2" ]]; then
+            echo "Expected active Xcode to be Xcode 26.2" >&2
+            exit 1
+          fi
 
       - name: Verify iOS workloads
         run: |
