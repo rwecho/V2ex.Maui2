@@ -6,6 +6,7 @@ using V2ex.Maui2.App.Services.Bridge;
 using HtmlAgilityPack;
 using System.Text.Json.Serialization;
 using System.Text;
+using V2ex.Maui2.App.Services;
 
 namespace V2ex.Maui2.App;
 
@@ -13,6 +14,7 @@ public partial class MainPage : ContentPage
 {
     private readonly MauiBridge _bridge;
     private readonly ILogger<MainPage> _logger;
+    private bool _isHybridWebViewReady;
 
     // Splash Screen 超时定时器
     private CancellationTokenSource? _splashTimeoutCts;
@@ -509,16 +511,14 @@ public partial class MainPage : ContentPage
     private void HandleAppReady()
     {
         _logger.LogInformation("Received appReady message from frontend.");
+        _isHybridWebViewReady = true;
+        DispatchPendingPushNavigation();
 
         // 取消超时定时器
         _splashTimeoutCts?.Cancel();
         _splashTimeoutCts = null;
 
         // 隐藏 Splash Screen
-        // 注意：冷启动时不在这里 DispatchPendingPushNavigation，
-        // 因为此时前端 App.tsx 的 useEffect 监听器可能还未注册，
-        // SendRawMessage 会丢失。改由前端 mount 后主动调用
-        // GetPendingPushNavigationAsync() bridge 来 pull pending 导航。
         MainThread.BeginInvokeOnMainThread(() =>
         {
             HideSplashScreen();
@@ -527,32 +527,30 @@ public partial class MainPage : ContentPage
 
     private void DispatchPendingPushNavigation()
     {
-        // 冷启动时，前端会在 App.tsx mount 后主动通过 GetPendingPushNavigationAsync() bridge 调用来 pull pending 导航。
-        // 这里只处理 App 从后台 Resume 的情况（WebView 已经 ready，不会再走 appReady 流程）。
-        // 如果是冷启动，此时前端刚好收到 appReady 后立即注册了 listener，
-        // 但由于 GetPendingPushNavigationAsync 已经消费了 Preferences，SendRawMessage 不会重复导航。
+        if (!_isHybridWebViewReady)
+        {
+            return;
+        }
+
         try
         {
-            var topicId = Preferences.Get("push_pending_topic_id", string.Empty);
-            if (string.IsNullOrWhiteSpace(topicId))
+            var pending = PushNavigationIntentStore.Peek();
+            if (!pending.HasPending)
             {
                 return;
             }
 
-            var link = Preferences.Get("push_pending_link", string.Empty);
-
             var payload = new
             {
                 type = "pushNavigate",
-                topicId,
-                link,
+                topicId = pending.TopicId,
+                link = pending.Link,
             };
 
             hybridWebView.SendRawMessage(JsonSerializer.Serialize(payload));
-            _logger.LogInformation("Dispatched pending push navigation to topic {TopicId}", topicId);
+            _logger.LogInformation("Dispatched pending push navigation to topic {TopicId}", pending.TopicId);
 
-            Preferences.Remove("push_pending_topic_id");
-            Preferences.Remove("push_pending_link");
+            PushNavigationIntentStore.Clear();
         }
         catch (Exception ex)
         {

@@ -91,31 +91,6 @@ public partial class MauiBridge(ApiService apiService, ILogger<MauiBridge> logge
         return ExecuteSafeAsync(() => Task.FromResult(Preferences.Default.Get(key, string.Empty)));
     }
 
-    /// <summary>
-    /// 前端启动后主动查询是否有待处理的推送导航（解决冷启动时序竞态问题）
-    /// 如果有 pending 的 topicId，返回后清除，以防重复导航
-    /// </summary>
-    public Task<string> GetPendingPushNavigationAsync()
-    {
-        return ExecuteSafeAsync(() =>
-        {
-            var topicId = Preferences.Default.Get("push_pending_topic_id", string.Empty);
-            var link = Preferences.Default.Get("push_pending_link", string.Empty);
-
-            if (string.IsNullOrWhiteSpace(topicId))
-            {
-                return Task.FromResult(new { hasPending = false, topicId = (string?)null, link = (string?)null });
-            }
-
-            // 消费后立即清除，防止重复导航
-            Preferences.Default.Remove("push_pending_topic_id");
-            Preferences.Default.Remove("push_pending_link");
-
-            logger.LogInformation("Bridge: GetPendingPushNavigation consumed topicId={TopicId}", topicId);
-            return Task.FromResult(new { hasPending = true, topicId = (string?)topicId, link = (string?)link });
-        });
-    }
-
     public Task<string> SetStringValue(string key, string value)
     {
         return ExecuteSafeVoidAsync(() =>
