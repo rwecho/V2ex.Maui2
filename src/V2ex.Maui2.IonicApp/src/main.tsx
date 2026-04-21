@@ -1,6 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import {
+  primeWebViewHealthCheck,
+  queuePushNavigationMessage,
+} from "./pushNavigation";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
@@ -62,6 +66,11 @@ const initDataHandler = (event: Event) => {
 };
 
 // 注册监听器
+primeWebViewHealthCheck();
+window.addEventListener(
+  "HybridWebViewMessageReceived",
+  queuePushNavigationMessage,
+);
 window.addEventListener("HybridWebViewMessageReceived", initDataHandler);
 
 // 发送 appInit 消息，告诉原生层我们准备好接收初始化数据了
