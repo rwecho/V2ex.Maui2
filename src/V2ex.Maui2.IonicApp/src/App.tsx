@@ -52,7 +52,10 @@ import FatalErrorBoundary from "./components/ErrorDebug/FatalErrorBoundary";
 import ErrorDebugScreen, {
   CapturedError,
 } from "./components/ErrorDebug/ErrorDebugScreen";
-import { dispatchPushNavigationMessage } from "./pushNavigation";
+import {
+  consumePendingPushNavigation,
+  dispatchPushNavigationMessage,
+} from "./pushNavigation";
 
 // 配置 Ionic 确保跨平台一致性
 setupIonicReact({
@@ -102,6 +105,7 @@ const App: React.FC<{ initialData?: any }> = ({ initialData }) => {
     };
 
     window.addEventListener("HybridWebViewMessageReceived", onNativeMessage);
+    consumePendingPushNavigation(history);
 
     return () => {
       window.removeEventListener(
