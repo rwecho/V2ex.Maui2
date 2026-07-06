@@ -4,7 +4,8 @@
   "description": "Push notification service for V2EX Maui",
   "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
     "typescript": "^5.3.3",
+    "vitest": "^1.6.0",
     "wrangler": "^3.28.0"
   },
   "dependencies": {

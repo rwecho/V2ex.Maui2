@@ -4,6 +4,10 @@ export interface Env {
   ADMIN_SECRET: string;
 }
 
+export const PUSHED_IDS_LIMIT = 200;
+export const MAX_PUSH_PER_USER_PER_RUN = 5;
+export const HOT_TOPIC_REPLIES_THRESHOLD = 100;
+
 function extractTopicIdFromLink(link?: string): string | null {
   if (!link) return null;
   const match = link.match(/\/t\/(\d+)/);
@@ -39,6 +43,33 @@ function buildHotTopicTitleBody(topic: any): {
   return { title, body };
 }
 
+async function getPushedIds(
+  kv: KVNamespace,
+  fcmToken: string,
+): Promise<Set<string>> {
+  const raw = await kv.get(`pushed:${fcmToken}`);
+  if (!raw) return new Set();
+  try {
+    const arr = JSON.parse(raw) as string[];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+async function setPushedIds(
+  kv: KVNamespace,
+  fcmToken: string,
+  ids: Set<string>,
+): Promise<void> {
+  const arr = Array.from(ids);
+  const capped =
+    arr.length > PUSHED_IDS_LIMIT
+      ? arr.slice(arr.length - PUSHED_IDS_LIMIT)
+      : arr;
+  await kv.put(`pushed:${fcmToken}`, JSON.stringify(capped));
+}
+
 export default {
   async fetch(
     request: Request,
@@ -55,7 +86,6 @@ export default {
       return new Response("OK");
     }
 
-    // Admin Routes
     if (url.pathname.startsWith("/admin")) {
       return handleAdmin(request, env);
     }
@@ -72,8 +102,6 @@ export default {
   },
 };
 
-// ... handleRegister implementation ...
-
 async function handleAdmin(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const secret = url.searchParams.get("secret");
@@ -85,14 +113,13 @@ async function handleAdmin(request: Request, env: Env): Promise<Response> {
   if (url.pathname === "/admin/api/stats") {
     const keys = await getAllUserKeys(env);
 
-    // Get history
     const historyStr = await env.V2EX_PUSH_KV.get("history:recent");
     const history = historyStr ? JSON.parse(historyStr) : [];
 
     return new Response(
       JSON.stringify({
         userCount: keys.length,
-        users: keys, // Be careful if too many users, might want to just count
+        users: keys,
         history: history,
       }),
       {
@@ -101,7 +128,6 @@ async function handleAdmin(request: Request, env: Env): Promise<Response> {
     );
   }
 
-  // Serve HTML Dashboard
   const html = `
     <!DOCTYPE html>
     <html>
@@ -122,7 +148,7 @@ async function handleAdmin(request: Request, env: Env): Promise<Response> {
     </head>
     <body>
         <h1>V2EX Push Service Admin</h1>
-        
+
         <div class="card">
             <h3>Registered Devices</h3>
             <div id="userCount" class="stat">Loading...</div>
@@ -147,18 +173,18 @@ async function handleAdmin(request: Request, env: Env): Promise<Response> {
 
         <script>
             const secret = new URLSearchParams(window.location.search).get("secret");
-            
+
             async function loadData() {
                 try {
                     const res = await fetch(\`/admin/api/stats?secret=\${secret}\`);
                     if (!res.ok) throw new Error("Failed to load");
                     const data = await res.json();
-                    
+
                     document.getElementById("userCount").innerText = data.userCount;
-                    
+
                     const tbody = document.querySelector("#historyTable tbody");
                     tbody.innerHTML = "";
-                    
+
                     data.history.reverse().forEach(item => {
                         const tr = document.createElement("tr");
                         tr.innerHTML = \`
@@ -173,7 +199,7 @@ async function handleAdmin(request: Request, env: Env): Promise<Response> {
                     alert("Error loading data: " + e.message);
                 }
             }
-            
+
             loadData();
         </script>
     </body>
@@ -186,7 +212,6 @@ async function handleAdmin(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleRegister(request: Request, env: Env): Promise<Response> {
-  // ... existing handleRegister code ...
   try {
     const data: any = await request.json();
     const { feedUrl, fcmToken, deviceType } = data;
@@ -195,20 +220,34 @@ async function handleRegister(request: Request, env: Env): Promise<Response> {
       return new Response("Missing feedUrl or fcmToken", { status: 400 });
     }
 
-    // Simple validation of feedUrl (must be v2ex)
     if (!feedUrl.includes("v2ex.com/")) {
       return new Response("Invalid feedUrl: must be a v2ex.com URL", {
         status: 400,
       });
     }
 
-    // Store in KV
+    // Preserve existing lastPushed if the user is already registered, so
+    // re-registration (e.g. token refresh, app reinstall) does not reset the
+    // dedup cursor and cause a flood of catch-up notifications.
+    let lastPushed = Date.now();
+    const existingStr = await env.V2EX_PUSH_KV.get(`user:${fcmToken}`);
+    if (existingStr) {
+      try {
+        const existing = JSON.parse(existingStr);
+        if (typeof existing.lastPushed === "number") {
+          lastPushed = existing.lastPushed;
+        }
+      } catch {
+        // ignore parse errors, fall back to Date.now()
+      }
+    }
+
     const payload = {
       feedUrl,
       fcmToken,
       deviceType,
       updatedAt: Date.now(),
-      lastPushed: Date.now(), // Init with now to avoid pushing old items
+      lastPushed,
     };
 
     await env.V2EX_PUSH_KV.put(`user:${fcmToken}`, JSON.stringify(payload));
@@ -227,7 +266,6 @@ import { sendPushNotification } from "./utils/fcm";
 async function handleScheduled(event: ScheduledEvent, env: Env) {
   console.log("Scheduled event triggered at", event.scheduledTime);
 
-  // Load history
   const historyStr = await env.V2EX_PUSH_KV.get("history:recent");
   let history: any[] = historyStr ? JSON.parse(historyStr) : [];
 
@@ -236,94 +274,147 @@ async function handleScheduled(event: ScheduledEvent, env: Env) {
 
   let pushedCount = 0;
 
-  const results = await Promise.allSettled(
+  await Promise.allSettled(
     keys.map(async (key) => {
       const userDataStr = await env.V2EX_PUSH_KV.get(key.name);
       if (!userDataStr) return;
 
       const userData = JSON.parse(userDataStr);
-      const { feedUrl, fcmToken, lastPushed = 0 } = userData;
 
-      if (!feedUrl || !fcmToken) return;
-
-      // Fetch Feed
-      const notifications = await fetchAndParseFeed(feedUrl);
-
-      // Filter new
-      const newItems = notifications.filter((n) => n.published > lastPushed);
-
-      if (newItems.length === 0) {
-        return; // Nothing new
-      }
-
-      console.log(`User ${key.name} has ${newItems.length} new notifications.`);
-
-      const maxTimestamp = Math.max(...newItems.map((n) => n.published));
-
-      for (const item of newItems) {
-        const { title, body } = buildNotificationTitleBody(item);
-        const topicId = extractTopicIdFromLink(item.link);
-        const data: Record<string, string> = {
-          link: item.link || "",
-          notificationId: item.id || "",
-        };
-        if (topicId) {
-          data.topicId = topicId;
-        }
-
-        const success = await sendPushNotification(
-          fcmToken,
-          title,
-          body,
-          data,
-          env.FIREBASE_SERVICE_ACCOUNT_JSON,
-          env.V2EX_PUSH_KV,
-        );
-
-        if (success) {
-          pushedCount++;
-          // Log to history
-          history.push({
-            timestamp: Date.now(),
-            type: "User",
-            title: item.title,
-            details: `To: ...${fcmToken.substring(0, 6)}`,
-          });
-        }
-      }
-
-      // Update KV
-      userData.lastPushed = maxTimestamp;
-      userData.updatedAt = Date.now();
-      await env.V2EX_PUSH_KV.put(key.name, JSON.stringify(userData));
+      const result = await processUserNotifications(
+        env,
+        key.name,
+        userData,
+        history,
+        sendPushNotification,
+        fetchAndParseFeed,
+      );
+      pushedCount += result.pushedCount;
     }),
   );
 
   await checkHotTopics(env, history);
 
-  // Trim history and save
   if (history.length > 100) history = history.slice(history.length - 100);
   await env.V2EX_PUSH_KV.put("history:recent", JSON.stringify(history));
+
+  console.log(`Pushed ${pushedCount} notifications total.`);
+}
+
+export async function processUserNotifications(
+  env: Env,
+  keyName: string,
+  userData: any,
+  history: any[],
+  sendPush: typeof sendPushNotification,
+  fetchFeed: typeof fetchAndParseFeed,
+): Promise<{ pushedCount: number }> {
+  const { feedUrl, fcmToken, lastPushed = 0 } = userData;
+  if (!feedUrl || !fcmToken) return { pushedCount: 0 };
+
+  const notifications = await fetchFeed(feedUrl);
+
+  const pushedIds = await getPushedIds(env.V2EX_PUSH_KV, fcmToken);
+
+  const newItems = notifications.filter(
+    (n) => n.published > lastPushed && !pushedIds.has(n.id),
+  );
+
+  if (newItems.length === 0) return { pushedCount: 0 };
+
+  console.log(`User ${keyName} has ${newItems.length} new notifications.`);
+
+  const itemsToPush = newItems.slice(-MAX_PUSH_PER_USER_PER_RUN);
+  const hasDeferred = newItems.length > itemsToPush.length;
+  if (hasDeferred) {
+    console.log(
+      `User ${keyName} has ${newItems.length - itemsToPush.length} backlog items, deferring to next run.`,
+    );
+  }
+
+  let pushedCount = 0;
+  let anyFailure = false;
+  let maxSuccessTimestamp = lastPushed;
+
+  for (const item of itemsToPush) {
+    const { title, body } = buildNotificationTitleBody(item);
+    const topicId = extractTopicIdFromLink(item.link);
+    const data: Record<string, string> = {
+      link: item.link || "",
+      notificationId: item.id || "",
+    };
+    if (topicId) {
+      data.topicId = topicId;
+    }
+
+    const success = await sendPush(
+      fcmToken,
+      title,
+      body,
+      data,
+      env.FIREBASE_SERVICE_ACCOUNT_JSON,
+      env.V2EX_PUSH_KV,
+    );
+
+    if (!success) {
+      anyFailure = true;
+      console.warn(
+        `Push failed for user ${keyName} notification ${item.id}, will retry next run.`,
+      );
+      continue;
+    }
+
+    pushedCount++;
+    pushedIds.add(item.id);
+    if (item.published > maxSuccessTimestamp) {
+      maxSuccessTimestamp = item.published;
+    }
+
+    await setPushedIds(env.V2EX_PUSH_KV, fcmToken, pushedIds);
+
+    history.push({
+      timestamp: Date.now(),
+      type: "User",
+      title: item.title,
+      details: `To: ...${fcmToken.substring(0, 6)}`,
+    });
+  }
+
+  // Advance lastPushed only on a clean run (no failures, no deferred items).
+  // On failure/deferral, keep the old cursor so the missed items get retried;
+  // pushedIds prevents already-pushed items from being re-sent.
+  const shouldAdvance =
+    !anyFailure && !hasDeferred && maxSuccessTimestamp > lastPushed;
+  const updatedUserData = {
+    ...userData,
+    lastPushed: shouldAdvance ? maxSuccessTimestamp : lastPushed,
+    updatedAt: Date.now(),
+  };
+  await env.V2EX_PUSH_KV.put(keyName, JSON.stringify(updatedUserData));
+
+  return { pushedCount };
 }
 
 async function checkHotTopics(env: Env, history: any[]) {
   try {
-    // 1. Fetch Hot Topics
     const response = await fetch("https://www.v2ex.com/api/topics/hot.json", {
       headers: { "User-Agent": "V2ex.Maui/1.0 PushService" },
     });
     if (!response.ok) return;
 
     const topics: any[] = await response.json();
-    const hotTopics = topics.filter((t: any) => t.replies > 100);
+    const hotTopics = topics.filter(
+      (t: any) => t.replies > HOT_TOPIC_REPLIES_THRESHOLD,
+    );
 
     const processedStr = await env.V2EX_PUSH_KV.get(
       "global:processed_hot_topics",
     );
     const processedIds: number[] = processedStr ? JSON.parse(processedStr) : [];
 
+    const processedSet = new Set(processedIds);
     const newHotTopics = hotTopics.filter(
-      (t: any) => !processedIds.includes(t.id),
+      (t: any) => !processedSet.has(t.id),
     );
 
     if (newHotTopics.length === 0) return;
@@ -332,7 +423,6 @@ async function checkHotTopics(env: Env, history: any[]) {
 
     for (const topic of newHotTopics) {
       let successCount = 0;
-      // Broadcast loop
       await Promise.allSettled(
         keys.map(async (key) => {
           const userDataStr = await env.V2EX_PUSH_KV.get(key.name);
@@ -366,15 +456,14 @@ async function checkHotTopics(env: Env, history: any[]) {
       });
 
       processedIds.push(topic.id);
+      if (processedIds.length > PUSHED_IDS_LIMIT) {
+        processedIds.splice(0, processedIds.length - PUSHED_IDS_LIMIT);
+      }
+      await env.V2EX_PUSH_KV.put(
+        "global:processed_hot_topics",
+        JSON.stringify(processedIds),
+      );
     }
-
-    if (processedIds.length > 200) {
-      processedIds.splice(0, processedIds.length - 200);
-    }
-    await env.V2EX_PUSH_KV.put(
-      "global:processed_hot_topics",
-      JSON.stringify(processedIds),
-    );
   } catch (e) {
     console.error("Error checking hot topics", e);
   }

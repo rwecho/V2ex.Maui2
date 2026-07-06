@@ -37,3 +37,4 @@ preferences.json
 **/Raw/wwwroot/favicon.png
 **/Raw/wwwroot/manifest.json
 **/Raw/wwwroot/vite.svg
+*.lscache
